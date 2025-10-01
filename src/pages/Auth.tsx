@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar, Store, User } from "lucide-react";
+import { Calendar, Store, User, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 
@@ -102,8 +102,18 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4">
-      <Card className="w-full max-w-md shadow-strong">
-        <CardHeader className="text-center">
+      <Card className="w-full max-w-md shadow-strong relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/")}
+          className="absolute top-4 left-4 gap-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Volver
+        </Button>
+        
+        <CardHeader className="text-center pt-12">
           <div className="flex justify-center mb-4">
             <Calendar className="h-12 w-12 text-accent" />
           </div>
