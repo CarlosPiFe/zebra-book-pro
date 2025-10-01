@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Calendar } from "lucide-react";
+import { Calendar, Store, User } from "lucide-react";
 import { z } from "zod";
+import { cn } from "@/lib/utils";
 
 const authSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
@@ -120,6 +120,63 @@ const Auth = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <>
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold">¿Qué tipo de cuenta necesitas?</Label>
+                  <div className="grid grid-cols-1 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRole("client")}
+                      className={cn(
+                        "relative flex items-start p-4 rounded-lg border-2 transition-all text-left",
+                        role === "client"
+                          ? "border-accent bg-accent/5 shadow-md"
+                          : "border-border hover:border-accent/50 bg-background"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className={cn(
+                          "flex items-center justify-center w-10 h-10 rounded-full",
+                          role === "client" ? "bg-accent text-white" : "bg-muted text-muted-foreground"
+                        )}>
+                          <User className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-base mb-1">Soy Cliente</p>
+                          <p className="text-sm text-muted-foreground">
+                            Quiero reservar en restaurantes, peluquerías, gimnasios, etc.
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setRole("owner")}
+                      className={cn(
+                        "relative flex items-start p-4 rounded-lg border-2 transition-all text-left",
+                        role === "owner"
+                          ? "border-accent bg-accent/5 shadow-md"
+                          : "border-border hover:border-accent/50 bg-background"
+                      )}
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className={cn(
+                          "flex items-center justify-center w-10 h-10 rounded-full",
+                          role === "owner" ? "bg-accent text-white" : "bg-muted text-muted-foreground"
+                        )}>
+                          <Store className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-base mb-1">Tengo un Negocio</p>
+                          <p className="text-sm text-muted-foreground">
+                            Quiero gestionar las reservas de mi negocio
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="fullName">Nombre completo</Label>
                   <Input
@@ -130,24 +187,6 @@ const Auth = () => {
                     onChange={(e) => setFullName(e.target.value)}
                     required
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Tipo de cuenta</Label>
-                  <RadioGroup value={role} onValueChange={(value: "client" | "owner") => setRole(value)}>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="client" id="client" />
-                      <Label htmlFor="client" className="font-normal cursor-pointer">
-                        Cliente (hacer reservas)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="owner" id="owner" />
-                      <Label htmlFor="owner" className="font-normal cursor-pointer">
-                        Propietario (gestionar negocio)
-                      </Label>
-                    </div>
-                  </RadioGroup>
                 </div>
               </>
             )}
