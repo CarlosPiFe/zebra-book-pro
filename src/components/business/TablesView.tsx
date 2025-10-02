@@ -38,6 +38,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [loading, setLoading] = useState(true);
   const [isAddTableDialogOpen, setIsAddTableDialogOpen] = useState(false);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
+  const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [tableNumber, setTableNumber] = useState("");
   const [maxCapacity, setMaxCapacity] = useState("");
@@ -137,7 +138,14 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
-  const handleQuickOccupy = async (table: Table) => {
+  const handleTableClick = (table: Table) => {
+    setSelectedTable(table);
+    setIsActionDialogOpen(true);
+  };
+
+  const handleQuickOccupy = async () => {
+    if (!selectedTable) return;
+    
     try {
       const today = new Date().toISOString().split('T')[0];
       const now = new Date();
@@ -145,7 +153,7 @@ export function TablesView({ businessId }: TablesViewProps) {
       const endTime = new Date(now.getTime() + 2 * 60 * 60 * 1000).toTimeString().slice(0, 5);
 
       const { error } = await supabase.from("bookings").insert({
-        table_id: table.id,
+        table_id: selectedTable.id,
         business_id: businessId,
         booking_date: today,
         start_time: startTime,
@@ -157,6 +165,7 @@ export function TablesView({ businessId }: TablesViewProps) {
       if (error) throw error;
 
       toast.success("Mesa ocupada");
+      setIsActionDialogOpen(false);
       loadTables();
     } catch (error) {
       console.error("Error occupying table:", error);
@@ -164,8 +173,9 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
-  const handleReserveClick = (table: Table) => {
-    setSelectedTable(table);
+  const handleReserveClick = () => {
+    if (!selectedTable) return;
+    
     const today = new Date().toISOString().split('T')[0];
     setBookingDate(today);
     setStartTime("");
@@ -175,22 +185,23 @@ export function TablesView({ businessId }: TablesViewProps) {
     setClientEmail("");
     setNotes("");
     setBookingStatus("reserved");
+    setIsActionDialogOpen(false);
     setIsBookingDialogOpen(true);
   };
 
-  const handleEditReservation = (table: Table) => {
-    setSelectedTable(table);
-    if (table.current_booking) {
-      const booking = table.current_booking;
-      setBookingDate(booking.booking_date);
-      setStartTime(booking.start_time);
-      setEndTime(booking.end_time);
-      setClientName(booking.client_name || "");
-      setClientPhone(booking.client_phone || "");
-      setClientEmail(booking.client_email || "");
-      setNotes(booking.notes || "");
-      setBookingStatus(booking.status);
-    }
+  const handleEditReservation = () => {
+    if (!selectedTable || !selectedTable.current_booking) return;
+    
+    const booking = selectedTable.current_booking;
+    setBookingDate(booking.booking_date);
+    setStartTime(booking.start_time);
+    setEndTime(booking.end_time);
+    setClientName(booking.client_name || "");
+    setClientPhone(booking.client_phone || "");
+    setClientEmail(booking.client_email || "");
+    setNotes(booking.notes || "");
+    setBookingStatus(booking.status);
+    setIsActionDialogOpen(false);
     setIsBookingDialogOpen(true);
   };
 
@@ -241,18 +252,19 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
-  const handleCancelReservation = async (table: Table) => {
-    if (!table.current_booking) return;
+  const handleCancelReservation = async () => {
+    if (!selectedTable?.current_booking) return;
 
     try {
       const { error } = await supabase
         .from("bookings")
         .delete()
-        .eq("id", table.current_booking.id);
+        .eq("id", selectedTable.current_booking.id);
 
       if (error) throw error;
 
       toast.success("Reserva cancelada correctamente");
+      setIsActionDialogOpen(false);
       loadTables();
     } catch (error) {
       console.error("Error canceling reservation:", error);
@@ -399,9 +411,10 @@ export function TablesView({ businessId }: TablesViewProps) {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {tables.map((table) => (
-              <div
+              <button
                 key={table.id}
-                className={`relative aspect-square border-2 rounded-lg p-4 flex flex-col items-center justify-center gap-2 transition-all group ${getTableColor(table)}`}
+                onClick={() => handleTableClick(table)}
+                className={`relative aspect-square border-2 rounded-lg p-4 flex flex-col items-center justify-center gap-2 hover:shadow-md transition-all group ${getTableColor(table)}`}
               >
                 <button
                   onClick={(e) => {
@@ -419,54 +432,74 @@ export function TablesView({ businessId }: TablesViewProps) {
                   <Users className="h-4 w-4" />
                   <span>{table.max_capacity}</span>
                 </div>
-                
-                {!table.current_booking ? (
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      size="sm"
-                      className="bg-green-500 hover:bg-green-600 text-white"
-                      onClick={() => handleQuickOccupy(table)}
-                    >
-                      Comer
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="bg-orange-500 hover:bg-orange-600 text-white"
-                      onClick={() => handleReserveClick(table)}
-                    >
-                      Reservar
-                    </Button>
-                  </div>
-                ) : table.current_booking.status === "reserved" ? (
-                  <>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {table.current_booking.client_name}
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleCancelReservation(table)}
-                      >
-                        Cancelar
-                      </Button>
-                      <Button
-                        size="sm"
-                        className="bg-orange-500 hover:bg-orange-600 text-white"
-                        onClick={() => handleEditReservation(table)}
-                      >
-                        Cambiar
-                      </Button>
-                    </div>
-                  </>
-                ) : (
+                {table.current_booking && (
                   <div className="text-xs text-muted-foreground mt-1">
                     {table.current_booking.client_name}
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </div>
+
+          {/* Action Dialog */}
+          <Dialog open={isActionDialogOpen} onOpenChange={setIsActionDialogOpen}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>Mesa {selectedTable?.table_number}</DialogTitle>
+                <DialogDescription>
+                  Selecciona una acción para esta mesa
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-3 py-4">
+                {!selectedTable?.current_booking ? (
+                  <>
+                    <Button
+                      className="bg-green-500 hover:bg-green-600 text-white h-12"
+                      onClick={handleQuickOccupy}
+                    >
+                      Comer
+                    </Button>
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600 text-white h-12"
+                      onClick={handleReserveClick}
+                    >
+                      Reservar
+                    </Button>
+                  </>
+                ) : selectedTable.current_booking.status === "reserved" ? (
+                  <>
+                    <div className="text-sm text-muted-foreground mb-2">
+                      <p><strong>Cliente:</strong> {selectedTable.current_booking.client_name}</p>
+                      {selectedTable.current_booking.client_phone && (
+                        <p><strong>Teléfono:</strong> {selectedTable.current_booking.client_phone}</p>
+                      )}
+                      {selectedTable.current_booking.start_time && (
+                        <p><strong>Hora:</strong> {selectedTable.current_booking.start_time}</p>
+                      )}
+                    </div>
+                    <Button
+                      variant="destructive"
+                      className="h-12"
+                      onClick={handleCancelReservation}
+                    >
+                      Cancelar Reserva
+                    </Button>
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600 text-white h-12"
+                      onClick={handleEditReservation}
+                    >
+                      Cambiar Reserva
+                    </Button>
+                  </>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    <p><strong>Cliente:</strong> {selectedTable.current_booking.client_name}</p>
+                    <p><strong>Estado:</strong> Comiendo</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Booking Dialog */}
           <Dialog open={isBookingDialogOpen} onOpenChange={setIsBookingDialogOpen}>
