@@ -4,6 +4,7 @@ import { Calendar, User, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 export const Navbar = () => {
   const navigate = useNavigate();
@@ -24,8 +25,34 @@ export const Navbar = () => {
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/");
+    try {
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Logout error:", error);
+        toast.error("Error al cerrar sesión");
+        return;
+      }
+      
+      // Clear user state immediately
+      setUser(null);
+      
+      // Clear any localStorage items
+      localStorage.clear();
+      
+      toast.success("Sesión cerrada correctamente");
+      
+      // Navigate to home
+      navigate("/");
+      
+      // Force page reload to clear all state
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 100);
+    } catch (error) {
+      console.error("Unexpected logout error:", error);
+      toast.error("Error inesperado al cerrar sesión");
+    }
   };
 
   return (
