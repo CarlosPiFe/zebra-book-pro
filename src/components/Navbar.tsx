@@ -26,12 +26,18 @@ export const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      // Check if there's an active session first
+      const { data: { session } } = await supabase.auth.getSession();
       
-      if (error) {
-        console.error("Logout error:", error);
-        toast.error("Error al cerrar sesión");
-        return;
+      // Only try to sign out if there's an active session
+      if (session) {
+        const { error } = await supabase.auth.signOut();
+        
+        if (error) {
+          console.error("Logout error:", error);
+          toast.error("Error al cerrar sesión");
+          return;
+        }
       }
       
       // Clear user state immediately
@@ -42,16 +48,14 @@ export const Navbar = () => {
       
       toast.success("Sesión cerrada correctamente");
       
-      // Navigate to home
-      navigate("/");
-      
-      // Force page reload to clear all state
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 100);
+      // Navigate to home and reload
+      window.location.href = "/";
     } catch (error) {
       console.error("Unexpected logout error:", error);
-      toast.error("Error inesperado al cerrar sesión");
+      // Even if there's an error, clear everything and go to home
+      setUser(null);
+      localStorage.clear();
+      window.location.href = "/";
     }
   };
 
