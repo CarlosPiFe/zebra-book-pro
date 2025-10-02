@@ -64,6 +64,7 @@ export type Database = {
           end_time: string
           id: string
           notes: string | null
+          party_size: number | null
           start_time: string
           status: string
           table_id: string | null
@@ -80,6 +81,7 @@ export type Database = {
           end_time: string
           id?: string
           notes?: string | null
+          party_size?: number | null
           start_time: string
           status?: string
           table_id?: string | null
@@ -96,6 +98,7 @@ export type Database = {
           end_time?: string
           id?: string
           notes?: string | null
+          party_size?: number | null
           start_time?: string
           status?: string
           table_id?: string | null

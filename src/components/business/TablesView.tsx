@@ -27,6 +27,7 @@ interface Booking {
   client_phone: string | null;
   client_email: string | null;
   notes: string | null;
+  party_size: number | null;
 }
 
 interface TablesViewProps {
@@ -52,6 +53,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [clientEmail, setClientEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [bookingStatus, setBookingStatus] = useState("reserved");
+  const [partySize, setPartySize] = useState("");
 
   useEffect(() => {
     loadTables();
@@ -185,6 +187,7 @@ export function TablesView({ businessId }: TablesViewProps) {
     setClientEmail("");
     setNotes("");
     setBookingStatus("reserved");
+    setPartySize("");
     setIsActionDialogOpen(false);
     setIsBookingDialogOpen(true);
   };
@@ -201,13 +204,14 @@ export function TablesView({ businessId }: TablesViewProps) {
     setClientEmail(booking.client_email || "");
     setNotes(booking.notes || "");
     setBookingStatus(booking.status);
+    setPartySize(booking.party_size?.toString() || "");
     setIsActionDialogOpen(false);
     setIsBookingDialogOpen(true);
   };
 
   const handleSaveBooking = async () => {
-    if (!selectedTable || !bookingDate || !startTime || !endTime || !clientName) {
-      toast.error("Por favor completa todos los campos requeridos");
+    if (!selectedTable || !clientName || !clientPhone || !partySize) {
+      toast.error("Por favor completa nombre, teléfono y cantidad de comensales");
       return;
     }
 
@@ -215,14 +219,15 @@ export function TablesView({ businessId }: TablesViewProps) {
       const bookingData = {
         table_id: selectedTable.id,
         business_id: businessId,
-        booking_date: bookingDate,
-        start_time: startTime,
-        end_time: endTime,
+        booking_date: bookingDate || new Date().toISOString().split('T')[0],
+        start_time: startTime || "00:00",
+        end_time: endTime || "23:59",
         client_name: clientName,
-        client_phone: clientPhone || null,
+        client_phone: clientPhone,
         client_email: clientEmail || null,
         notes: notes || null,
         status: bookingStatus,
+        party_size: parseInt(partySize),
       };
 
       if (selectedTable.current_booking) {
@@ -554,13 +559,24 @@ export function TablesView({ businessId }: TablesViewProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="client-phone">Teléfono</Label>
+                  <Label htmlFor="client-phone">Teléfono *</Label>
                   <Input
                     id="client-phone"
                     type="tel"
                     placeholder="Ej: 612345678"
                     value={clientPhone}
                     onChange={(e) => setClientPhone(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="party-size">Cantidad de Comensales *</Label>
+                  <Input
+                    id="party-size"
+                    type="number"
+                    min="1"
+                    placeholder="Ej: 4"
+                    value={partySize}
+                    onChange={(e) => setPartySize(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
