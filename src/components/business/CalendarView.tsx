@@ -112,17 +112,17 @@ export function CalendarView({ businessId }: CalendarViewProps) {
         </CardHeader>
         <CardContent className="p-4">
           {/* Navigation Controls */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={previousYear}
-                className="h-7 w-7"
-              >
-                <ChevronLeft className="h-3 w-3" />
-                <ChevronLeft className="h-3 w-3 -ml-2" />
-              </Button>
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={previousYear}
+              className="h-8 px-3 text-sm"
+            >
+              {year - 1}
+            </Button>
+            
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="icon"
@@ -131,15 +131,11 @@ export function CalendarView({ businessId }: CalendarViewProps) {
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
-            </div>
-
-            <div className="text-center">
-              <h2 className="text-xl font-bold">
+              
+              <h2 className="text-xl font-bold min-w-[200px] text-center">
                 {MONTHS[month]} {year}
               </h2>
-            </div>
-
-            <div className="flex items-center gap-1">
+              
               <Button
                 variant="outline"
                 size="icon"
@@ -148,16 +144,16 @@ export function CalendarView({ businessId }: CalendarViewProps) {
               >
                 <ChevronRight className="h-3 w-3" />
               </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={nextYear}
-                className="h-7 w-7"
-              >
-                <ChevronRight className="h-3 w-3" />
-                <ChevronRight className="h-3 w-3 -ml-2" />
-              </Button>
             </div>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={nextYear}
+              className="h-8 px-3 text-sm"
+            >
+              {year + 1}
+            </Button>
           </div>
 
           {/* Calendar Grid */}
