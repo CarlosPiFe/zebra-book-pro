@@ -110,64 +110,64 @@ export function CalendarView({ businessId }: CalendarViewProps) {
             Haz clic en cualquier día para ver las reservas. Los días cerrados aparecen marcados.
           </CardDescription>
         </CardHeader>
-        <CardContent className="p-6">
+        <CardContent className="p-4">
           {/* Navigation Controls */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={previousYear}
-                className="h-8 w-8"
+                className="h-7 w-7"
               >
-                <ChevronLeft className="h-4 w-4" />
-                <ChevronLeft className="h-4 w-4 -ml-3" />
+                <ChevronLeft className="h-3 w-3" />
+                <ChevronLeft className="h-3 w-3 -ml-2" />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={previousMonth}
-                className="h-8 w-8"
+                className="h-7 w-7"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3 w-3" />
               </Button>
             </div>
 
             <div className="text-center">
-              <h2 className="text-2xl font-bold">
+              <h2 className="text-xl font-bold">
                 {MONTHS[month]} {year}
               </h2>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={nextMonth}
-                className="h-8 w-8"
+                className="h-7 w-7"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3 w-3" />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={nextYear}
-                className="h-8 w-8"
+                className="h-7 w-7"
               >
-                <ChevronRight className="h-4 w-4" />
-                <ChevronRight className="h-4 w-4 -ml-3" />
+                <ChevronRight className="h-3 w-3" />
+                <ChevronRight className="h-3 w-3 -ml-2" />
               </Button>
             </div>
           </div>
 
           {/* Calendar Grid */}
-          <div className="space-y-2">
+          <div className="space-y-1">
             {/* Days of week header */}
-            <div className="grid grid-cols-7 gap-2 mb-2">
+            <div className="grid grid-cols-7 gap-1">
               {DAYS_OF_WEEK.map((day) => (
                 <div
                   key={day}
-                  className="text-center text-sm font-semibold text-muted-foreground p-2"
+                  className="text-center text-xs font-semibold text-muted-foreground p-1"
                 >
                   {day}
                 </div>
@@ -175,7 +175,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
             </div>
 
             {/* Calendar days */}
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1">
               {calendarDays.map((day, index) => {
                 if (day === null) {
                   return <div key={`empty-${index}`} />;
@@ -190,7 +190,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                     onClick={() => handleDayClick(day)}
                     disabled={closed}
                     className={cn(
-                      "aspect-square p-2 rounded-lg text-center transition-all",
+                      "aspect-square p-1 rounded text-center transition-all text-sm",
                       "hover:bg-accent/10 hover:scale-105",
                       closed && "bg-muted cursor-not-allowed opacity-50 hover:bg-muted hover:scale-100",
                       today && !closed && "bg-accent text-accent-foreground font-bold",
@@ -198,11 +198,11 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                     )}
                   >
                     <div className="flex flex-col items-center justify-center h-full">
-                      <span className={cn("text-lg", today && "font-bold")}>
+                      <span className={cn("text-sm", today && "font-bold")}>
                         {day}
                       </span>
                       {closed && (
-                        <span className="text-xs text-muted-foreground mt-1">
+                        <span className="text-[10px] text-muted-foreground">
                           Cerrado
                         </span>
                       )}
@@ -214,18 +214,18 @@ export function CalendarView({ businessId }: CalendarViewProps) {
           </div>
 
           {/* Legend */}
-          <div className="mt-6 pt-6 border-t border-border">
-            <div className="flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-accent" />
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex flex-wrap gap-3 text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-accent" />
                 <span>Día actual</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-background border border-border" />
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-background border border-border" />
                 <span>Día disponible</span>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded bg-muted" />
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded bg-muted" />
                 <span>Local cerrado</span>
               </div>
             </div>

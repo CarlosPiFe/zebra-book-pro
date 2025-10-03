@@ -35,7 +35,6 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
   const mainItems = [
     { id: "calendar", label: "Calendario", icon: Calendar },
     { id: "bookings", label: "Reservas", icon: ClipboardList },
-    { id: "settings", label: "Configuración", icon: Settings },
   ];
 
   const restaurantItems = isRestaurant ? [
@@ -102,6 +101,24 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Sistema</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={() => onViewChange("settings")}
+                  isActive={activeView === "settings"}
+                  className={activeView === "settings" ? "bg-accent/10 text-accent" : ""}
+                >
+                  <Settings className="h-4 w-4" />
+                  {!isCollapsed && <span>Configuración</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
   );

@@ -552,36 +552,36 @@ export function TablesView({ businessId }: TablesViewProps) {
             </Dialog>
           </div>
 
-          <div className={`grid gap-3 ${tables.length >= 8 ? 'grid-cols-[repeat(auto-fit,minmax(100px,1fr))]' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
+          <div className={`grid gap-2 ${tables.length >= 8 ? 'grid-cols-[repeat(auto-fit,minmax(80px,1fr))]' : 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8'}`}>
             {tables.map((table) => (
               <button
                 key={table.id}
                 onClick={() => handleTableClick(table)}
-                className={`relative aspect-square border-2 rounded-lg p-4 flex flex-col items-center justify-center gap-2 hover:shadow-md transition-all group ${getTableColor(table)}`}
+                className={`relative aspect-square border-2 rounded-lg p-1.5 flex flex-col items-center justify-center gap-0.5 hover:shadow-md transition-all group ${getTableColor(table)}`}
               >
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     handleDeleteTable(table.id);
                   }}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-destructive/10 rounded"
+                  className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded"
                 >
-                  <Trash2 className="h-4 w-4 text-destructive" />
+                  <Trash2 className="h-3 w-3 text-destructive" />
                 </button>
-                <div className="text-3xl font-bold text-foreground">
+                <div className="text-lg font-bold text-foreground">
                   {table.table_number}
                 </div>
-                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
+                <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                  <Users className="h-3 w-3" />
                   <span>{table.max_capacity}</span>
                 </div>
                 {table.current_booking && (
                   <>
-                    <div className="text-xs text-muted-foreground mt-1">
+                    <div className="text-[9px] text-muted-foreground truncate w-full text-center px-0.5">
                       {table.current_booking.client_name}
                     </div>
                     {table.current_booking.status === "occupied" && table.total_spent! > 0 && (
-                      <div className="text-sm font-bold text-primary mt-1">
+                      <div className="text-[10px] font-bold text-primary">
                         ${table.total_spent!.toFixed(2)}
                       </div>
                     )}
