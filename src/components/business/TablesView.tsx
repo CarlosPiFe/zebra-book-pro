@@ -195,6 +195,26 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
+  const handleClientLeft = async () => {
+    if (!selectedTable?.current_booking) return;
+
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", selectedTable.current_booking.id);
+
+      if (error) throw error;
+
+      toast.success("Cliente marcado como ausente");
+      loadTables();
+      setIsActionDialogOpen(false);
+    } catch (error) {
+      console.error("Error marking client as left:", error);
+      toast.error("Error al actualizar el estado");
+    }
+  };
+
   const handleReserveClick = () => {
     if (!selectedTable) return;
     
@@ -434,7 +454,7 @@ export function TablesView({ businessId }: TablesViewProps) {
             </Dialog>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(120px,1fr))] gap-4">
             {tables.map((table) => (
               <button
                 key={table.id}
@@ -528,12 +548,21 @@ export function TablesView({ businessId }: TablesViewProps) {
                       )}
                       <p><strong>Estado:</strong> Comiendo</p>
                     </div>
-                    <Button
-                      onClick={handleCompleteOccupancy}
-                      className="bg-blue-600 hover:bg-blue-700 text-white h-12"
-                    >
-                      Cliente ha terminado
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        onClick={handleCompleteOccupancy}
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12"
+                      >
+                        Cliente ha terminado
+                      </Button>
+                      <Button
+                        onClick={handleClientLeft}
+                        variant="outline"
+                        className="flex-1 h-12"
+                      >
+                        Cliente se ha ido
+                      </Button>
+                    </div>
                   </>
                 )}
               </div>
