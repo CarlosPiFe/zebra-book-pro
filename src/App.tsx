@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import CreateBusiness from "./pages/CreateBusiness";
 import ManageBusiness from "./pages/ManageBusiness";
+import WaiterInterface from "./pages/WaiterInterface";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/business/create" element={<CreateBusiness />} />
           <Route path="/business/:businessId/manage" element={<ManageBusiness />} />
+          <Route path="/waiter/:token" element={<WaiterInterface />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

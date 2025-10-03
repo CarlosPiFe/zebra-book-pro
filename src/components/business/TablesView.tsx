@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Users, Trash2, Edit } from "lucide-react";
+import { Plus, Users, Trash2, Edit, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { OrdersDialog } from "./OrdersDialog";
 
 interface Table {
   id: string;
   table_number: number;
   max_capacity: number;
   current_booking?: Booking | null;
+  total_spent?: number;
 }
 
 interface Booking {
@@ -40,9 +42,11 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [isAddTableDialogOpen, setIsAddTableDialogOpen] = useState(false);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
+  const [isOrdersDialogOpen, setIsOrdersDialogOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [tableNumber, setTableNumber] = useState("");
   const [maxCapacity, setMaxCapacity] = useState("");
+  const [orders, setOrders] = useState<any[]>([]);
   
   // Booking form state
   const [bookingDate, setBookingDate] = useState("");
@@ -81,10 +85,39 @@ export function TablesView({ businessId }: TablesViewProps) {
 
       if (bookingsError) throw bookingsError;
 
-      // Merge tables with their current bookings
+      // Get orders for today's occupied tables
+      const occupiedTableIds = bookingsData
+        ?.filter(b => b.status === "occupied")
+        .map(b => b.table_id) || [];
+
+      let ordersData: any[] = [];
+      if (occupiedTableIds.length > 0) {
+        const { data, error: ordersError } = await supabase
+          .from("orders")
+          .select(`
+            *,
+            menu_items!inner(price)
+          `)
+          .in("table_id", occupiedTableIds)
+          .eq("status", "pending");
+
+        if (ordersError) throw ordersError;
+        ordersData = data || [];
+      }
+
+      // Calculate total spent per table
+      const tableTotals = ordersData.reduce((acc, order) => {
+        const tableId = order.table_id;
+        const amount = order.menu_items.price * order.quantity;
+        acc[tableId] = (acc[tableId] || 0) + amount;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Merge tables with their current bookings and totals
       const tablesWithBookings = (tablesData || []).map(table => ({
         ...table,
-        current_booking: bookingsData?.find(b => b.table_id === table.id) || null
+        current_booking: bookingsData?.find(b => b.table_id === table.id) || null,
+        total_spent: tableTotals[table.id] || 0
       }));
 
       setTables(tablesWithBookings);
@@ -143,6 +176,31 @@ export function TablesView({ businessId }: TablesViewProps) {
   const handleTableClick = (table: Table) => {
     setSelectedTable(table);
     setIsActionDialogOpen(true);
+  };
+
+  const handleViewOrders = async () => {
+    if (!selectedTable) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          *,
+          menu_items(name, price)
+        `)
+        .eq("table_id", selectedTable.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      setOrders(data || []);
+      setIsActionDialogOpen(false);
+      setIsOrdersDialogOpen(true);
+    } catch (error) {
+      console.error("Error loading orders:", error);
+      toast.error("Error al cargar pedidos");
+    }
   };
 
   const handleQuickOccupy = async () => {
@@ -478,9 +536,16 @@ export function TablesView({ businessId }: TablesViewProps) {
                   <span>{table.max_capacity}</span>
                 </div>
                 {table.current_booking && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {table.current_booking.client_name}
-                  </div>
+                  <>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {table.current_booking.client_name}
+                    </div>
+                    {table.current_booking.status === "occupied" && table.total_spent! > 0 && (
+                      <div className="text-sm font-bold text-primary mt-1">
+                        ${table.total_spent!.toFixed(2)}
+                      </div>
+                    )}
+                  </>
                 )}
               </button>
             ))}
@@ -547,21 +612,36 @@ export function TablesView({ businessId }: TablesViewProps) {
                         <p><strong>Comensales:</strong> {selectedTable.current_booking.party_size}</p>
                       )}
                       <p><strong>Estado:</strong> Comiendo</p>
+                      {selectedTable.total_spent! > 0 && (
+                        <p className="text-lg font-bold text-primary">
+                          <strong>Total:</strong> ${selectedTable.total_spent!.toFixed(2)}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col gap-2">
                       <Button
-                        onClick={handleCompleteOccupancy}
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12"
-                      >
-                        Cliente ha terminado
-                      </Button>
-                      <Button
-                        onClick={handleClientLeft}
+                        onClick={handleViewOrders}
                         variant="outline"
-                        className="flex-1 h-12"
+                        className="w-full h-12"
                       >
-                        Cliente se ha ido
+                        <Receipt className="w-4 h-4 mr-2" />
+                        Ver Pedido
                       </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleCompleteOccupancy}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12"
+                        >
+                          Cliente ha terminado
+                        </Button>
+                        <Button
+                          onClick={handleClientLeft}
+                          variant="outline"
+                          className="flex-1 h-12"
+                        >
+                          Cliente se ha ido
+                        </Button>
+                      </div>
                     </div>
                   </>
                 )}
@@ -705,6 +785,15 @@ export function TablesView({ businessId }: TablesViewProps) {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+
+          {/* Orders Dialog */}
+          <OrdersDialog
+            open={isOrdersDialogOpen}
+            onOpenChange={setIsOrdersDialogOpen}
+            tableNumber={selectedTable?.table_number || 0}
+            orders={orders}
+            totalAmount={selectedTable?.total_spent || 0}
+          />
         </>
       )}
     </div>

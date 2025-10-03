@@ -1,4 +1,4 @@
-import { Building2, Calendar, ClipboardList, UtensilsCrossed, LayoutGrid } from "lucide-react";
+import { Building2, Calendar, ClipboardList, UtensilsCrossed, LayoutGrid, Users } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -40,6 +40,7 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
   const restaurantItems = isRestaurant ? [
     { id: "tables", label: "Mesas", icon: LayoutGrid },
     { id: "menu", label: "Menú", icon: UtensilsCrossed },
+    { id: "waiters", label: "Camareros", icon: Users },
   ] : [];
 
   return (
