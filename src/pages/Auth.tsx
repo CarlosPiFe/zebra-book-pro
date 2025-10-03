@@ -20,8 +20,10 @@ const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("mode") === "signup");
+  const [isBusiness, setIsBusiness] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [businessId, setBusinessId] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"client" | "owner">("client");
   const [loading, setLoading] = useState(false);
@@ -201,17 +203,31 @@ const Auth = () => {
               </>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="tu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+            {!isSignUp && isBusiness ? (
+              <div className="space-y-2">
+                <Label htmlFor="businessId">Identificación del negocio</Label>
+                <Input
+                  id="businessId"
+                  type="text"
+                  placeholder="ID proporcionado por administrador"
+                  value={businessId}
+                  onChange={(e) => setBusinessId(e.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="password">Contraseña</Label>
@@ -233,7 +249,17 @@ const Auth = () => {
               {loading ? "Procesando..." : isSignUp ? "Crear cuenta" : "Iniciar sesión"}
             </Button>
 
-            <div className="text-center text-sm">
+            <div className="text-center text-sm space-y-2">
+              {!isSignUp && (
+                <button
+                  type="button"
+                  onClick={() => setIsBusiness(!isBusiness)}
+                  className="text-accent hover:underline font-medium block w-full"
+                >
+                  {isBusiness ? "¿Eres cliente?" : "¿Eres negocio?"}
+                </button>
+              )}
+              
               {isSignUp ? (
                 <p className="text-muted-foreground">
                   ¿Ya tienes cuenta?{" "}

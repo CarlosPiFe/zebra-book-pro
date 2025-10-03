@@ -512,7 +512,7 @@ export function TablesView({ businessId }: TablesViewProps) {
             </Dialog>
           </div>
 
-          <div className={`grid gap-4 ${tables.length >= 8 ? 'grid-cols-[repeat(auto-fit,minmax(120px,1fr))]' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
+          <div className={`grid gap-3 ${tables.length >= 8 ? 'grid-cols-[repeat(auto-fit,minmax(100px,1fr))]' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4'}`}>
             {tables.map((table) => (
               <button
                 key={table.id}

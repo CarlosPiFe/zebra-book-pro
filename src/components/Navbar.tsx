@@ -25,6 +25,13 @@ export const Navbar = () => {
   }, []);
 
   const handleLogout = async () => {
+    // Show confirmation dialog
+    const confirmed = window.confirm("¿Estás seguro de que quieres cerrar sesión?");
+    
+    if (!confirmed) {
+      return;
+    }
+
     try {
       // Check if there's an active session first
       const { data: { session } } = await supabase.auth.getSession();
@@ -87,7 +94,7 @@ export const Navbar = () => {
                   className="gap-2"
                 >
                   <LogOut className="h-4 w-4" />
-                  Salir
+                  Cerrar sesión
                 </Button>
               </>
             ) : (

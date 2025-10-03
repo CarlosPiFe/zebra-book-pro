@@ -1,4 +1,4 @@
-import { Building2, Calendar, ClipboardList, UtensilsCrossed, LayoutGrid, Users } from "lucide-react";
+import { Building2, Calendar, ClipboardList, UtensilsCrossed, LayoutGrid, Users, Settings } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -35,6 +35,7 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
   const mainItems = [
     { id: "calendar", label: "Calendario", icon: Calendar },
     { id: "bookings", label: "Reservas", icon: ClipboardList },
+    { id: "settings", label: "Configuración", icon: Settings },
   ];
 
   const restaurantItems = isRestaurant ? [
@@ -49,12 +50,12 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
 
       <SidebarContent>
         {business && !isCollapsed && (
-          <div className="px-4 py-3 border-b border-border">
+          <div className="px-4 py-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <Building2 className="h-8 w-8 text-accent" />
+              <Building2 className="h-8 w-8 text-accent flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold truncate">{business.name}</h3>
-                <p className="text-xs text-muted-foreground truncate">{business.category}</p>
+                <h3 className="font-semibold truncate leading-tight">{business.name}</h3>
+                <p className="text-xs text-muted-foreground truncate mt-1">{business.category}</p>
               </div>
             </div>
           </div>

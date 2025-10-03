@@ -10,6 +10,7 @@ import { BookingsView } from "@/components/business/BookingsView";
 import { TablesView } from "@/components/business/TablesView";
 import { MenuView } from "@/components/business/MenuView";
 import { WaitersView } from "@/components/business/WaitersView";
+import { BusinessSettings } from "@/components/business/BusinessSettings";
 
 interface Business {
   id: string;
@@ -81,6 +82,8 @@ const ManageBusiness = () => {
         return <MenuView businessId={business.id} />;
       case "waiters":
         return <WaitersView businessId={business.id} />;
+      case "settings":
+        return <BusinessSettings business={business} onUpdate={loadBusiness} />;
       default:
         return <CalendarView businessId={business.id} />;
     }
