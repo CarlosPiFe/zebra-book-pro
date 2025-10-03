@@ -175,6 +175,26 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
+  const handleCompleteOccupancy = async () => {
+    if (!selectedTable?.current_booking) return;
+
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "completed" })
+        .eq("id", selectedTable.current_booking.id);
+
+      if (error) throw error;
+
+      toast.success("Mesa liberada");
+      loadTables();
+      setIsActionDialogOpen(false);
+    } catch (error) {
+      console.error("Error completing occupancy:", error);
+      toast.error("Error al liberar la mesa");
+    }
+  };
+
   const handleReserveClick = () => {
     if (!selectedTable) return;
     
@@ -497,10 +517,24 @@ export function TablesView({ businessId }: TablesViewProps) {
                     </Button>
                   </>
                 ) : (
-                  <div className="text-sm text-muted-foreground">
-                    <p><strong>Cliente:</strong> {selectedTable.current_booking.client_name}</p>
-                    <p><strong>Estado:</strong> Comiendo</p>
-                  </div>
+                  <>
+                    <div className="space-y-2 text-sm text-muted-foreground mb-4">
+                      <p><strong>Cliente:</strong> {selectedTable.current_booking.client_name}</p>
+                      {selectedTable.current_booking.client_phone && (
+                        <p><strong>Teléfono:</strong> {selectedTable.current_booking.client_phone}</p>
+                      )}
+                      {selectedTable.current_booking.party_size && (
+                        <p><strong>Comensales:</strong> {selectedTable.current_booking.party_size}</p>
+                      )}
+                      <p><strong>Estado:</strong> Comiendo</p>
+                    </div>
+                    <Button
+                      onClick={handleCompleteOccupancy}
+                      className="bg-blue-600 hover:bg-blue-700 text-white h-12"
+                    >
+                      Cliente ha terminado
+                    </Button>
+                  </>
                 )}
               </div>
             </DialogContent>
