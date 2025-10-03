@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 
 interface Booking {
   id: string;
@@ -32,9 +33,7 @@ interface BookingsViewProps {
 export function BookingsView({ businessId }: BookingsViewProps) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
-  );
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [selectedTime, setSelectedTime] = useState<string>("");
 
   useEffect(() => {
@@ -43,6 +42,8 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
   const loadBookings = async () => {
     try {
+      const dateString = selectedDate.toISOString().split('T')[0];
+      
       let query = supabase
         .from("bookings")
         .select(`
@@ -52,7 +53,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
           )
         `)
         .eq("business_id", businessId)
-        .eq("booking_date", selectedDate)
+        .eq("booking_date", dateString)
         .order("start_time", { ascending: true });
 
       if (selectedTime) {
@@ -132,22 +133,20 @@ export function BookingsView({ businessId }: BookingsViewProps) {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="date">Fecha</Label>
-              <Input
-                id="date"
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+              <Label>Fecha</Label>
+              <DatePicker
+                date={selectedDate}
+                onDateChange={(date) => date && setSelectedDate(date)}
+                placeholder="Seleccionar fecha"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="time">Hora (opcional)</Label>
-              <Input
-                id="time"
-                type="time"
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                placeholder="Dejar vacío para ver todas"
+              <Label>Hora (opcional)</Label>
+              <TimePicker
+                time={selectedTime}
+                onTimeChange={setSelectedTime}
+                placeholder="Ver todas las horas"
+                allowClear={true}
               />
             </div>
           </div>
@@ -161,7 +160,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
               <p>No hay reservas para esta fecha{selectedTime && " y hora"}</p>
               <p className="text-sm mt-2">
                 {selectedTime 
-                  ? "Intenta cambiar la hora o seleccionar solo la fecha"
+                  ? "Intenta cambiar la hora o dejar el campo vacío"
                   : "Las reservas aparecerán aquí cuando los clientes las realicen"}
               </p>
             </div>

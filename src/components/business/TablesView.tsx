@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrdersDialog } from "./OrdersDialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 
 interface Table {
   id: string;
@@ -48,6 +51,12 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [maxCapacity, setMaxCapacity] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
   
+  // Filter states
+  const [filterDate, setFilterDate] = useState<Date>(new Date());
+  const [filterTime, setFilterTime] = useState<string>(
+    new Date().toTimeString().slice(0, 5)
+  );
+  
   // Booking form state
   const [bookingDate, setBookingDate] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -61,11 +70,11 @@ export function TablesView({ businessId }: TablesViewProps) {
 
   useEffect(() => {
     loadTables();
-  }, [businessId]);
+  }, [businessId, filterDate, filterTime]);
 
   const loadTables = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const selectedDate = filterDate.toISOString().split('T')[0];
       
       // Get tables
       const { data: tablesData, error: tablesError } = await supabase
@@ -76,11 +85,13 @@ export function TablesView({ businessId }: TablesViewProps) {
 
       if (tablesError) throw tablesError;
 
-      // Get today's active bookings for these tables
+      // Get bookings for selected date and time
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
         .select("*")
-        .eq("booking_date", today)
+        .eq("booking_date", selectedDate)
+        .lte("start_time", filterTime)
+        .gte("end_time", filterTime)
         .in("status", ["reserved", "occupied"]);
 
       if (bookingsError) throw bookingsError;
@@ -413,6 +424,35 @@ export function TablesView({ businessId }: TablesViewProps) {
   return (
     <div className="space-y-4 bg-background min-h-screen">
       <h1 className="text-xl font-semibold">Gestión de Mesas</h1>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Filtros</CardTitle>
+          <CardDescription>
+            Selecciona fecha y hora para ver el estado de las mesas en ese momento
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Fecha</Label>
+              <DatePicker
+                date={filterDate}
+                onDateChange={(date) => date && setFilterDate(date)}
+                placeholder="Seleccionar fecha"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Hora</Label>
+              <TimePicker
+                time={filterTime}
+                onTimeChange={setFilterTime}
+                placeholder="Seleccionar hora"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {tables.length === 0 ? (
         <div className="flex items-center justify-center min-h-[400px]">
