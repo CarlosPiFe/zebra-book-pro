@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Copy, Plus, Trash2, UserPlus, Edit, Calendar } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
+import { toMadridTime } from "@/lib/timezone";
+import { format } from "date-fns";
 
 interface Employee {
   id: string;
@@ -197,12 +199,19 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
     }
 
     try {
+      // Convertir a zona horaria de Madrid antes de guardar
+      const madridStartDate = toMadridTime(vacationDateRange.from);
+      const madridEndDate = toMadridTime(vacationDateRange.to);
+      
+      const startDateString = format(madridStartDate, "yyyy-MM-dd");
+      const endDateString = format(madridEndDate, "yyyy-MM-dd");
+
       const { error } = await supabase
         .from("employee_vacations")
         .insert({
           employee_id: selectedEmployee.id,
-          start_date: vacationDateRange.from.toISOString().split('T')[0],
-          end_date: vacationDateRange.to.toISOString().split('T')[0],
+          start_date: startDateString,
+          end_date: endDateString,
           notes: newVacationNotes.trim() || null,
         });
 
@@ -396,27 +405,38 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                     No hay vacaciones registradas
                   </p>
                 ) : (
-                  vacations.map((vacation) => (
-                    <Card key={vacation.id} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-medium">
-                            {new Date(vacation.start_date).toLocaleDateString()} - {new Date(vacation.end_date).toLocaleDateString()}
-                          </p>
-                          {vacation.notes && (
-                            <p className="text-sm text-muted-foreground">{vacation.notes}</p>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleDeleteVacation(vacation.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </Card>
-                  ))
+                  <>
+                    {vacations.map((vacation) => {
+                      // Parsear las fechas como strings de fecha (sin hora) para evitar problemas de zona horaria
+                      const [startYear, startMonth, startDay] = vacation.start_date.split('-').map(Number);
+                      const [endYear, endMonth, endDay] = vacation.end_date.split('-').map(Number);
+                      
+                      const startDate = new Date(startYear, startMonth - 1, startDay);
+                      const endDate = new Date(endYear, endMonth - 1, endDay);
+                      
+                      return (
+                        <Card key={vacation.id} className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-medium">
+                                {startDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })} - {endDate.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                              </p>
+                              {vacation.notes && (
+                                <p className="text-sm text-muted-foreground">{vacation.notes}</p>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteVacation(vacation.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </Card>
+                      );
+                    })}
+                  </>
                 )}
               </div>
 

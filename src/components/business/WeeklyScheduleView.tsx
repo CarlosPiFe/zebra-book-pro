@@ -142,11 +142,9 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
     return vacations.some((vacation) => {
       if (vacation.employee_id !== employeeId) return false;
       
-      const startDate = new Date(vacation.start_date);
-      const endDate = new Date(vacation.end_date);
-      const checkDate = new Date(dateStr);
-      
-      return checkDate >= startDate && checkDate <= endDate;
+      // Comparar strings directamente para evitar problemas de zona horaria
+      // Las fechas en la base de datos ya están en formato YYYY-MM-DD sin hora
+      return dateStr >= vacation.start_date && dateStr <= vacation.end_date;
     });
   };
 
