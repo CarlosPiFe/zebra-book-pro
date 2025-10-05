@@ -189,28 +189,62 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="slot_duration">Duración de la Reserva</Label>
-            <Select
-              value={formData.booking_slot_duration_minutes.toString()}
-              onValueChange={(value) => 
-                setFormData({ ...formData, booking_slot_duration_minutes: parseInt(value) })
-              }
-            >
-              <SelectTrigger id="slot_duration">
-                <SelectValue placeholder="Selecciona la duración" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30">30 minutos</SelectItem>
-                <SelectItem value="45">45 minutos</SelectItem>
-                <SelectItem value="60">1 hora</SelectItem>
-                <SelectItem value="90">1 hora 30 min</SelectItem>
-                <SelectItem value="120">2 horas</SelectItem>
-                <SelectItem value="150">2 horas 30 min</SelectItem>
-                <SelectItem value="180">3 horas</SelectItem>
-                <SelectItem value="240">4 horas</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-4">
+            <Label>Duración de la Reserva</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="booking_hours" className="text-sm text-muted-foreground">Horas</Label>
+                <Select
+                  value={Math.floor(formData.booking_slot_duration_minutes / 60).toString()}
+                  onValueChange={(value) => {
+                    const hours = parseInt(value);
+                    const currentMinutes = formData.booking_slot_duration_minutes % 60;
+                    setFormData({ ...formData, booking_slot_duration_minutes: hours * 60 + currentMinutes });
+                  }}
+                >
+                  <SelectTrigger id="booking_hours">
+                    <SelectValue placeholder="Horas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0 horas</SelectItem>
+                    <SelectItem value="1">1 hora</SelectItem>
+                    <SelectItem value="2">2 horas</SelectItem>
+                    <SelectItem value="3">3 horas</SelectItem>
+                    <SelectItem value="4">4 horas</SelectItem>
+                    <SelectItem value="5">5 horas</SelectItem>
+                    <SelectItem value="6">6 horas</SelectItem>
+                    <SelectItem value="7">7 horas</SelectItem>
+                    <SelectItem value="8">8 horas</SelectItem>
+                    <SelectItem value="9">9 horas</SelectItem>
+                    <SelectItem value="10">10 horas</SelectItem>
+                    <SelectItem value="11">11 horas</SelectItem>
+                    <SelectItem value="12">12 horas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="booking_minutes" className="text-sm text-muted-foreground">Minutos</Label>
+                <Select
+                  value={(formData.booking_slot_duration_minutes % 60).toString()}
+                  onValueChange={(value) => {
+                    const currentHours = Math.floor(formData.booking_slot_duration_minutes / 60);
+                    const minutes = parseInt(value);
+                    setFormData({ ...formData, booking_slot_duration_minutes: currentHours * 60 + minutes });
+                  }}
+                >
+                  <SelectTrigger id="booking_minutes">
+                    <SelectValue placeholder="Minutos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">00 min</SelectItem>
+                    <SelectItem value="15">15 min</SelectItem>
+                    <SelectItem value="30">30 min</SelectItem>
+                    <SelectItem value="45">45 min</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <p className="text-sm text-muted-foreground">
               Esta duración se aplicará automáticamente a todas las reservas nuevas. 
               Las reservas manuales pueden personalizar la hora de finalización si es necesario.
