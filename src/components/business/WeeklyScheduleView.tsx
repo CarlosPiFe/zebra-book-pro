@@ -43,7 +43,7 @@ interface CopiedSchedule {
 }
 
 export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [vacations, setVacations] = useState<Vacation[]>([]);
@@ -68,6 +68,10 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
     if (highlightedDate) {
       const timer = setTimeout(() => {
         setHighlightedDate(null);
+        // Limpiar los parámetros de la URL para que no persistan
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete("highlightDate");
+        setSearchParams(newParams, { replace: true });
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -367,8 +371,8 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                     <th 
                       key={day.toISOString()} 
                       className={cn(
-                        "p-2 text-center font-semibold w-28 transition-all",
-                        isHighlighted && "bg-primary/20 scale-105 animate-pulse"
+                        "p-2 text-center font-semibold w-28 transition-all duration-300",
+                        isHighlighted && "bg-primary/15 shadow-[0_0_15px_rgba(var(--primary),0.3)]"
                       )}
                     >
                       <div className="text-sm">{format(day, "EEE", { locale: es })}</div>
@@ -404,8 +408,8 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                       <td 
                         key={`${employee.id}-${day.toISOString()}`} 
                         className={cn(
-                          "p-1 transition-all",
-                          isHighlighted && "bg-primary/20 scale-105 animate-pulse"
+                          "p-1 transition-all duration-300",
+                          isHighlighted && "bg-primary/15 shadow-[0_0_15px_rgba(var(--primary),0.3)]"
                         )}
                       >
                         <ScheduleCell
