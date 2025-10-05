@@ -171,11 +171,16 @@ export const ScheduleCell = ({
     if (timeSlots.length > 0) {
       return (
         <div className="relative group text-[10px] p-1.5 bg-card rounded border border-border hover:border-primary transition-colors">
-          {timeSlots.map((slot, index) => (
-            <div key={index} className="font-medium">
-              {slot.start} - {slot.end}
-            </div>
-          ))}
+          {timeSlots.map((slot, index) => {
+            // Format times to show only HH:MM (remove seconds if present)
+            const startTime = slot.start.substring(0, 5);
+            const endTime = slot.end.substring(0, 5);
+            return (
+              <div key={index} className="font-medium">
+                {startTime} - {endTime}
+              </div>
+            );
+          })}
           <button
             onClick={handleClearSchedule}
             className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
