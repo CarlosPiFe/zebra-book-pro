@@ -39,26 +39,32 @@ export function TimePicker({ time, onTimeChange, placeholder = "Seleccionar hora
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
     
-    // Auto-format: if 4 digits entered, format as HH:MM
-    if (value.length === 4) {
+    // Auto-format as user types
+    if (value.length >= 2) {
       const hours = value.substring(0, 2);
       const minutes = value.substring(2, 4);
-      const formattedTime = `${hours}:${minutes}`;
       
-      // Validate the formatted time
-      if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formattedTime)) {
-        setInputValue(formattedTime);
-        onTimeChange(formattedTime);
-        return;
+      if (value.length <= 2) {
+        // Just hours entered
+        setInputValue(`${hours}:`);
+      } else if (value.length === 4) {
+        // Both hours and minutes entered
+        const formattedTime = `${hours}:${minutes}`;
+        
+        // Validate the formatted time
+        if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formattedTime)) {
+          setInputValue(formattedTime);
+          onTimeChange(formattedTime);
+        } else {
+          setInputValue(value.substring(0, 2) + ':');
+        }
+      } else {
+        // Partial minutes
+        setInputValue(`${hours}:${minutes}`);
       }
-    }
-    
-    // Allow partial input or already formatted input
-    if (value.length <= 4) {
+    } else {
+      // Less than 2 digits
       setInputValue(value);
-    } else if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(e.target.value)) {
-      setInputValue(e.target.value);
-      onTimeChange(e.target.value);
     }
   };
 
@@ -70,38 +76,38 @@ export function TimePicker({ time, onTimeChange, placeholder = "Seleccionar hora
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <div className="relative">
-          <Input
-            value={inputValue}
-            onChange={handleInputChange}
-            placeholder={placeholder}
-            className={cn("pr-20", !time && "text-muted-foreground")}
-          />
-          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
-            {allowClear && time && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0"
-                onClick={handleClear}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
+      <div className="relative">
+        <Input
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder="HH:MM"
+          className={cn("pr-20")}
+          maxLength={5}
+        />
+        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
+          {allowClear && time && (
             <Button
               type="button"
               variant="ghost"
               size="sm"
               className="h-7 w-7 p-0"
-              onClick={() => setIsOpen(!isOpen)}
+              onClick={handleClear}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
             >
               <Clock className="h-4 w-4" />
             </Button>
-          </div>
+          </PopoverTrigger>
         </div>
-      </PopoverTrigger>
+      </div>
       <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
         <div className="flex">
           <ScrollArea className="h-[200px] w-[70px] border-r">
