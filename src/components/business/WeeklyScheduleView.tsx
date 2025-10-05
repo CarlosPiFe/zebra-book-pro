@@ -370,25 +370,22 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                         key={`${employee.id}-${day.toISOString()}`} 
                         className="p-1"
                       >
-                        <div
-                          onClick={() => {
+                        <ScheduleCell
+                          employeeId={employee.id}
+                          date={day}
+                          schedules={daySchedules}
+                          onVacation={onVacation}
+                          onUpdate={updateSchedule}
+                          onDelete={deleteSchedule}
+                          onCopy={handleCopySchedule}
+                          onSelect={() => {
                             if (hasCopiedSchedule && !onVacation) {
                               toggleDateSelection(employee.id, day);
                             }
                           }}
-                        >
-                          <ScheduleCell
-                            employeeId={employee.id}
-                            date={day}
-                            schedules={daySchedules}
-                            onVacation={onVacation}
-                            onUpdate={updateSchedule}
-                            onDelete={deleteSchedule}
-                            onCopy={handleCopySchedule}
-                            isInSelectionMode={hasCopiedSchedule && !onVacation}
-                            isSelected={isSelected}
-                          />
-                        </div>
+                          isInSelectionMode={hasCopiedSchedule && !onVacation}
+                          isSelected={isSelected}
+                        />
                       </td>
                     );
                   })}

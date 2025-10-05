@@ -34,6 +34,7 @@ interface ScheduleCellProps {
   onUpdate: (schedule: Schedule) => void;
   onDelete: (scheduleId: string) => void;
   onCopy?: (employeeId: string, date: Date, schedules: Schedule[]) => void;
+  onSelect?: () => void;
   isInSelectionMode?: boolean;
   isSelected?: boolean;
 }
@@ -46,6 +47,7 @@ export const ScheduleCell = ({
   onUpdate,
   onDelete,
   onCopy,
+  onSelect,
   isInSelectionMode = false,
   isSelected = false,
 }: ScheduleCellProps) => {
@@ -214,10 +216,10 @@ export const ScheduleCell = ({
           isInSelectionMode && !isSelected && "hover:bg-primary/10 hover:ring-1 hover:ring-primary/50 rounded"
         )}
         onClick={(e) => {
-          if (isInSelectionMode && !onVacation) {
+          if (isInSelectionMode && !onVacation && onSelect) {
             e.stopPropagation();
-            // The click will be handled by the parent div in WeeklyScheduleView
-          } else if (!onVacation) {
+            onSelect();
+          } else if (!onVacation && !isInSelectionMode) {
             e.stopPropagation();
             setIsOpen(true);
           }
