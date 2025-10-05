@@ -363,7 +363,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                     const daySchedules = getSchedulesForDay(employee.id, day);
                     const hasCopiedSchedule = copiedSchedule?.employeeId === employee.id;
                     const dateStr = format(day, "yyyy-MM-dd");
-                    const isSelected = copiedSchedule?.selectedDates.includes(dateStr);
+                    const isSelected = hasCopiedSchedule && copiedSchedule?.selectedDates.includes(dateStr);
 
                     return (
                       <td 
