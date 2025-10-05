@@ -7,7 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Copy, Plus, Trash2, UserPlus, Edit, Calendar } from "lucide-react";
-import { DatePicker } from "@/components/ui/date-picker";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { DateRange } from "react-day-picker";
 
 interface Employee {
   id: string;
@@ -40,8 +41,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
   const [editName, setEditName] = useState("");
   const [editPosition, setEditPosition] = useState("");
   const [vacations, setVacations] = useState<Vacation[]>([]);
-  const [newVacationStart, setNewVacationStart] = useState<Date>();
-  const [newVacationEnd, setNewVacationEnd] = useState<Date>();
+  const [vacationDateRange, setVacationDateRange] = useState<DateRange>();
   const [newVacationNotes, setNewVacationNotes] = useState("");
 
   useEffect(() => {
@@ -174,13 +174,8 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
   };
 
   const handleAddVacation = async () => {
-    if (!selectedEmployee || !newVacationStart || !newVacationEnd) {
-      toast.error("Por favor selecciona las fechas");
-      return;
-    }
-
-    if (newVacationEnd < newVacationStart) {
-      toast.error("La fecha de fin debe ser posterior a la de inicio");
+    if (!selectedEmployee || !vacationDateRange?.from || !vacationDateRange?.to) {
+      toast.error("Por favor selecciona las fechas de inicio y fin");
       return;
     }
 
@@ -189,16 +184,15 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
         .from("employee_vacations")
         .insert({
           employee_id: selectedEmployee.id,
-          start_date: newVacationStart.toISOString().split('T')[0],
-          end_date: newVacationEnd.toISOString().split('T')[0],
+          start_date: vacationDateRange.from.toISOString().split('T')[0],
+          end_date: vacationDateRange.to.toISOString().split('T')[0],
           notes: newVacationNotes.trim() || null,
         });
 
       if (error) throw error;
 
       toast.success("Vacaciones añadidas");
-      setNewVacationStart(undefined);
-      setNewVacationEnd(undefined);
+      setVacationDateRange(undefined);
       setNewVacationNotes("");
       loadVacations(selectedEmployee.id);
     } catch (error) {
@@ -376,23 +370,13 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
               
               {/* Add Vacation */}
               <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label>Fecha de Inicio</Label>
-                    <DatePicker
-                      date={newVacationStart}
-                      onDateChange={setNewVacationStart}
-                      placeholder="Seleccionar fecha"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Fecha de Fin</Label>
-                    <DatePicker
-                      date={newVacationEnd}
-                      onDateChange={setNewVacationEnd}
-                      placeholder="Seleccionar fecha"
-                    />
-                  </div>
+                <div className="space-y-2">
+                  <Label>Rango de Fechas</Label>
+                  <DateRangePicker
+                    dateRange={vacationDateRange}
+                    onDateRangeChange={setVacationDateRange}
+                    placeholder="Seleccionar fechas de vacaciones"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Notas (Opcional)</Label>
