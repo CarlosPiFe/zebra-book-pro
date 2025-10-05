@@ -9,6 +9,7 @@ import { Calendar, Clock, User } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { CreateBookingDialog } from "./CreateBookingDialog";
+import { EditBookingDialog } from "./EditBookingDialog";
 
 interface Booking {
   id: string;
@@ -41,6 +42,8 @@ export function BookingsView({ businessId }: BookingsViewProps) {
     return dateParam ? new Date(dateParam) : new Date();
   });
   const [selectedTime, setSelectedTime] = useState<string>("");
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
     loadBookings();
@@ -176,72 +179,71 @@ export function BookingsView({ businessId }: BookingsViewProps) {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {bookings.map((booking) => (
-            <Card key={booking.id} className="hover:shadow-lg transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-3 flex-1">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-semibold">{booking.client_name}</span>
-                      </div>
-                      <Badge className={getStatusColor(booking.status)}>
-                        {getStatusLabel(booking.status)}
-                      </Badge>
+            <Card 
+              key={booking.id} 
+              className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50"
+              onClick={() => {
+                setSelectedBooking(booking);
+                setEditDialogOpen(true);
+              }}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 flex-1">
+                    <Badge className={getStatusColor(booking.status)}>
+                      {getStatusLabel(booking.status)}
+                    </Badge>
+                    
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="font-medium">
+                        {new Date(booking.booking_date).toLocaleDateString('es-ES', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                        })}
+                      </span>
                     </div>
 
-                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          {new Date(booking.booking_date).toLocaleDateString('es-ES', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>
-                          {booking.start_time} - {booking.end_time}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
-                        <span>{booking.party_size} personas</span>
-                      </div>
-                      {booking.tables && (
-                        <div className="font-medium text-accent">
-                          Mesa {booking.tables.table_number}
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>
+                        {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
+                      </span>
                     </div>
 
-                    {booking.notes && (
-                      <div className="text-sm">
-                        <span className="font-medium">Notas: </span>
-                        <span className="text-muted-foreground">{booking.notes}</span>
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span>{booking.party_size} personas</span>
+                    </div>
+
+                    {booking.tables && (
+                      <div className="font-medium text-sm text-accent">
+                        Mesa {booking.tables.table_number}
                       </div>
                     )}
-
-                    <div className="flex flex-wrap gap-2 text-sm">
-                      {booking.client_email && (
-                        <span className="text-muted-foreground">{booking.client_email}</span>
-                      )}
-                      {booking.client_phone && (
-                        <span className="text-muted-foreground">{booking.client_phone}</span>
-                      )}
-                    </div>
+                  </div>
+                  
+                  <div className="text-sm font-medium text-foreground">
+                    {booking.client_name}
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+      )}
+
+      {selectedBooking && (
+        <EditBookingDialog
+          booking={selectedBooking}
+          businessId={businessId}
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          onBookingUpdated={loadBookings}
+        />
       )}
     </div>
   );
