@@ -16,7 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
-import { Plus } from "lucide-react";
+import { Plus, Info } from "lucide-react";
+import { useEffect } from "react";
+import { addMinutes } from "date-fns";
 import { z } from "zod";
 import { toMadridTime } from "@/lib/timezone";
 import { format } from "date-fns";
@@ -37,9 +39,14 @@ interface CreateBookingDialogProps {
   onBookingCreated: () => void;
 }
 
+interface Business {
+  booking_slot_duration_minutes: number;
+}
+
 export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBookingDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [slotDuration, setSlotDuration] = useState(60);
   
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -47,8 +54,38 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [bookingDate, setBookingDate] = useState<Date | undefined>(new Date());
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [customEndTime, setCustomEndTime] = useState(false);
   const [partySize, setPartySize] = useState("2");
   const [notes, setNotes] = useState("");
+
+  // Load business slot duration
+  useEffect(() => {
+    const loadBusinessSettings = async () => {
+      const { data, error } = await supabase
+        .from("businesses")
+        .select("booking_slot_duration_minutes")
+        .eq("id", businessId)
+        .single();
+
+      if (!error && data) {
+        setSlotDuration(data.booking_slot_duration_minutes);
+      }
+    };
+
+    loadBusinessSettings();
+  }, [businessId]);
+
+  // Auto-calculate end time when start time changes (only if not custom)
+  useEffect(() => {
+    if (startTime && !customEndTime) {
+      const [hours, minutes] = startTime.split(":").map(Number);
+      const startDate = new Date();
+      startDate.setHours(hours, minutes, 0, 0);
+      const endDate = addMinutes(startDate, slotDuration);
+      const calculatedEndTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
+      setEndTime(calculatedEndTime);
+    }
+  }, [startTime, slotDuration, customEndTime]);
 
   const resetForm = () => {
     setClientName("");
@@ -57,6 +94,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     setBookingDate(new Date());
     setStartTime("");
     setEndTime("");
+    setCustomEndTime(false);
     setPartySize("2");
     setNotes("");
   };
@@ -282,12 +320,34 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="end_time">Hora de fin *</Label>
+                <Label htmlFor="end_time" className="flex items-center gap-2">
+                  Hora de fin {!customEndTime && "(automática)"}
+                </Label>
                 <TimePicker
                   time={endTime}
-                  onTimeChange={setEndTime}
-                  placeholder="16:00"
+                  onTimeChange={(time) => {
+                    setEndTime(time);
+                    setCustomEndTime(true);
+                  }}
+                  placeholder="Calculada automáticamente"
                 />
+                {!customEndTime && startTime && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Duración: {slotDuration} minutos (configurable en Ajustes)
+                  </p>
+                )}
+                {customEndTime && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCustomEndTime(false)}
+                    className="h-6 text-xs"
+                  >
+                    Usar duración automática
+                  </Button>
+                )}
               </div>
             </div>
 

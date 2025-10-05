@@ -131,6 +131,7 @@ export type Database = {
       businesses: {
         Row: {
           address: string | null
+          booking_slot_duration_minutes: number
           category: string
           created_at: string
           description: string | null
@@ -145,6 +146,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          booking_slot_duration_minutes?: number
           category: string
           created_at?: string
           description?: string | null
@@ -159,6 +161,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          booking_slot_duration_minutes?: number
           category?: string
           created_at?: string
           description?: string | null

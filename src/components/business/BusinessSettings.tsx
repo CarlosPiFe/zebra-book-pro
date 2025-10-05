@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Settings, Upload, X, ImagePlus } from "lucide-react";
+import { Settings, Upload, X, ImagePlus, Clock } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BusinessHours } from "./BusinessHours";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +20,7 @@ interface Business {
   phone: string;
   address: string;
   image_url: string;
+  booking_slot_duration_minutes: number;
 }
 
 interface BusinessSettingsProps {
@@ -39,6 +41,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     email: business.email || "",
     description: business.description || "",
     image_url: business.image_url || "",
+    booking_slot_duration_minutes: business.booking_slot_duration_minutes || 60,
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,6 +149,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
           email: formData.email,
           description: formData.description,
           image_url: finalImageUrl,
+          booking_slot_duration_minutes: formData.booking_slot_duration_minutes,
         })
         .eq("id", business.id);
 
@@ -172,7 +176,50 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
         </p>
       </div>
 
-      <BusinessHours businessId={business.id} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BusinessHours businessId={business.id} />
+        
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Duración de Tramos de Reserva
+            </CardTitle>
+            <CardDescription>
+              Define la duración predeterminada para cada reserva
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="slot_duration">Duración del Tramo</Label>
+              <Select
+                value={formData.booking_slot_duration_minutes.toString()}
+                onValueChange={(value) => 
+                  setFormData({ ...formData, booking_slot_duration_minutes: parseInt(value) })
+                }
+              >
+                <SelectTrigger id="slot_duration">
+                  <SelectValue placeholder="Selecciona la duración" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">30 minutos</SelectItem>
+                  <SelectItem value="45">45 minutos</SelectItem>
+                  <SelectItem value="60">1 hora</SelectItem>
+                  <SelectItem value="90">1 hora 30 min</SelectItem>
+                  <SelectItem value="120">2 horas</SelectItem>
+                  <SelectItem value="150">2 horas 30 min</SelectItem>
+                  <SelectItem value="180">3 horas</SelectItem>
+                  <SelectItem value="240">4 horas</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                Esta duración se aplicará automáticamente a todas las reservas nuevas. 
+                Las reservas manuales pueden personalizar la hora de finalización si es necesario.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>

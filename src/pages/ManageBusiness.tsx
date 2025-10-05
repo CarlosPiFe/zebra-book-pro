@@ -22,6 +22,7 @@ interface Business {
   phone: string;
   address: string;
   image_url: string;
+  booking_slot_duration_minutes: number;
 }
 
 const ManageBusiness = () => {

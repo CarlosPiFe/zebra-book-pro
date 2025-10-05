@@ -17,7 +17,8 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { z } from "zod";
 import { toMadridTime } from "@/lib/timezone";
-import { format, parse } from "date-fns";
+import { format, parse, addMinutes } from "date-fns";
+import { Info } from "lucide-react";
 
 const bookingSchema = z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -52,6 +53,10 @@ interface EditBookingDialogProps {
   onBookingUpdated: () => void;
 }
 
+interface Business {
+  booking_slot_duration_minutes: number;
+}
+
 export function EditBookingDialog({ 
   booking, 
   businessId, 
@@ -60,6 +65,8 @@ export function EditBookingDialog({
   onBookingUpdated 
 }: EditBookingDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [slotDuration, setSlotDuration] = useState(60);
+  const [customEndTime, setCustomEndTime] = useState(true);
   const [clientName, setClientName] = useState(booking.client_name);
   const [clientEmail, setClientEmail] = useState(booking.client_email || "");
   const [clientPhone, setClientPhone] = useState(booking.client_phone || "");
@@ -81,10 +88,38 @@ export function EditBookingDialog({
       
       setStartTime(booking.start_time.substring(0, 5));
       setEndTime(booking.end_time.substring(0, 5));
+      setCustomEndTime(true); // Las reservas existentes tienen hora personalizada
       setPartySize(booking.party_size.toString());
       setNotes(booking.notes || "");
+
+      // Load business slot duration
+      const loadBusinessSettings = async () => {
+        const { data, error } = await supabase
+          .from("businesses")
+          .select("booking_slot_duration_minutes")
+          .eq("id", businessId)
+          .single();
+
+        if (!error && data) {
+          setSlotDuration(data.booking_slot_duration_minutes);
+        }
+      };
+
+      loadBusinessSettings();
     }
-  }, [open, booking]);
+  }, [open, booking, businessId]);
+
+  // Auto-calculate end time when start time changes (only if not custom)
+  useEffect(() => {
+    if (startTime && !customEndTime) {
+      const [hours, minutes] = startTime.split(":").map(Number);
+      const startDate = new Date();
+      startDate.setHours(hours, minutes, 0, 0);
+      const endDate = addMinutes(startDate, slotDuration);
+      const calculatedEndTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
+      setEndTime(calculatedEndTime);
+    }
+  }, [startTime, slotDuration, customEndTime]);
 
   const findAvailableTable = async (
     date: string,
@@ -319,12 +354,34 @@ export function EditBookingDialog({
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="end_time">Hora de fin *</Label>
+                <Label htmlFor="end_time" className="flex items-center gap-2">
+                  Hora de fin {!customEndTime && "(automática)"}
+                </Label>
                 <TimePicker
                   time={endTime}
-                  onTimeChange={setEndTime}
-                  placeholder="16:00"
+                  onTimeChange={(time) => {
+                    setEndTime(time);
+                    setCustomEndTime(true);
+                  }}
+                  placeholder="Calculada automáticamente"
                 />
+                {!customEndTime && startTime && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Duración: {slotDuration} minutos (configurable en Ajustes)
+                  </p>
+                )}
+                {customEndTime && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCustomEndTime(false)}
+                    className="h-6 text-xs"
+                  >
+                    Usar duración automática
+                  </Button>
+                )}
               </div>
             </div>
 
