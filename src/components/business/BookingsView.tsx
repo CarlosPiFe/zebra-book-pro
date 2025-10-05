@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
+import { Input } from "@/components/ui/input";
 import { CreateBookingDialog } from "./CreateBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
 import { toMadridTime } from "@/lib/timezone";
@@ -44,6 +45,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
     return dateParam ? new Date(dateParam) : new Date();
   });
   const [selectedTime, setSelectedTime] = useState<string>("");
+  const [searchName, setSearchName] = useState<string>("");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
@@ -143,11 +145,11 @@ export function BookingsView({ businessId }: BookingsViewProps) {
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
           <CardDescription>
-            Filtra reservas por fecha y hora específica (opcional)
+            Filtra reservas por fecha, hora y nombre del comensal
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Fecha</Label>
               <DatePicker
@@ -165,26 +167,44 @@ export function BookingsView({ businessId }: BookingsViewProps) {
                 allowClear={true}
               />
             </div>
+            <div className="space-y-2">
+              <Label>Nombre del comensal</Label>
+              <Input
+                type="text"
+                placeholder="Buscar por nombre..."
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {bookings.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center text-muted-foreground">
-              <p>No hay reservas para esta fecha{selectedTime && " y hora"}</p>
-              <p className="text-sm mt-2">
-                {selectedTime 
-                  ? "Intenta cambiar la hora o dejar el campo vacío"
-                  : "Las reservas aparecerán aquí cuando los clientes las realicen"}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {bookings.map((booking) => (
+      {(() => {
+        // Filtrar reservas por nombre del comensal
+        const filteredBookings = bookings.filter((booking) => {
+          if (!searchName) return true;
+          return booking.client_name?.toLowerCase().includes(searchName.toLowerCase());
+        });
+
+        return filteredBookings.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center text-muted-foreground">
+                <p>No hay reservas para esta fecha{selectedTime && " y hora"}{searchName && " y nombre"}</p>
+                <p className="text-sm mt-2">
+                  {searchName 
+                    ? "Intenta cambiar el nombre o dejar el campo vacío"
+                    : selectedTime 
+                    ? "Intenta cambiar la hora o dejar el campo vacío"
+                    : "Las reservas aparecerán aquí cuando los clientes las realicen"}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-3">
+            {filteredBookings.map((booking) => (
             <Card 
               key={booking.id} 
               className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50"
@@ -236,9 +256,10 @@ export function BookingsView({ businessId }: BookingsViewProps) {
                 </div>
               </CardContent>
             </Card>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        );
+      })()}
 
       {selectedBooking && (
         <EditBookingDialog
