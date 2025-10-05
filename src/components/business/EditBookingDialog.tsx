@@ -140,13 +140,14 @@ export function EditBookingDialog({
         return { tableId: null, status: "pending" };
       }
 
+      // Using < and > (not <= and >=) so end time is exclusive - allows back-to-back bookings
       const { data: existingBookings, error: bookingsError } = await supabase
         .from("bookings")
         .select("table_id")
         .eq("booking_date", date)
         .neq("status", "cancelled")
         .neq("id", excludeBookingId)
-        .or(`and(start_time.lte.${endTime},end_time.gte.${startTime})`);
+        .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
 
       if (bookingsError) throw bookingsError;
 
