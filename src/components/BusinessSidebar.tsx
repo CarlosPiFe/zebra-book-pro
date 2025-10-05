@@ -1,4 +1,4 @@
-import { Building2, Calendar, ClipboardList, UtensilsCrossed, LayoutGrid, Users, Settings } from "lucide-react";
+import { Building2, Calendar, ClipboardList, UtensilsCrossed, LayoutGrid, Users, Settings, Clock } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -36,6 +36,7 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
     { id: "calendar", label: "Calendario", icon: Calendar },
     { id: "bookings", label: "Reservas", icon: ClipboardList },
     { id: "employees", label: "Empleados", icon: Users },
+    { id: "schedules", label: "Horarios", icon: Clock },
   ];
 
   const restaurantItems = isRestaurant ? [

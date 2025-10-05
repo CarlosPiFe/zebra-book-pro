@@ -251,6 +251,53 @@ export type Database = {
           },
         ]
       }
+      employee_weekly_schedules: {
+        Row: {
+          afternoon_end: string | null
+          afternoon_start: string | null
+          created_at: string
+          date: string
+          employee_id: string
+          id: string
+          is_day_off: boolean
+          morning_end: string | null
+          morning_start: string | null
+          updated_at: string
+        }
+        Insert: {
+          afternoon_end?: string | null
+          afternoon_start?: string | null
+          created_at?: string
+          date: string
+          employee_id: string
+          id?: string
+          is_day_off?: boolean
+          morning_end?: string | null
+          morning_start?: string | null
+          updated_at?: string
+        }
+        Update: {
+          afternoon_end?: string | null
+          afternoon_start?: string | null
+          created_at?: string
+          date?: string
+          employee_id?: string
+          id?: string
+          is_day_off?: boolean
+          morning_end?: string | null
+          morning_start?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_weekly_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           business_id: string
