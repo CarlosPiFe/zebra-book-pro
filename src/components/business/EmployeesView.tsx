@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Copy, Plus, Trash2, UserPlus } from "lucide-react";
 
-interface Waiter {
+interface Employee {
   id: string;
   name: string;
   token: string;
@@ -16,21 +16,21 @@ interface Waiter {
   created_at: string;
 }
 
-interface WaitersViewProps {
+interface EmployeesViewProps {
   businessId: string;
 }
 
-export const WaitersView = ({ businessId }: WaitersViewProps) => {
-  const [waiters, setWaiters] = useState<Waiter[]>([]);
+export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
-  const [newWaiterName, setNewWaiterName] = useState("");
+  const [newEmployeeName, setNewEmployeeName] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
-    loadWaiters();
+    loadEmployees();
   }, [businessId]);
 
-  const loadWaiters = async () => {
+  const loadEmployees = async () => {
     try {
       const { data, error } = await supabase
         .from("waiters")
@@ -39,10 +39,10 @@ export const WaitersView = ({ businessId }: WaitersViewProps) => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setWaiters(data || []);
+      setEmployees(data || []);
     } catch (error) {
-      console.error("Error loading waiters:", error);
-      toast.error("Error al cargar camareros");
+      console.error("Error loading employees:", error);
+      toast.error("Error al cargar empleados");
     } finally {
       setLoading(false);
     }
@@ -52,8 +52,8 @@ export const WaitersView = ({ businessId }: WaitersViewProps) => {
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
-  const handleCreateWaiter = async () => {
-    if (!newWaiterName.trim()) {
+  const handleCreateEmployee = async () => {
+    if (!newEmployeeName.trim()) {
       toast.error("Por favor ingresa un nombre");
       return;
     }
@@ -64,40 +64,40 @@ export const WaitersView = ({ businessId }: WaitersViewProps) => {
         .from("waiters")
         .insert({
           business_id: businessId,
-          name: newWaiterName.trim(),
+          name: newEmployeeName.trim(),
           token: token,
         });
 
       if (error) throw error;
 
-      toast.success("Camarero creado exitosamente");
-      setNewWaiterName("");
+      toast.success("Empleado creado exitosamente");
+      setNewEmployeeName("");
       setIsDialogOpen(false);
-      loadWaiters();
+      loadEmployees();
     } catch (error) {
-      console.error("Error creating waiter:", error);
-      toast.error("Error al crear camarero");
+      console.error("Error creating employee:", error);
+      toast.error("Error al crear empleado");
     }
   };
 
-  const handleDeleteWaiter = async (waiterId: string) => {
+  const handleDeleteEmployee = async (employeeId: string) => {
     try {
       const { error } = await supabase
         .from("waiters")
         .delete()
-        .eq("id", waiterId);
+        .eq("id", employeeId);
 
       if (error) throw error;
 
-      toast.success("Camarero eliminado");
-      loadWaiters();
+      toast.success("Empleado eliminado");
+      loadEmployees();
     } catch (error) {
-      console.error("Error deleting waiter:", error);
-      toast.error("Error al eliminar camarero");
+      console.error("Error deleting employee:", error);
+      toast.error("Error al eliminar empleado");
     }
   };
 
-  const copyWaiterLink = (token: string) => {
+  const copyEmployeeLink = (token: string) => {
     const link = `${window.location.origin}/waiter/${token}`;
     navigator.clipboard.writeText(link);
     toast.success("Link copiado al portapapeles");
@@ -118,57 +118,57 @@ export const WaitersView = ({ businessId }: WaitersViewProps) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold">Camareros</h2>
-          <p className="text-muted-foreground">Gestiona los camareros de tu restaurante</p>
+          <h2 className="text-3xl font-bold">Empleados</h2>
+          <p className="text-muted-foreground">Gestiona los empleados de tu negocio</p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
-              Agregar Camarero
+              Agregar Empleado
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Nuevo Camarero</DialogTitle>
+              <DialogTitle>Nuevo Empleado</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="waiterName">Nombre del Camarero</Label>
+                <Label htmlFor="employeeName">Nombre del Empleado</Label>
                 <Input
-                  id="waiterName"
-                  value={newWaiterName}
-                  onChange={(e) => setNewWaiterName(e.target.value)}
+                  id="employeeName"
+                  value={newEmployeeName}
+                  onChange={(e) => setNewEmployeeName(e.target.value)}
                   placeholder="Ej: Juan Pérez"
                 />
               </div>
-              <Button onClick={handleCreateWaiter} className="w-full">
+              <Button onClick={handleCreateEmployee} className="w-full">
                 <UserPlus className="w-4 h-4 mr-2" />
-                Crear Camarero
+                Crear Empleado
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {waiters.length === 0 ? (
+      {employees.length === 0 ? (
         <Card className="p-8 text-center">
           <UserPlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No hay camareros</h3>
+          <h3 className="text-lg font-semibold mb-2">No hay empleados</h3>
           <p className="text-muted-foreground mb-4">
-            Agrega tu primer camarero para comenzar
+            Agrega tu primer empleado para comenzar
           </p>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {waiters.map((waiter) => (
-            <Card key={waiter.id} className="p-6">
+          {employees.map((employee) => (
+            <Card key={employee.id} className="p-6">
               <div className="space-y-4">
                 <div>
-                  <h3 className="font-semibold text-lg">{waiter.name}</h3>
+                  <h3 className="font-semibold text-lg">{employee.name}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Creado: {new Date(waiter.created_at).toLocaleDateString()}
+                    Creado: {new Date(employee.created_at).toLocaleDateString()}
                   </p>
                 </div>
 
@@ -176,7 +176,7 @@ export const WaitersView = ({ businessId }: WaitersViewProps) => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => copyWaiterLink(waiter.token)}
+                    onClick={() => copyEmployeeLink(employee.token)}
                     className="flex-1"
                   >
                     <Copy className="w-4 h-4 mr-2" />
@@ -185,7 +185,7 @@ export const WaitersView = ({ businessId }: WaitersViewProps) => {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleDeleteWaiter(waiter.id)}
+                    onClick={() => handleDeleteEmployee(employee.id)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>

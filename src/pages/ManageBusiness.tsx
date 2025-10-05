@@ -9,7 +9,7 @@ import { CalendarView } from "@/components/business/CalendarView";
 import { BookingsView } from "@/components/business/BookingsView";
 import { TablesView } from "@/components/business/TablesView";
 import { MenuView } from "@/components/business/MenuView";
-import { WaitersView } from "@/components/business/WaitersView";
+import { EmployeesView } from "@/components/business/EmployeesView";
 import { BusinessSettings } from "@/components/business/BusinessSettings";
 
 interface Business {
@@ -80,8 +80,8 @@ const ManageBusiness = () => {
         return <TablesView businessId={business.id} />;
       case "menu":
         return <MenuView businessId={business.id} />;
-      case "waiters":
-        return <WaitersView businessId={business.id} />;
+      case "employees":
+        return <EmployeesView businessId={business.id} />;
       case "settings":
         return <BusinessSettings business={business} onUpdate={loadBusiness} />;
       default:

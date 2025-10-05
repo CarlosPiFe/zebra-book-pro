@@ -35,12 +35,12 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
   const mainItems = [
     { id: "calendar", label: "Calendario", icon: Calendar },
     { id: "bookings", label: "Reservas", icon: ClipboardList },
+    { id: "employees", label: "Empleados", icon: Users },
   ];
 
   const restaurantItems = isRestaurant ? [
     { id: "tables", label: "Mesas", icon: LayoutGrid },
     { id: "menu", label: "Menú", icon: UtensilsCrossed },
-    { id: "waiters", label: "Camareros", icon: Users },
   ] : [];
 
   return (
