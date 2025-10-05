@@ -76,9 +76,18 @@ export function EmployeeWeeklyCalendar({
   };
 
   // Convert time string "HH:MM" to decimal hours
-  const timeToDecimal = (time: string): number => {
+  // If extendPastMidnight is true, treats early morning hours (0-6) as next day (24-30)
+  const timeToDecimal = (time: string, extendPastMidnight: boolean = false): number => {
     const [hours, minutes] = time.split(":").map(Number);
-    return hours + minutes / 60;
+    const decimal = hours + minutes / 60;
+    
+    // If we're extending past midnight and hours are in early morning (0-6 AM)
+    // treat them as the next day (24-30)
+    if (extendPastMidnight && hours >= 0 && hours < 6) {
+      return decimal + 24;
+    }
+    
+    return decimal;
   };
 
   // Calculate the earliest and latest hours from business hours
@@ -92,7 +101,12 @@ export function EmployeeWeeklyCalendar({
 
     businessHours.forEach((slot) => {
       const start = timeToDecimal(slot.start_time);
-      const end = timeToDecimal(slot.end_time);
+      let end = timeToDecimal(slot.end_time);
+      
+      // If end time is before start time, it means it crosses midnight
+      if (end <= start) {
+        end = timeToDecimal(slot.end_time, true); // Extend past midnight
+      }
       
       if (start < earliest) earliest = start;
       if (end > latest) latest = end;
@@ -121,7 +135,13 @@ export function EmployeeWeeklyCalendar({
 
     return daySlots.some((slot) => {
       const start = timeToDecimal(slot.start_time);
-      const end = timeToDecimal(slot.end_time);
+      let end = timeToDecimal(slot.end_time);
+      
+      // If end is before or equal to start, it crosses midnight
+      if (end <= start) {
+        end = timeToDecimal(slot.end_time, true);
+      }
+      
       return hour >= start && hour < end;
     });
   };
@@ -146,7 +166,12 @@ export function EmployeeWeeklyCalendar({
       if (!schedule.start_time || !schedule.end_time) return null;
 
       const startDecimal = timeToDecimal(schedule.start_time);
-      const endDecimal = timeToDecimal(schedule.end_time);
+      let endDecimal = timeToDecimal(schedule.end_time);
+      
+      // If end time is before or equal to start time, it crosses midnight
+      if (endDecimal <= startDecimal) {
+        endDecimal = timeToDecimal(schedule.end_time, true);
+      }
       
       // Calculate position relative to business hours range
       const topPosition = ((startDecimal - startHour) / totalHours) * 100;
@@ -176,7 +201,7 @@ export function EmployeeWeeklyCalendar({
             minHeight: "24px",
           }}
         >
-          <span className="truncate w-full text-center font-semibold">
+          <span className="truncate w-full text-center font-semibold text-[11px]">
             {schedule.start_time} - {schedule.end_time}
           </span>
         </div>
@@ -214,18 +239,22 @@ export function EmployeeWeeklyCalendar({
                 Hora
               </div>
               <div className="relative" style={{ height: `${totalHours * 40}px` }}>
-                {displayHours.map((hour) => (
-                  <div
-                    key={hour}
-                    className="absolute w-full border-t border-border/50 flex items-start justify-end pr-2 text-xs text-muted-foreground font-medium"
-                    style={{
-                      top: `${((hour - startHour) / totalHours) * 100}%`,
-                      height: `${100 / totalHours}%`,
-                    }}
-                  >
-                    {hour.toString().padStart(2, "0")}:00
-                  </div>
-                ))}
+                {displayHours.map((hour) => {
+                  // Display hours > 24 as next day hours (e.g., 25 = 01:00, 26 = 02:00)
+                  const displayHour = hour >= 24 ? hour - 24 : hour;
+                  return (
+                    <div
+                      key={hour}
+                      className="absolute w-full border-t border-border/50 flex items-start justify-end pr-2 text-xs text-muted-foreground font-medium"
+                      style={{
+                        top: `${((hour - startHour) / totalHours) * 100}%`,
+                        height: `${100 / totalHours}%`,
+                      }}
+                    >
+                      {displayHour.toString().padStart(2, "0")}:00
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
