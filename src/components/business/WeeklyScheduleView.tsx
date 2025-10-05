@@ -184,8 +184,8 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
     toast.success("Horario copiado. Selecciona los días donde quieres pegarlo.");
   };
 
-  const toggleDateSelection = (date: Date) => {
-    if (!copiedSchedule) return;
+  const toggleDateSelection = (employeeId: string, date: Date) => {
+    if (!copiedSchedule || copiedSchedule.employeeId !== employeeId) return;
     
     const dateStr = format(date, "yyyy-MM-dd");
     const isSelected = copiedSchedule.selectedDates.includes(dateStr);
@@ -364,7 +364,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                         className="p-1"
                         onClick={() => {
                           if (hasCopiedSchedule && !onVacation) {
-                            toggleDateSelection(day);
+                            toggleDateSelection(employee.id, day);
                           }
                         }}
                       >
