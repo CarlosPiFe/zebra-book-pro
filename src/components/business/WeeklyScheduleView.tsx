@@ -465,6 +465,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
           employee={selectedEmployee}
           schedules={schedules.filter(s => s.employee_id === selectedEmployee.id)}
           weekStart={currentWeekStart}
+          businessId={businessId}
         />
       )}
     </div>

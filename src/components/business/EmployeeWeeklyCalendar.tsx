@@ -2,6 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { format, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Schedule {
   id?: string;
@@ -19,12 +21,19 @@ interface Employee {
   position?: string;
 }
 
+interface AvailabilitySlot {
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+}
+
 interface EmployeeWeeklyCalendarProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   employee: Employee;
   schedules: Schedule[];
   weekStart: Date;
+  businessId: string;
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0-23 hours
@@ -36,13 +45,85 @@ export function EmployeeWeeklyCalendar({
   employee,
   schedules,
   weekStart,
+  businessId,
 }: EmployeeWeeklyCalendarProps) {
+  const [businessHours, setBusinessHours] = useState<AvailabilitySlot[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  useEffect(() => {
+    if (open && businessId) {
+      loadBusinessHours();
+    }
+  }, [open, businessId]);
+
+  const loadBusinessHours = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("availability_slots")
+        .select("day_of_week, start_time, end_time")
+        .eq("business_id", businessId);
+
+      if (error) throw error;
+      setBusinessHours(data || []);
+    } catch (error) {
+      console.error("Error loading business hours:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Convert time string "HH:MM" to decimal hours
   const timeToDecimal = (time: string): number => {
     const [hours, minutes] = time.split(":").map(Number);
     return hours + minutes / 60;
+  };
+
+  // Calculate the earliest and latest hours from business hours
+  const getBusinessHoursRange = () => {
+    if (businessHours.length === 0) {
+      return { earliest: 0, latest: 24 };
+    }
+
+    let earliest = 24;
+    let latest = 0;
+
+    businessHours.forEach((slot) => {
+      const start = timeToDecimal(slot.start_time);
+      const end = timeToDecimal(slot.end_time);
+      
+      if (start < earliest) earliest = start;
+      if (end > latest) latest = end;
+    });
+
+    // Round down earliest to nearest hour and round up latest to nearest hour
+    return {
+      earliest: Math.floor(earliest),
+      latest: Math.ceil(latest),
+    };
+  };
+
+  const { earliest: startHour, latest: endHour } = getBusinessHoursRange();
+  const totalHours = endHour - startHour;
+  const displayHours = Array.from({ length: totalHours + 1 }, (_, i) => startHour + i);
+
+  // Get business hours for a specific day
+  const getBusinessHoursForDay = (dayOfWeek: number): AvailabilitySlot[] => {
+    return businessHours.filter((slot) => slot.day_of_week === dayOfWeek);
+  };
+
+  // Check if a time is within business hours for a day
+  const isWithinBusinessHours = (dayOfWeek: number, hour: number): boolean => {
+    const daySlots = getBusinessHoursForDay(dayOfWeek);
+    if (daySlots.length === 0) return false;
+
+    return daySlots.some((slot) => {
+      const start = timeToDecimal(slot.start_time);
+      const end = timeToDecimal(slot.end_time);
+      return hour >= start && hour < end;
+    });
   };
 
   // Get schedules for a specific date
@@ -64,21 +145,20 @@ export function EmployeeWeeklyCalendar({
     return daySchedules.map((schedule, index) => {
       if (!schedule.start_time || !schedule.end_time) return null;
 
-      const startHour = timeToDecimal(schedule.start_time);
-      const endHour = timeToDecimal(schedule.end_time);
-      const duration = endHour - startHour;
-
-      // Calculate position and height
-      const topPosition = (startHour / 24) * 100;
-      const height = (duration / 24) * 100;
+      const startDecimal = timeToDecimal(schedule.start_time);
+      const endDecimal = timeToDecimal(schedule.end_time);
+      
+      // Calculate position relative to business hours range
+      const topPosition = ((startDecimal - startHour) / totalHours) * 100;
+      const height = ((endDecimal - startDecimal) / totalHours) * 100;
 
       // Generate a color based on the schedule index for visual variety
       const colors = [
-        "bg-blue-500/80",
-        "bg-green-500/80",
-        "bg-purple-500/80",
-        "bg-orange-500/80",
-        "bg-pink-500/80",
+        "bg-blue-500/90 border-blue-600",
+        "bg-green-500/90 border-green-600",
+        "bg-purple-500/90 border-purple-600",
+        "bg-orange-500/90 border-orange-600",
+        "bg-pink-500/90 border-pink-600",
       ];
       const colorClass = colors[index % colors.length];
 
@@ -86,23 +166,27 @@ export function EmployeeWeeklyCalendar({
         <div
           key={schedule.id || `${dayIndex}-${index}`}
           className={cn(
-            "absolute left-0 right-0 mx-1 rounded-md p-2 text-white text-xs font-medium shadow-md",
-            "flex flex-col justify-center items-center",
+            "absolute left-0 right-0 mx-1 rounded-md p-2 text-white text-xs font-medium shadow-lg border-l-4",
+            "flex flex-col justify-center items-center z-10",
             colorClass
           )}
           style={{
             top: `${topPosition}%`,
             height: `${height}%`,
-            minHeight: "30px",
+            minHeight: "24px",
           }}
         >
-          <span className="truncate w-full text-center">
+          <span className="truncate w-full text-center font-semibold">
             {schedule.start_time} - {schedule.end_time}
           </span>
         </div>
       );
     });
   };
+
+  if (loading) {
+    return null;
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -123,20 +207,20 @@ export function EmployeeWeeklyCalendar({
         </DialogHeader>
 
         <div className="flex-1 overflow-auto">
-          <div className="grid grid-cols-8 gap-0 border border-border rounded-lg overflow-hidden min-h-[600px]">
+          <div className="grid grid-cols-8 gap-0 border border-border rounded-lg overflow-hidden">
             {/* Time column */}
             <div className="col-span-1 bg-muted/30 border-r border-border">
               <div className="h-12 border-b border-border flex items-center justify-center font-semibold text-sm">
                 Hora
               </div>
-              <div className="relative" style={{ height: "calc(24 * 60px)" }}>
-                {HOURS.map((hour) => (
+              <div className="relative" style={{ height: `${totalHours * 40}px` }}>
+                {displayHours.map((hour) => (
                   <div
                     key={hour}
-                    className="absolute w-full border-t border-border/50 flex items-start justify-end pr-2 text-xs text-muted-foreground"
+                    className="absolute w-full border-t border-border/50 flex items-start justify-end pr-2 text-xs text-muted-foreground font-medium"
                     style={{
-                      top: `${(hour / 24) * 100}%`,
-                      height: `${100 / 24}%`,
+                      top: `${((hour - startHour) / totalHours) * 100}%`,
+                      height: `${100 / totalHours}%`,
                     }}
                   >
                     {hour.toString().padStart(2, "0")}:00
@@ -147,9 +231,10 @@ export function EmployeeWeeklyCalendar({
 
             {/* Days columns */}
             {weekDays.map((day, dayIndex) => {
+              const dayOfWeek = day.getDay();
               const daySchedules = getSchedulesForDate(day);
-              const isDayOff = daySchedules.length === 0 || 
-                schedules.some(s => s.date === format(day, "yyyy-MM-dd") && s.is_day_off);
+              const businessHoursForDay = getBusinessHoursForDay(dayOfWeek);
+              const isDayOff = businessHoursForDay.length === 0;
 
               return (
                 <div key={dayIndex} className="col-span-1 border-r border-border last:border-r-0">
@@ -167,24 +252,42 @@ export function EmployeeWeeklyCalendar({
                   <div
                     className={cn(
                       "relative border-t-0",
-                      isDayOff && "bg-muted/20"
+                      isDayOff && "bg-muted/30"
                     )}
-                    style={{ height: "calc(24 * 60px)" }}
+                    style={{ height: `${totalHours * 40}px` }}
                   >
-                    {/* Hour grid lines */}
-                    {HOURS.map((hour) => (
-                      <div
-                        key={hour}
-                        className="absolute w-full border-t border-border/30"
-                        style={{ top: `${(hour / 24) * 100}%` }}
-                      />
-                    ))}
+                    {/* Hour grid and background highlighting */}
+                    {displayHours.map((hour) => {
+                      const isBusinessOpen = isWithinBusinessHours(dayOfWeek, hour);
+                      return (
+                        <div
+                          key={hour}
+                          className={cn(
+                            "absolute w-full border-t border-border/30",
+                            isBusinessOpen && "bg-primary/5"
+                          )}
+                          style={{
+                            top: `${((hour - startHour) / totalHours) * 100}%`,
+                            height: `${100 / totalHours}%`,
+                          }}
+                        />
+                      );
+                    })}
 
                     {/* Day off message */}
                     {isDayOff && (
                       <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-xs text-muted-foreground font-medium bg-background/80 px-3 py-1 rounded">
+                          Local Cerrado
+                        </span>
+                      </div>
+                    )}
+
+                    {/* No schedule message for open days */}
+                    {!isDayOff && daySchedules.length === 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center">
                         <span className="text-xs text-muted-foreground font-medium">
-                          Día libre
+                          Sin turno
                         </span>
                       </div>
                     )}
@@ -195,6 +298,18 @@ export function EmployeeWeeklyCalendar({
                 </div>
               );
             })}
+          </div>
+
+          {/* Legend */}
+          <div className="mt-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-primary/5 border border-border rounded" />
+              <span>Horario del local</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 bg-blue-500/90 border-l-4 border-blue-600 rounded" />
+              <span>Turno del empleado</span>
+            </div>
           </div>
         </div>
       </DialogContent>
