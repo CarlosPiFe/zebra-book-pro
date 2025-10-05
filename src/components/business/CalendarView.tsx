@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { DayDetailsDialog } from "./DayDetailsDialog";
 
 interface CalendarViewProps {
   businessId: string;
@@ -17,10 +17,11 @@ const MONTHS = [
 ];
 
 export function CalendarView({ businessId }: CalendarViewProps) {
-  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [openDays, setOpenDays] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     loadBusinessHours();
@@ -98,16 +99,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
 
   const handleDayClick = (day: number) => {
     const date = new Date(year, month, day);
-    const dayOfWeek = date.getDay();
-    
-    // Check if it's a closed day (not in openDays)
-    if (!openDays.includes(dayOfWeek)) {
-      return;
-    }
-
-    // Navigate to bookings view with selected date
-    const dateString = date.toISOString().split('T')[0];
-    navigate(`/business/${businessId}/manage?view=bookings&date=${dateString}`);
+    setSelectedDate(date);
+    setDialogOpen(true);
   };
 
   const isClosedDay = (day: number) => {
@@ -244,11 +237,10 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                   <button
                     key={day}
                     onClick={() => handleDayClick(day)}
-                    disabled={closed}
                     className={cn(
                       "aspect-square p-1 rounded text-center transition-all text-sm",
                       "hover:bg-accent/10 hover:scale-105",
-                      closed && "bg-muted cursor-not-allowed opacity-50 hover:bg-muted hover:scale-100",
+                      closed && "bg-muted opacity-70 hover:bg-muted/80",
                       today && !closed && "bg-accent text-accent-foreground font-bold",
                       !closed && !today && "bg-background border border-border hover:border-accent"
                     )}
@@ -288,6 +280,16 @@ export function CalendarView({ businessId }: CalendarViewProps) {
           </div>
         </CardContent>
       </Card>
+
+      {selectedDate && (
+        <DayDetailsDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          date={selectedDate}
+          businessId={businessId}
+          isClosed={isClosedDay(selectedDate.getDate())}
+        />
+      )}
     </div>
   );
 }

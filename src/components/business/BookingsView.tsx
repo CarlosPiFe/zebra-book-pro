@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,9 +32,13 @@ interface BookingsViewProps {
 }
 
 export function BookingsView({ businessId }: BookingsViewProps) {
+  const [searchParams] = useSearchParams();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+    const dateParam = searchParams.get("date");
+    return dateParam ? new Date(dateParam) : new Date();
+  });
   const [selectedTime, setSelectedTime] = useState<string>("");
 
   useEffect(() => {

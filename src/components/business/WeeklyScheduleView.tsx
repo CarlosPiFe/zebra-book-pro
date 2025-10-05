@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -42,18 +43,35 @@ interface CopiedSchedule {
 }
 
 export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
+  const [searchParams] = useSearchParams();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [vacations, setVacations] = useState<Vacation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(
-    startOfWeek(new Date(), { weekStartsOn: 1 }) // Lunes
-  );
+  const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
+    const weekStartParam = searchParams.get("weekStart");
+    if (weekStartParam) {
+      return new Date(weekStartParam);
+    }
+    return startOfWeek(new Date(), { weekStartsOn: 1 });
+  });
   const [copiedSchedule, setCopiedSchedule] = useState<CopiedSchedule | null>(null);
+  const [highlightedDate, setHighlightedDate] = useState<string | null>(() => {
+    return searchParams.get("highlightDate");
+  });
 
   useEffect(() => {
     loadData();
   }, [businessId, currentWeekStart]);
+
+  useEffect(() => {
+    if (highlightedDate) {
+      const timer = setTimeout(() => {
+        setHighlightedDate(null);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedDate]);
 
   const loadData = async () => {
     try {
@@ -342,14 +360,24 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                 <th className="p-3 text-left font-semibold w-32 sticky left-0 bg-card z-10">
                   Empleado
                 </th>
-                {weekDays.map((day) => (
-                  <th key={day.toISOString()} className="p-2 text-center font-semibold w-28">
-                    <div className="text-sm">{format(day, "EEE", { locale: es })}</div>
-                    <div className="text-xs font-normal text-muted-foreground">
-                      {format(day, "d MMM", { locale: es })}
-                    </div>
-                  </th>
-                ))}
+                {weekDays.map((day) => {
+                  const dateStr = format(day, "yyyy-MM-dd");
+                  const isHighlighted = highlightedDate === dateStr;
+                  return (
+                    <th 
+                      key={day.toISOString()} 
+                      className={cn(
+                        "p-2 text-center font-semibold w-28 transition-all",
+                        isHighlighted && "bg-primary/20 scale-105 animate-pulse"
+                      )}
+                    >
+                      <div className="text-sm">{format(day, "EEE", { locale: es })}</div>
+                      <div className="text-xs font-normal text-muted-foreground">
+                        {format(day, "d MMM", { locale: es })}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -370,10 +398,15 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                       cell => cell.employeeId === employee.id && cell.date === dateStr
                     );
 
+                    const isHighlighted = highlightedDate === dateStr;
+
                     return (
                       <td 
                         key={`${employee.id}-${day.toISOString()}`} 
-                        className="p-1"
+                        className={cn(
+                          "p-1 transition-all",
+                          isHighlighted && "bg-primary/20 scale-105 animate-pulse"
+                        )}
                       >
                         <ScheduleCell
                           employeeId={employee.id}
