@@ -176,50 +176,48 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <BusinessHours businessId={business.id} />
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Duración de Tramos de Reserva
-            </CardTitle>
-            <CardDescription>
-              Define la duración predeterminada para cada reserva
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="slot_duration">Duración del Tramo</Label>
-              <Select
-                value={formData.booking_slot_duration_minutes.toString()}
-                onValueChange={(value) => 
-                  setFormData({ ...formData, booking_slot_duration_minutes: parseInt(value) })
-                }
-              >
-                <SelectTrigger id="slot_duration">
-                  <SelectValue placeholder="Selecciona la duración" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="30">30 minutos</SelectItem>
-                  <SelectItem value="45">45 minutos</SelectItem>
-                  <SelectItem value="60">1 hora</SelectItem>
-                  <SelectItem value="90">1 hora 30 min</SelectItem>
-                  <SelectItem value="120">2 horas</SelectItem>
-                  <SelectItem value="150">2 horas 30 min</SelectItem>
-                  <SelectItem value="180">3 horas</SelectItem>
-                  <SelectItem value="240">4 horas</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Esta duración se aplicará automáticamente a todas las reservas nuevas. 
-                Las reservas manuales pueden personalizar la hora de finalización si es necesario.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <BusinessHours businessId={business.id} />
+      
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Duración de la Reserva
+          </CardTitle>
+          <CardDescription>
+            Define la duración predeterminada para cada reserva
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="slot_duration">Duración de la Reserva</Label>
+            <Select
+              value={formData.booking_slot_duration_minutes.toString()}
+              onValueChange={(value) => 
+                setFormData({ ...formData, booking_slot_duration_minutes: parseInt(value) })
+              }
+            >
+              <SelectTrigger id="slot_duration">
+                <SelectValue placeholder="Selecciona la duración" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="30">30 minutos</SelectItem>
+                <SelectItem value="45">45 minutos</SelectItem>
+                <SelectItem value="60">1 hora</SelectItem>
+                <SelectItem value="90">1 hora 30 min</SelectItem>
+                <SelectItem value="120">2 horas</SelectItem>
+                <SelectItem value="150">2 horas 30 min</SelectItem>
+                <SelectItem value="180">3 horas</SelectItem>
+                <SelectItem value="240">4 horas</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Esta duración se aplicará automáticamente a todas las reservas nuevas. 
+              Las reservas manuales pueden personalizar la hora de finalización si es necesario.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
