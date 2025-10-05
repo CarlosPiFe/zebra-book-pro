@@ -18,6 +18,8 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Plus } from "lucide-react";
 import { z } from "zod";
+import { toMadridTime } from "@/lib/timezone";
+import { format } from "date-fns";
 
 const bookingSchema = z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -142,7 +144,9 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         notes: notes || undefined,
       });
 
-      const dateString = formData.booking_date.toISOString().split('T')[0];
+      // Convertir a zona horaria de Madrid antes de guardar
+      const madridDate = toMadridTime(formData.booking_date);
+      const dateString = format(madridDate, "yyyy-MM-dd");
 
       // Find available table
       const { tableId, status } = await findAvailableTable(

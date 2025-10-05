@@ -16,6 +16,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { z } from "zod";
+import { toMadridTime } from "@/lib/timezone";
+import { format, parse } from "date-fns";
 
 const bookingSchema = z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -72,7 +74,11 @@ export function EditBookingDialog({
       setClientName(booking.client_name);
       setClientEmail(booking.client_email || "");
       setClientPhone(booking.client_phone || "");
-      setBookingDate(new Date(booking.booking_date));
+      
+      // Parsear la fecha en zona horaria de Madrid
+      const bookingDateParsed = parse(booking.booking_date, "yyyy-MM-dd", new Date());
+      setBookingDate(bookingDateParsed);
+      
       setStartTime(booking.start_time.substring(0, 5));
       setEndTime(booking.end_time.substring(0, 5));
       setPartySize(booking.party_size.toString());
@@ -158,7 +164,9 @@ export function EditBookingDialog({
         notes: notes || undefined,
       });
 
-      const dateString = formData.booking_date.toISOString().split('T')[0];
+      // Convertir a zona horaria de Madrid antes de guardar
+      const madridDate = toMadridTime(formData.booking_date);
+      const dateString = format(madridDate, "yyyy-MM-dd");
 
       const { tableId, status } = await findAvailableTable(
         dateString,

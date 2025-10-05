@@ -10,6 +10,8 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { CreateBookingDialog } from "./CreateBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
+import { toMadridTime } from "@/lib/timezone";
+import { format, parse } from "date-fns";
 
 interface Booking {
   id: string;
@@ -51,7 +53,9 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
   const loadBookings = async () => {
     try {
-      const dateString = selectedDate.toISOString().split('T')[0];
+      // Convertir fecha seleccionada a zona horaria de Madrid
+      const madridDate = toMadridTime(selectedDate);
+      const dateString = format(madridDate, "yyyy-MM-dd");
       
       let query = supabase
         .from("bookings")
@@ -199,7 +203,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
                     <div className="flex items-center gap-2 text-sm">
                       <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                       <span className="font-medium">
-                        {new Date(booking.booking_date).toLocaleDateString('es-ES', {
+                        {parse(booking.booking_date, "yyyy-MM-dd", new Date()).toLocaleDateString('es-ES', {
                           day: '2-digit',
                           month: '2-digit',
                           year: 'numeric',
