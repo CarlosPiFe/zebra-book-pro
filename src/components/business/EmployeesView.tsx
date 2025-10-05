@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Copy, Plus, Trash2, UserPlus } from "lucide-react";
+import { EmployeeSchedule } from "./EmployeeSchedule";
 
 interface Employee {
   id: string;
@@ -161,37 +162,38 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           </p>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-6">
           {employees.map((employee) => (
-            <Card key={employee.id} className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold text-lg">{employee.name}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Creado: {new Date(employee.created_at).toLocaleDateString()}
-                  </p>
+            <div key={employee.id} className="space-y-4">
+              <Card className="p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-lg">{employee.name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Creado: {new Date(employee.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => copyEmployeeLink(employee.token)}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copiar Link
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDeleteEmployee(employee.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyEmployeeLink(employee.token)}
-                    className="flex-1"
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copiar Link
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleDeleteEmployee(employee.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
+              </Card>
+              <EmployeeSchedule employeeId={employee.id} employeeName={employee.name} />
+            </div>
           ))}
         </div>
       )}

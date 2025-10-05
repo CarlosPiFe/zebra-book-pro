@@ -28,8 +28,8 @@ export function EmployeeSchedule({ employeeId, employeeName }: EmployeeScheduleP
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [startTime, setStartTime] = useState<Date>(new Date());
-  const [endTime, setEndTime] = useState<Date>(new Date());
+  const [startTime, setStartTime] = useState<string>("09:00");
+  const [endTime, setEndTime] = useState<string>("17:00");
 
   useEffect(() => {
     loadSchedules();
@@ -69,8 +69,8 @@ export function EmployeeSchedule({ employeeId, employeeName }: EmployeeScheduleP
       const entries = selectedDays.map(day => ({
         employee_id: employeeId,
         day_of_week: day,
-        start_time: startTime.toTimeString().slice(0, 5),
-        end_time: endTime.toTimeString().slice(0, 5),
+        start_time: startTime,
+        end_time: endTime,
       }));
 
       const { error } = await supabase
@@ -163,11 +163,11 @@ export function EmployeeSchedule({ employeeId, employeeName }: EmployeeScheduleP
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Hora de inicio</Label>
-                    <TimePicker date={startTime} setDate={setStartTime} />
+                    <TimePicker time={startTime} onTimeChange={setStartTime} />
                   </div>
                   <div className="space-y-2">
                     <Label>Hora de fin</Label>
-                    <TimePicker date={endTime} setDate={setEndTime} />
+                    <TimePicker time={endTime} onTimeChange={setEndTime} />
                   </div>
                 </div>
 
