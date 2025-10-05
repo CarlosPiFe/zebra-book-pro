@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { format, startOfWeek, addDays, addWeeks, subWeeks } from "date-fns";
 import { es } from "date-fns/locale";
 import { ScheduleCell } from "./ScheduleCell";
+import { EmployeeWeeklyCalendar } from "./EmployeeWeeklyCalendar";
 import { cn } from "@/lib/utils";
 
 interface Employee {
@@ -59,6 +60,8 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
   const [highlightedDate, setHighlightedDate] = useState<string | null>(() => {
     return searchParams.get("highlightDate");
   });
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -388,10 +391,26 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
               {employees.map((employee) => (
                 <tr key={employee.id} className="border-b hover:bg-muted/50">
                   <td className="p-3 sticky left-0 bg-card z-10">
-                    <div className="font-medium text-sm">{employee.name}</div>
-                    {employee.position && (
-                      <div className="text-xs text-muted-foreground">{employee.position}</div>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{employee.name}</div>
+                        {employee.position && (
+                          <div className="text-xs text-muted-foreground">{employee.position}</div>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => {
+                          setSelectedEmployee(employee);
+                          setCalendarDialogOpen(true);
+                        }}
+                        title="Ver horario visual"
+                      >
+                        <Calendar className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                   {weekDays.map((day) => {
                     const onVacation = isOnVacation(employee.id, day);
@@ -436,6 +455,17 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
             </tbody>
           </table>
         </Card>
+      )}
+
+      {/* Employee Weekly Calendar Dialog */}
+      {selectedEmployee && (
+        <EmployeeWeeklyCalendar
+          open={calendarDialogOpen}
+          onOpenChange={setCalendarDialogOpen}
+          employee={selectedEmployee}
+          schedules={schedules.filter(s => s.employee_id === selectedEmployee.id)}
+          weekStart={currentWeekStart}
+        />
       )}
     </div>
   );
