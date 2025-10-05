@@ -17,6 +17,7 @@ interface Employee {
   is_active: boolean;
   created_at: string;
   position?: string;
+  vacationCount?: number;
 }
 
 interface Vacation {
@@ -50,14 +51,30 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
 
   const loadEmployees = async () => {
     try {
-      const { data, error } = await supabase
+      const { data: employeesData, error: employeesError } = await supabase
         .from("waiters")
         .select("*")
         .eq("business_id", businessId)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      setEmployees(data || []);
+      if (employeesError) throw employeesError;
+
+      // Load vacation counts for each employee
+      const employeesWithVacations = await Promise.all(
+        (employeesData || []).map(async (employee) => {
+          const { count } = await supabase
+            .from("employee_vacations")
+            .select("*", { count: "exact", head: true })
+            .eq("employee_id", employee.id);
+
+          return {
+            ...employee,
+            vacationCount: count || 0,
+          };
+        })
+      );
+
+      setEmployees(employeesWithVacations);
     } catch (error) {
       console.error("Error loading employees:", error);
       toast.error("Error al cargar empleados");
@@ -295,17 +312,19 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
               onClick={() => handleEmployeeClick(employee)}
             >
               <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{employee.name}</h3>
-                  {employee.position && (
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {employee.position}
-                    </p>
-                  )}
-                  <p className="text-sm text-muted-foreground">
-                    Creado: {new Date(employee.created_at).toLocaleDateString()}
+              <div className="flex-1">
+                <h3 className="font-semibold text-lg">{employee.name}</h3>
+                {employee.position && (
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {employee.position}
                   </p>
-                </div>
+                )}
+                <p className="text-sm text-muted-foreground">
+                  {employee.vacationCount === 0 
+                    ? "Sin vacaciones añadidas" 
+                    : `${employee.vacationCount} ${employee.vacationCount === 1 ? "período de vacaciones" : "períodos de vacaciones"}`}
+                </p>
+              </div>
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <Button
                     variant="outline"
