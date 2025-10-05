@@ -389,30 +389,6 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
             <div className="space-y-4 border-t pt-4">
               <h3 className="font-semibold text-lg">Vacaciones</h3>
               
-              {/* Add Vacation */}
-              <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
-                <div className="space-y-2">
-                  <Label>Rango de Fechas</Label>
-                  <DateRangePicker
-                    dateRange={vacationDateRange}
-                    onDateRangeChange={setVacationDateRange}
-                    placeholder="Seleccionar fechas de vacaciones"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Notas (Opcional)</Label>
-                  <Input
-                    value={newVacationNotes}
-                    onChange={(e) => setNewVacationNotes(e.target.value)}
-                    placeholder="Ej: Vacaciones de verano"
-                  />
-                </div>
-                <Button onClick={handleAddVacation} className="w-full">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Añadir Vacaciones
-                </Button>
-              </div>
-
               {/* Vacations List */}
               <div className="space-y-2">
                 {vacations.length === 0 ? (
@@ -442,6 +418,31 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                     </Card>
                   ))
                 )}
+              </div>
+
+              {/* Add Vacation */}
+              <div className="space-y-3 p-4 bg-muted/50 rounded-lg border-t mt-4">
+                <h4 className="font-medium">Añadir Nuevas Vacaciones</h4>
+                <div className="space-y-2">
+                  <Label>Rango de Fechas</Label>
+                  <DateRangePicker
+                    dateRange={vacationDateRange}
+                    onDateRangeChange={setVacationDateRange}
+                    placeholder="Seleccionar fechas de vacaciones"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Notas (Opcional)</Label>
+                  <Input
+                    value={newVacationNotes}
+                    onChange={(e) => setNewVacationNotes(e.target.value)}
+                    placeholder="Ej: Vacaciones de verano"
+                  />
+                </div>
+                <Button onClick={handleAddVacation} className="w-full">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Añadir Vacaciones
+                </Button>
               </div>
             </div>
           </div>
