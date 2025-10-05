@@ -1,1 +1,4 @@
 project_id = "lcdgjpmkxpbufcgpffmr"
+
+[functions.vapi-bookings]
+verify_jwt = false
