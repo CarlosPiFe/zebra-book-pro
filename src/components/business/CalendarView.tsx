@@ -5,6 +5,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-reac
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { DayDetailsDialog } from "./DayDetailsDialog";
 
 interface CalendarViewProps {
   businessId: string;
@@ -21,6 +22,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [openDays, setOpenDays] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     loadBusinessHours();
@@ -98,16 +101,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
 
   const handleDayClick = (day: number) => {
     const date = new Date(year, month, day);
-    const dayOfWeek = date.getDay();
-    
-    // Check if it's a closed day (not in openDays)
-    if (!openDays.includes(dayOfWeek)) {
-      return;
-    }
-
-    // Navigate to bookings view with selected date
-    const dateString = date.toISOString().split('T')[0];
-    navigate(`/business/${businessId}/manage?view=bookings&date=${dateString}`);
+    setSelectedDate(date);
+    setDialogOpen(true);
   };
 
   const isClosedDay = (day: number) => {
@@ -152,13 +147,22 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Calendario</h1>
-        <p className="text-muted-foreground">
-          Navega por el calendario y haz clic en un día para ver sus reservas
-        </p>
-      </div>
+    <>
+      <DayDetailsDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        selectedDate={selectedDate}
+        businessId={businessId}
+        isClosed={selectedDate ? isClosedDay(selectedDate.getDate()) : false}
+      />
+
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Calendario</h1>
+          <p className="text-muted-foreground">
+            Haz clic en cualquier día para gestionar eventos, horarios y reservas
+          </p>
+        </div>
 
       <Card>
         <CardHeader>
@@ -244,11 +248,10 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                   <button
                     key={day}
                     onClick={() => handleDayClick(day)}
-                    disabled={closed}
                     className={cn(
-                      "aspect-square p-1 rounded text-center transition-all text-sm",
+                      "aspect-square p-1 rounded text-center transition-all text-sm cursor-pointer",
                       "hover:bg-accent/10 hover:scale-105",
-                      closed && "bg-muted cursor-not-allowed opacity-50 hover:bg-muted hover:scale-100",
+                      closed && "bg-muted opacity-50",
                       today && !closed && "bg-accent text-accent-foreground font-bold",
                       !closed && !today && "bg-background border border-border hover:border-accent"
                     )}
@@ -288,6 +291,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }

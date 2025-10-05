@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { format, startOfWeek, addDays, addWeeks, subWeeks } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { ScheduleCell } from "./ScheduleCell";
 import { cn } from "@/lib/utils";
@@ -42,6 +43,7 @@ interface CopiedSchedule {
 }
 
 export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
+  const [searchParams] = useSearchParams();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [vacations, setVacations] = useState<Vacation[]>([]);
@@ -50,10 +52,30 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
     startOfWeek(new Date(), { weekStartsOn: 1 }) // Lunes
   );
   const [copiedSchedule, setCopiedSchedule] = useState<CopiedSchedule | null>(null);
+  const [highlightedDate, setHighlightedDate] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
   }, [businessId, currentWeekStart]);
+
+  useEffect(() => {
+    // Handle URL parameters for week navigation and highlighting
+    const weekStartParam = searchParams.get("weekStart");
+    const highlightDateParam = searchParams.get("highlightDate");
+
+    if (weekStartParam) {
+      const weekStart = parseISO(weekStartParam);
+      setCurrentWeekStart(startOfWeek(weekStart, { weekStartsOn: 1 }));
+    }
+
+    if (highlightDateParam) {
+      setHighlightedDate(highlightDateParam);
+      // Remove highlight after 1 second
+      setTimeout(() => {
+        setHighlightedDate(null);
+      }, 1000);
+    }
+  }, [searchParams]);
 
   const loadData = async () => {
     try {
@@ -342,14 +364,25 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                 <th className="p-3 text-left font-semibold w-32 sticky left-0 bg-card z-10">
                   Empleado
                 </th>
-                {weekDays.map((day) => (
-                  <th key={day.toISOString()} className="p-2 text-center font-semibold w-28">
-                    <div className="text-sm">{format(day, "EEE", { locale: es })}</div>
-                    <div className="text-xs font-normal text-muted-foreground">
-                      {format(day, "d MMM", { locale: es })}
-                    </div>
-                  </th>
-                ))}
+                {weekDays.map((day) => {
+                  const dateStr = format(day, "yyyy-MM-dd");
+                  const isHighlighted = highlightedDate === dateStr;
+                  
+                  return (
+                    <th 
+                      key={day.toISOString()} 
+                      className={cn(
+                        "p-2 text-center font-semibold w-28 transition-all duration-300",
+                        isHighlighted && "bg-primary/20 scale-105 animate-pulse"
+                      )}
+                    >
+                      <div className="text-sm">{format(day, "EEE", { locale: es })}</div>
+                      <div className="text-xs font-normal text-muted-foreground">
+                        {format(day, "d MMM", { locale: es })}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -369,11 +402,15 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                     const isSelected = copiedSchedule?.selectedCells.some(
                       cell => cell.employeeId === employee.id && cell.date === dateStr
                     );
+                    const isHighlighted = highlightedDate === dateStr;
 
                     return (
                       <td 
                         key={`${employee.id}-${day.toISOString()}`} 
-                        className="p-1"
+                        className={cn(
+                          "p-1 transition-all duration-300",
+                          isHighlighted && "bg-primary/10 scale-105"
+                        )}
                       >
                         <ScheduleCell
                           employeeId={employee.id}
