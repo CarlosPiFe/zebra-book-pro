@@ -6,8 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Plus, Trash2, UserPlus } from "lucide-react";
-import { EmployeeSchedule } from "./EmployeeSchedule";
+import { Copy, Plus, Trash2, UserPlus, Edit, Calendar } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
 
 interface Employee {
   id: string;
@@ -16,6 +16,13 @@ interface Employee {
   is_active: boolean;
   created_at: string;
   position?: string;
+}
+
+interface Vacation {
+  id: string;
+  start_date: string;
+  end_date: string;
+  notes?: string;
 }
 
 interface EmployeesViewProps {
@@ -28,6 +35,14 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
   const [newEmployeeName, setNewEmployeeName] = useState("");
   const [newEmployeePosition, setNewEmployeePosition] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editPosition, setEditPosition] = useState("");
+  const [vacations, setVacations] = useState<Vacation[]>([]);
+  const [newVacationStart, setNewVacationStart] = useState<Date>();
+  const [newVacationEnd, setNewVacationEnd] = useState<Date>();
+  const [newVacationNotes, setNewVacationNotes] = useState("");
 
   useEffect(() => {
     loadEmployees();
@@ -108,6 +123,109 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
     toast.success("Link copiado al portapapeles");
   };
 
+  const handleEmployeeClick = async (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setEditName(employee.name);
+    setEditPosition(employee.position || "");
+    setIsEditDialogOpen(true);
+    await loadVacations(employee.id);
+  };
+
+  const loadVacations = async (employeeId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("employee_vacations")
+        .select("*")
+        .eq("employee_id", employeeId)
+        .order("start_date", { ascending: true });
+
+      if (error) throw error;
+      setVacations(data || []);
+    } catch (error) {
+      console.error("Error loading vacations:", error);
+      toast.error("Error al cargar vacaciones");
+    }
+  };
+
+  const handleUpdateEmployee = async () => {
+    if (!selectedEmployee || !editName.trim()) {
+      toast.error("Por favor ingresa un nombre");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("waiters")
+        .update({
+          name: editName.trim(),
+          position: editPosition.trim() || null,
+        })
+        .eq("id", selectedEmployee.id);
+
+      if (error) throw error;
+
+      toast.success("Empleado actualizado");
+      setIsEditDialogOpen(false);
+      loadEmployees();
+    } catch (error) {
+      console.error("Error updating employee:", error);
+      toast.error("Error al actualizar empleado");
+    }
+  };
+
+  const handleAddVacation = async () => {
+    if (!selectedEmployee || !newVacationStart || !newVacationEnd) {
+      toast.error("Por favor selecciona las fechas");
+      return;
+    }
+
+    if (newVacationEnd < newVacationStart) {
+      toast.error("La fecha de fin debe ser posterior a la de inicio");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("employee_vacations")
+        .insert({
+          employee_id: selectedEmployee.id,
+          start_date: newVacationStart.toISOString().split('T')[0],
+          end_date: newVacationEnd.toISOString().split('T')[0],
+          notes: newVacationNotes.trim() || null,
+        });
+
+      if (error) throw error;
+
+      toast.success("Vacaciones añadidas");
+      setNewVacationStart(undefined);
+      setNewVacationEnd(undefined);
+      setNewVacationNotes("");
+      loadVacations(selectedEmployee.id);
+    } catch (error) {
+      console.error("Error adding vacation:", error);
+      toast.error("Error al añadir vacaciones");
+    }
+  };
+
+  const handleDeleteVacation = async (vacationId: string) => {
+    if (!selectedEmployee) return;
+
+    try {
+      const { error } = await supabase
+        .from("employee_vacations")
+        .delete()
+        .eq("id", vacationId);
+
+      if (error) throw error;
+
+      toast.success("Vacaciones eliminadas");
+      loadVacations(selectedEmployee.id);
+    } catch (error) {
+      console.error("Error deleting vacation:", error);
+      toast.error("Error al eliminar vacaciones");
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -175,46 +293,155 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           </p>
         </Card>
       ) : (
-        <div className="space-y-6">
+        <div className="grid gap-4">
           {employees.map((employee) => (
-            <div key={employee.id} className="space-y-4">
-              <Card className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{employee.name}</h3>
-                    {employee.position && (
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {employee.position}
-                      </p>
-                    )}
-                    <p className="text-sm text-muted-foreground">
-                      Creado: {new Date(employee.created_at).toLocaleDateString()}
+            <Card 
+              key={employee.id} 
+              className="p-6 cursor-pointer hover:bg-accent/50 transition-colors"
+              onClick={() => handleEmployeeClick(employee)}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg">{employee.name}</h3>
+                  {employee.position && (
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {employee.position}
                     </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => copyEmployeeLink(employee.token)}
-                    >
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copiar Link
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteEmployee(employee.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
+                  )}
+                  <p className="text-sm text-muted-foreground">
+                    Creado: {new Date(employee.created_at).toLocaleDateString()}
+                  </p>
                 </div>
-              </Card>
-              <EmployeeSchedule employeeId={employee.id} employeeName={employee.name} />
-            </div>
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => copyEmployeeLink(employee.token)}
+                  >
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copiar Link
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDeleteEmployee(employee.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
           ))}
         </div>
       )}
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Empleado</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Employee Info Section */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-lg">Información del Empleado</h3>
+              <div className="space-y-2">
+                <Label htmlFor="editName">Nombre</Label>
+                <Input
+                  id="editName"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="Nombre del empleado"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editPosition">Cargo</Label>
+                <Input
+                  id="editPosition"
+                  value={editPosition}
+                  onChange={(e) => setEditPosition(e.target.value)}
+                  placeholder="Cargo del empleado"
+                />
+              </div>
+              <Button onClick={handleUpdateEmployee} className="w-full">
+                <Edit className="w-4 h-4 mr-2" />
+                Actualizar Información
+              </Button>
+            </div>
+
+            {/* Vacations Section */}
+            <div className="space-y-4 border-t pt-4">
+              <h3 className="font-semibold text-lg">Vacaciones</h3>
+              
+              {/* Add Vacation */}
+              <div className="space-y-3 p-4 bg-muted/50 rounded-lg">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Fecha de Inicio</Label>
+                    <DatePicker
+                      date={newVacationStart}
+                      onDateChange={setNewVacationStart}
+                      placeholder="Seleccionar fecha"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fecha de Fin</Label>
+                    <DatePicker
+                      date={newVacationEnd}
+                      onDateChange={setNewVacationEnd}
+                      placeholder="Seleccionar fecha"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Notas (Opcional)</Label>
+                  <Input
+                    value={newVacationNotes}
+                    onChange={(e) => setNewVacationNotes(e.target.value)}
+                    placeholder="Ej: Vacaciones de verano"
+                  />
+                </div>
+                <Button onClick={handleAddVacation} className="w-full">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Añadir Vacaciones
+                </Button>
+              </div>
+
+              {/* Vacations List */}
+              <div className="space-y-2">
+                {vacations.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No hay vacaciones registradas
+                  </p>
+                ) : (
+                  vacations.map((vacation) => (
+                    <Card key={vacation.id} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-medium">
+                            {new Date(vacation.start_date).toLocaleDateString()} - {new Date(vacation.end_date).toLocaleDateString()}
+                          </p>
+                          {vacation.notes && (
+                            <p className="text-sm text-muted-foreground">{vacation.notes}</p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteVacation(vacation.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </Card>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

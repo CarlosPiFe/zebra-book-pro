@@ -216,6 +216,41 @@ export type Database = {
           },
         ]
       }
+      employee_vacations: {
+        Row: {
+          created_at: string
+          employee_id: string
+          end_date: string
+          id: string
+          notes: string | null
+          start_date: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          end_date: string
+          id?: string
+          notes?: string | null
+          start_date: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          end_date?: string
+          id?: string
+          notes?: string | null
+          start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_vacations_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           business_id: string
