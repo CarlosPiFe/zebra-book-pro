@@ -339,8 +339,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                         key={`${employee.id}-${day.toISOString()}`} 
                         className={cn(
                           "p-1",
-                          hasCopiedSchedule && !onVacation && "cursor-pointer",
-                          isSelected && "bg-primary/20"
+                          hasCopiedSchedule && !onVacation && "cursor-pointer"
                         )}
                         onClick={() => {
                           if (hasCopiedSchedule && !onVacation) {
@@ -357,6 +356,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                           onDelete={deleteSchedule}
                           onCopy={handleCopySchedule}
                           isInSelectionMode={hasCopiedSchedule && !onVacation}
+                          isSelected={isSelected}
                         />
                       </td>
                     );

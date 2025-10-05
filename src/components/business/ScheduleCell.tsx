@@ -6,7 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { TimePicker } from "@/components/ui/time-picker";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Plus, Trash2, Copy } from "lucide-react";
+import { Plus, Trash2, Copy, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Schedule {
   id?: string;
@@ -34,6 +35,7 @@ interface ScheduleCellProps {
   onDelete: (scheduleId: string) => void;
   onCopy?: (employeeId: string, date: Date, schedules: Schedule[]) => void;
   isInSelectionMode?: boolean;
+  isSelected?: boolean;
 }
 
 export const ScheduleCell = ({
@@ -45,6 +47,7 @@ export const ScheduleCell = ({
   onDelete,
   onCopy,
   isInSelectionMode = false,
+  isSelected = false,
 }: ScheduleCellProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -138,6 +141,16 @@ export const ScheduleCell = ({
     setIsOpen(false);
   };
 
+  const handleClearSchedule = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    const deletePromises = schedules
+      .filter(s => s.id)
+      .map(s => onDelete(s.id!));
+    
+    await Promise.all(deletePromises);
+  };
+
   const getCellContent = () => {
     if (onVacation) {
       return (
@@ -157,12 +170,19 @@ export const ScheduleCell = ({
 
     if (timeSlots.length > 0) {
       return (
-        <div className="text-[10px] p-1.5 bg-card rounded border border-border hover:border-primary transition-colors">
+        <div className="relative group text-[10px] p-1.5 bg-card rounded border border-border hover:border-primary transition-colors">
           {timeSlots.map((slot, index) => (
             <div key={index} className="font-medium">
               {slot.start} - {slot.end}
             </div>
           ))}
+          <button
+            onClick={handleClearSchedule}
+            className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            title="Eliminar horario"
+          >
+            <X className="w-3 h-3" />
+          </button>
         </div>
       );
     }
@@ -177,7 +197,10 @@ export const ScheduleCell = ({
   return (
     <>
       <div
-        className="cursor-pointer"
+        className={cn(
+          "cursor-pointer",
+          isSelected && "bg-primary/20 rounded"
+        )}
         onClick={(e) => {
           if (!onVacation && !isInSelectionMode) {
             e.stopPropagation();
