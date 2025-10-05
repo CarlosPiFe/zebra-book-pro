@@ -249,6 +249,34 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
               Esta duración se aplicará automáticamente a todas las reservas nuevas. 
               Las reservas manuales pueden personalizar la hora de finalización si es necesario.
             </p>
+            <Button
+              type="button"
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  const { error } = await supabase
+                    .from("businesses")
+                    .update({
+                      booking_slot_duration_minutes: formData.booking_slot_duration_minutes,
+                    })
+                    .eq("id", business.id);
+
+                  if (error) throw error;
+
+                  toast.success("Duración de reserva actualizada correctamente");
+                  onUpdate();
+                } catch (error) {
+                  console.error("Error updating booking duration:", error);
+                  toast.error("Error al actualizar la duración");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? "Guardando..." : "Aplicar Cambios"}
+            </Button>
           </div>
         </CardContent>
       </Card>
