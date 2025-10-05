@@ -37,9 +37,8 @@ interface WeeklyScheduleViewProps {
 }
 
 interface CopiedSchedule {
-  employeeId: string;
   schedules: Schedule[];
-  selectedDates: string[]; // Array of date strings in yyyy-MM-dd format
+  selectedCells: Array<{ employeeId: string; date: string }>; // Array of selected cells
 }
 
 export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
@@ -176,39 +175,43 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
 
   const handleCopySchedule = (employeeId: string, date: Date, schedulesToCopy: Schedule[]) => {
     setCopiedSchedule({
-      employeeId,
       schedules: schedulesToCopy,
-      selectedDates: [],
+      selectedCells: [],
     });
-    toast.success("Horario copiado. Selecciona los días donde quieres pegarlo.");
+    toast.success("Horario copiado. Haz clic en las celdas donde quieres pegarlo.");
   };
 
-  const toggleDateSelection = (employeeId: string, date: Date) => {
-    if (!copiedSchedule || copiedSchedule.employeeId !== employeeId) return;
+  const toggleCellSelection = (employeeId: string, date: Date) => {
+    if (!copiedSchedule) return;
     
     const dateStr = format(date, "yyyy-MM-dd");
-    const isSelected = copiedSchedule.selectedDates.includes(dateStr);
+    const cellKey = `${employeeId}-${dateStr}`;
+    const isSelected = copiedSchedule.selectedCells.some(
+      cell => cell.employeeId === employeeId && cell.date === dateStr
+    );
     
     setCopiedSchedule({
       ...copiedSchedule,
-      selectedDates: isSelected
-        ? copiedSchedule.selectedDates.filter(d => d !== dateStr)
-        : [...copiedSchedule.selectedDates, dateStr],
+      selectedCells: isSelected
+        ? copiedSchedule.selectedCells.filter(
+            cell => !(cell.employeeId === employeeId && cell.date === dateStr)
+          )
+        : [...copiedSchedule.selectedCells, { employeeId, date: dateStr }],
     });
   };
 
   const handleApplySchedule = async () => {
-    if (!copiedSchedule || copiedSchedule.selectedDates.length === 0) {
-      toast.error("Selecciona al menos un día");
+    if (!copiedSchedule || copiedSchedule.selectedCells.length === 0) {
+      toast.error("Selecciona al menos una celda");
       return;
     }
 
     try {
-      // Apply schedule to all selected dates
-      for (const dateStr of copiedSchedule.selectedDates) {
-        // Delete existing schedules for this day
+      // Apply schedule to all selected cells
+      for (const cell of copiedSchedule.selectedCells) {
+        // Delete existing schedules for this cell
         const existingSchedules = schedules.filter(
-          s => s.employee_id === copiedSchedule.employeeId && s.date === dateStr && s.id
+          s => s.employee_id === cell.employeeId && s.date === cell.date && s.id
         );
         
         if (existingSchedules.length > 0) {
@@ -220,10 +223,10 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
           if (deleteError) throw deleteError;
         }
 
-        // Insert new schedules for this day
+        // Insert new schedules for this cell
         const newSchedules = copiedSchedule.schedules.map((schedule, index) => ({
-          employee_id: copiedSchedule.employeeId,
-          date: dateStr,
+          employee_id: cell.employeeId,
+          date: cell.date,
           is_day_off: false,
           start_time: schedule.start_time,
           end_time: schedule.end_time,
@@ -237,7 +240,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
         if (insertError) throw insertError;
       }
 
-      toast.success(`Horario aplicado a ${copiedSchedule.selectedDates.length} día(s)`);
+      toast.success(`Horario aplicado a ${copiedSchedule.selectedCells.length} celda(s)`);
       setCopiedSchedule(null);
       await loadSchedules(); // Reload schedules after all operations
     } catch (error) {
@@ -303,9 +306,9 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
             <div>
               <h3 className="font-semibold text-lg">Modo: Pegar Horario</h3>
               <p className="text-sm text-muted-foreground">
-                {copiedSchedule.selectedDates.length > 0 
-                  ? `${copiedSchedule.selectedDates.length} día(s) seleccionado(s)`
-                  : "Haz clic en las casillas del empleado para seleccionar los días donde pegar el horario"}
+                {copiedSchedule.selectedCells.length > 0 
+                  ? `${copiedSchedule.selectedCells.length} celda(s) seleccionada(s)`
+                  : "Haz clic en cualquier celda del calendario para pegar el horario"}
               </p>
             </div>
             <div className="flex gap-2">
@@ -315,9 +318,9 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
               >
                 Cancelar
               </Button>
-              {copiedSchedule.selectedDates.length > 0 && (
+              {copiedSchedule.selectedCells.length > 0 && (
                 <Button onClick={handleApplySchedule}>
-                  Aplicar a {copiedSchedule.selectedDates.length} día(s)
+                  Aplicar a {copiedSchedule.selectedCells.length} celda(s)
                 </Button>
               )}
             </div>
@@ -361,9 +364,11 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                   {weekDays.map((day) => {
                     const onVacation = isOnVacation(employee.id, day);
                     const daySchedules = getSchedulesForDay(employee.id, day);
-                    const hasCopiedSchedule = copiedSchedule?.employeeId === employee.id;
+                    const isInPasteMode = !!copiedSchedule;
                     const dateStr = format(day, "yyyy-MM-dd");
-                    const isSelected = hasCopiedSchedule && copiedSchedule?.selectedDates.includes(dateStr);
+                    const isSelected = copiedSchedule?.selectedCells.some(
+                      cell => cell.employeeId === employee.id && cell.date === dateStr
+                    );
 
                     return (
                       <td 
@@ -379,12 +384,12 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                           onDelete={deleteSchedule}
                           onCopy={handleCopySchedule}
                           onSelect={() => {
-                            if (hasCopiedSchedule && !onVacation) {
-                              toggleDateSelection(employee.id, day);
+                            if (isInPasteMode && !onVacation) {
+                              toggleCellSelection(employee.id, day);
                             }
                           }}
-                          isInSelectionMode={hasCopiedSchedule && !onVacation}
-                          isSelected={isSelected}
+                          isInSelectionMode={isInPasteMode && !onVacation}
+                          isSelected={isSelected || false}
                         />
                       </td>
                     );
