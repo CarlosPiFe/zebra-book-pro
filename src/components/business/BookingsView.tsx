@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
+import { CreateBookingDialog } from "./CreateBookingDialog";
 
 interface Booking {
   id: string;
@@ -121,11 +122,14 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Reservas</h1>
-        <p className="text-muted-foreground">
-          Gestiona y visualiza todas las reservas de tu negocio
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Reservas</h1>
+          <p className="text-muted-foreground">
+            Gestiona y visualiza todas las reservas de tu negocio
+          </p>
+        </div>
+        <CreateBookingDialog businessId={businessId} onBookingCreated={loadBookings} />
       </div>
 
       <Card>
