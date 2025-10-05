@@ -64,7 +64,13 @@ export const ScheduleCell = ({
 
   const [isDayOff, setIsDayOff] = useState(!!dayOffSchedule);
   const [slots, setSlots] = useState<TimeSlot[]>(
-    timeSlots.length > 0 ? timeSlots : [{ start: "", end: "", order: 1 }]
+    timeSlots.length > 0 
+      ? timeSlots.map(slot => ({
+          ...slot,
+          start: slot.start.substring(0, 5), // Remove seconds
+          end: slot.end.substring(0, 5), // Remove seconds
+        }))
+      : [{ start: "", end: "", order: 1 }]
   );
 
   const handleAddSlot = () => {
