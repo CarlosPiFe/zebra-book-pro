@@ -540,7 +540,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_public_businesses: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          address: string
+          category: string
+          created_at: string
+          description: string
+          id: string
+          image_url: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       user_role: "owner" | "client"

@@ -30,11 +30,10 @@ const Index = () => {
 
   const loadBusinesses = async () => {
     try {
+      // Use secure function that only returns public business information
+      // This protects email and phone from being exposed publicly
       const { data, error } = await supabase
-        .from("businesses")
-        .select("*")
-        .eq("is_active", true)
-        .limit(6);
+        .rpc("get_public_businesses");
 
       if (error) throw error;
       setBusinesses(data || []);
