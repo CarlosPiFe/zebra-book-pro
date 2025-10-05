@@ -15,6 +15,7 @@ interface Employee {
   token: string;
   is_active: boolean;
   created_at: string;
+  position?: string;
 }
 
 interface EmployeesViewProps {
@@ -25,6 +26,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [newEmployeeName, setNewEmployeeName] = useState("");
+  const [newEmployeePosition, setNewEmployeePosition] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -67,12 +69,14 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           business_id: businessId,
           name: newEmployeeName.trim(),
           token: token,
+          position: newEmployeePosition.trim() || null,
         });
 
       if (error) throw error;
 
       toast.success("Empleado creado exitosamente");
       setNewEmployeeName("");
+      setNewEmployeePosition("");
       setIsDialogOpen(false);
       loadEmployees();
     } catch (error) {
@@ -144,6 +148,15 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                   placeholder="Ej: Juan Pérez"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="employeePosition">Cargo (Opcional)</Label>
+                <Input
+                  id="employeePosition"
+                  value={newEmployeePosition}
+                  onChange={(e) => setNewEmployeePosition(e.target.value)}
+                  placeholder="Ej: Cocinero, Gerente, Cajero"
+                />
+              </div>
               <Button onClick={handleCreateEmployee} className="w-full">
                 <UserPlus className="w-4 h-4 mr-2" />
                 Crear Empleado
@@ -169,6 +182,11 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg">{employee.name}</h3>
+                    {employee.position && (
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {employee.position}
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">
                       Creado: {new Date(employee.created_at).toLocaleDateString()}
                     </p>
