@@ -26,10 +26,9 @@ interface Schedule {
   employee_id: string;
   date: string;
   is_day_off: boolean;
-  morning_start?: string;
-  morning_end?: string;
-  afternoon_start?: string;
-  afternoon_end?: string;
+  start_time?: string;
+  end_time?: string;
+  slot_order?: number;
 }
 
 interface WeeklyScheduleViewProps {
@@ -82,7 +81,8 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
         .from("employee_weekly_schedules")
         .select("*")
         .gte("date", format(currentWeekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"));
+        .lte("date", format(weekEnd, "yyyy-MM-dd"))
+        .order("slot_order", { ascending: true });
 
       if (error) throw error;
       setSchedules(data || []);
@@ -118,9 +118,9 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
     });
   };
 
-  const getScheduleForDay = (employeeId: string, date: Date): Schedule | undefined => {
+  const getSchedulesForDay = (employeeId: string, date: Date): Schedule[] => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return schedules.find(
+    return schedules.filter(
       (schedule) =>
         schedule.employee_id === employeeId && schedule.date === dateStr
     );
@@ -128,19 +128,42 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
 
   const updateSchedule = async (schedule: Schedule) => {
     try {
-      const { error } = await supabase
-        .from("employee_weekly_schedules")
-        .upsert({
-          ...schedule,
-          date: schedule.date,
-        });
-
-      if (error) throw error;
+      if (schedule.id) {
+        const { error } = await supabase
+          .from("employee_weekly_schedules")
+          .update(schedule)
+          .eq("id", schedule.id);
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("employee_weekly_schedules")
+          .insert(schedule);
+        
+        if (error) throw error;
+      }
+      
       toast.success("Horario actualizado");
       loadSchedules();
     } catch (error) {
       console.error("Error updating schedule:", error);
       toast.error("Error al actualizar horario");
+    }
+  };
+
+  const deleteSchedule = async (scheduleId: string) => {
+    try {
+      const { error } = await supabase
+        .from("employee_weekly_schedules")
+        .delete()
+        .eq("id", scheduleId);
+
+      if (error) throw error;
+      toast.success("Tramo eliminado");
+      loadSchedules();
+    } catch (error) {
+      console.error("Error deleting schedule:", error);
+      toast.error("Error al eliminar tramo");
     }
   };
 
@@ -224,16 +247,17 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                   </td>
                   {weekDays.map((day) => {
                     const onVacation = isOnVacation(employee.id, day);
-                    const schedule = getScheduleForDay(employee.id, day);
+                    const daySchedules = getSchedulesForDay(employee.id, day);
 
                     return (
                       <td key={`${employee.id}-${day.toISOString()}`} className="p-1">
                         <ScheduleCell
                           employeeId={employee.id}
                           date={day}
-                          schedule={schedule}
+                          schedules={daySchedules}
                           onVacation={onVacation}
                           onUpdate={updateSchedule}
+                          onDelete={deleteSchedule}
                         />
                       </td>
                     );

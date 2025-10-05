@@ -6,52 +6,118 @@ import { Switch } from "@/components/ui/switch";
 import { TimePicker } from "@/components/ui/time-picker";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Plus, Trash2 } from "lucide-react";
 
 interface Schedule {
   id?: string;
   employee_id: string;
   date: string;
   is_day_off: boolean;
-  morning_start?: string;
-  morning_end?: string;
-  afternoon_start?: string;
-  afternoon_end?: string;
+  start_time?: string;
+  end_time?: string;
+  slot_order?: number;
+}
+
+interface TimeSlot {
+  id?: string;
+  start: string;
+  end: string;
+  order: number;
 }
 
 interface ScheduleCellProps {
   employeeId: string;
   date: Date;
-  schedule?: Schedule;
+  schedules: Schedule[];
   onVacation: boolean;
   onUpdate: (schedule: Schedule) => void;
+  onDelete: (scheduleId: string) => void;
 }
 
 export const ScheduleCell = ({
   employeeId,
   date,
-  schedule,
+  schedules,
   onVacation,
   onUpdate,
+  onDelete,
 }: ScheduleCellProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isDayOff, setIsDayOff] = useState(schedule?.is_day_off || false);
-  const [morningStart, setMorningStart] = useState(schedule?.morning_start || "");
-  const [morningEnd, setMorningEnd] = useState(schedule?.morning_end || "");
-  const [afternoonStart, setAfternoonStart] = useState(schedule?.afternoon_start || "");
-  const [afternoonEnd, setAfternoonEnd] = useState(schedule?.afternoon_end || "");
+  
+  const dayOffSchedule = schedules.find(s => s.is_day_off);
+  const timeSlots = schedules
+    .filter(s => !s.is_day_off && s.start_time)
+    .map(s => ({
+      id: s.id,
+      start: s.start_time!,
+      end: s.end_time!,
+      order: s.slot_order || 1,
+    }))
+    .sort((a, b) => a.order - b.order);
+
+  const [isDayOff, setIsDayOff] = useState(!!dayOffSchedule);
+  const [slots, setSlots] = useState<TimeSlot[]>(
+    timeSlots.length > 0 ? timeSlots : [{ start: "", end: "", order: 1 }]
+  );
+
+  const handleAddSlot = () => {
+    const newOrder = Math.max(...slots.map(s => s.order), 0) + 1;
+    setSlots([...slots, { start: "", end: "", order: newOrder }]);
+  };
+
+  const handleRemoveSlot = (index: number) => {
+    const slot = slots[index];
+    if (slot.id) {
+      onDelete(slot.id);
+    }
+    setSlots(slots.filter((_, i) => i !== index));
+  };
+
+  const handleSlotChange = (index: number, field: "start" | "end", value: string) => {
+    const newSlots = [...slots];
+    newSlots[index][field] = value;
+    setSlots(newSlots);
+  };
 
   const handleSave = () => {
     const dateStr = format(date, "yyyy-MM-dd");
-    onUpdate({
-      id: schedule?.id,
-      employee_id: employeeId,
-      date: dateStr,
-      is_day_off: isDayOff,
-      morning_start: isDayOff ? undefined : morningStart || undefined,
-      morning_end: isDayOff ? undefined : morningEnd || undefined,
-      afternoon_start: isDayOff ? undefined : afternoonStart || undefined,
-      afternoon_end: isDayOff ? undefined : afternoonEnd || undefined,
-    });
+
+    // If day off is set, delete all time slots and create/update day off entry
+    if (isDayOff) {
+      // Delete all existing time slot schedules
+      schedules.filter(s => !s.is_day_off && s.id).forEach(s => onDelete(s.id!));
+      
+      // Create or update day off schedule
+      onUpdate({
+        id: dayOffSchedule?.id,
+        employee_id: employeeId,
+        date: dateStr,
+        is_day_off: true,
+        slot_order: 1,
+      });
+    } else {
+      // Delete day off schedule if it exists
+      if (dayOffSchedule?.id) {
+        onDelete(dayOffSchedule.id);
+      }
+
+      // Save all time slots
+      slots.forEach((slot, index) => {
+        if (slot.start && slot.end) {
+          const existingSchedule = schedules.find(s => s.id === slot.id);
+          onUpdate({
+            id: slot.id,
+            employee_id: employeeId,
+            date: dateStr,
+            is_day_off: false,
+            start_time: slot.start,
+            end_time: slot.end,
+            slot_order: index + 1,
+          });
+        }
+      });
+    }
+    
     setIsOpen(false);
   };
 
@@ -64,7 +130,7 @@ export const ScheduleCell = ({
       );
     }
 
-    if (schedule?.is_day_off) {
+    if (dayOffSchedule) {
       return (
         <div className="text-xs text-center p-1.5 bg-muted rounded border border-border">
           <div className="font-medium text-muted-foreground text-[10px]">Libre</div>
@@ -72,19 +138,14 @@ export const ScheduleCell = ({
       );
     }
 
-    if (schedule?.morning_start || schedule?.afternoon_start) {
+    if (timeSlots.length > 0) {
       return (
         <div className="text-[10px] p-1.5 bg-card rounded border border-border hover:border-primary transition-colors">
-          {schedule.morning_start && (
-            <div className="font-medium">
-              {schedule.morning_start} - {schedule.morning_end}
+          {timeSlots.map((slot, index) => (
+            <div key={index} className="font-medium">
+              {slot.start} - {slot.end}
             </div>
-          )}
-          {schedule.afternoon_start && (
-            <div className="font-medium">
-              {schedule.afternoon_start} - {schedule.afternoon_end}
-            </div>
-          )}
+          ))}
         </div>
       );
     }
@@ -124,51 +185,51 @@ export const ScheduleCell = ({
             </div>
 
             {!isDayOff && (
-              <>
-                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                  <h4 className="font-semibold">Horario de Mañana</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Inicio</Label>
-                      <TimePicker
-                        time={morningStart}
-                        onTimeChange={setMorningStart}
-                        allowClear
-                      />
+              <div className="space-y-4">
+                {slots.map((slot, index) => (
+                  <div key={index} className="p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold">Tramo {index + 1}</h4>
+                      {slots.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveSlot(index)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label>Fin</Label>
-                      <TimePicker
-                        time={morningEnd}
-                        onTimeChange={setMorningEnd}
-                        allowClear
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Inicio</Label>
+                        <TimePicker
+                          time={slot.start}
+                          onTimeChange={(value) => handleSlotChange(index, "start", value)}
+                          allowClear
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Fin</Label>
+                        <TimePicker
+                          time={slot.end}
+                          onTimeChange={(value) => handleSlotChange(index, "end", value)}
+                          allowClear
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
 
-                <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-                  <h4 className="font-semibold">Horario de Tarde</h4>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Inicio</Label>
-                      <TimePicker
-                        time={afternoonStart}
-                        onTimeChange={setAfternoonStart}
-                        allowClear
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Fin</Label>
-                      <TimePicker
-                        time={afternoonEnd}
-                        onTimeChange={setAfternoonEnd}
-                        allowClear
-                      />
-                    </div>
-                  </div>
-                </div>
-              </>
+                <Button
+                  variant="outline"
+                  onClick={handleAddSlot}
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Añadir Tramo
+                </Button>
+              </div>
             )}
 
             <Button onClick={handleSave} className="w-full">
