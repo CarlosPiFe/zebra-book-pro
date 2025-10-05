@@ -214,7 +214,10 @@ export const ScheduleCell = ({
           isInSelectionMode && !isSelected && "hover:bg-primary/10 hover:ring-1 hover:ring-primary/50 rounded"
         )}
         onClick={(e) => {
-          if (!onVacation && !isInSelectionMode) {
+          if (isInSelectionMode && !onVacation) {
+            e.stopPropagation();
+            // The click will be handled by the parent div in WeeklyScheduleView
+          } else if (!onVacation) {
             e.stopPropagation();
             setIsOpen(true);
           }

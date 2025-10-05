@@ -151,8 +151,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
         if (error) throw error;
       }
       
-      toast.success("Horario actualizado");
-      loadSchedules();
+      await loadSchedules(); // Always reload after update
     } catch (error) {
       console.error("Error updating schedule:", error);
       toast.error("Error al actualizar horario");
@@ -370,23 +369,26 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                       <td 
                         key={`${employee.id}-${day.toISOString()}`} 
                         className="p-1"
-                        onClick={() => {
-                          if (hasCopiedSchedule && !onVacation) {
-                            toggleDateSelection(employee.id, day);
-                          }
-                        }}
                       >
-                        <ScheduleCell
-                          employeeId={employee.id}
-                          date={day}
-                          schedules={daySchedules}
-                          onVacation={onVacation}
-                          onUpdate={updateSchedule}
-                          onDelete={deleteSchedule}
-                          onCopy={handleCopySchedule}
-                          isInSelectionMode={hasCopiedSchedule && !onVacation}
-                          isSelected={isSelected}
-                        />
+                        <div
+                          onClick={() => {
+                            if (hasCopiedSchedule && !onVacation) {
+                              toggleDateSelection(employee.id, day);
+                            }
+                          }}
+                        >
+                          <ScheduleCell
+                            employeeId={employee.id}
+                            date={day}
+                            schedules={daySchedules}
+                            onVacation={onVacation}
+                            onUpdate={updateSchedule}
+                            onDelete={deleteSchedule}
+                            onCopy={handleCopySchedule}
+                            isInSelectionMode={hasCopiedSchedule && !onVacation}
+                            isSelected={isSelected}
+                          />
+                        </div>
                       </td>
                     );
                   })}
