@@ -58,23 +58,23 @@ export const ScheduleCell = ({
   const getCellContent = () => {
     if (onVacation) {
       return (
-        <div className="text-xs text-center p-2 bg-accent/20 rounded border-2 border-accent">
-          <div className="font-semibold text-accent-foreground">Vacaciones</div>
+        <div className="text-xs text-center p-1.5 bg-accent/20 rounded border-2 border-accent">
+          <div className="font-semibold text-accent-foreground text-[10px]">Vacaciones</div>
         </div>
       );
     }
 
     if (schedule?.is_day_off) {
       return (
-        <div className="text-xs text-center p-2 bg-muted rounded border border-border">
-          <div className="font-medium text-muted-foreground">Libre</div>
+        <div className="text-xs text-center p-1.5 bg-muted rounded border border-border">
+          <div className="font-medium text-muted-foreground text-[10px]">Libre</div>
         </div>
       );
     }
 
     if (schedule?.morning_start || schedule?.afternoon_start) {
       return (
-        <div className="text-xs p-2 bg-card rounded border border-border hover:border-primary transition-colors">
+        <div className="text-[10px] p-1.5 bg-card rounded border border-border hover:border-primary transition-colors">
           {schedule.morning_start && (
             <div className="font-medium">
               {schedule.morning_start} - {schedule.morning_end}
@@ -90,8 +90,8 @@ export const ScheduleCell = ({
     }
 
     return (
-      <div className="text-xs text-center p-2 bg-muted/50 rounded border border-dashed border-border hover:border-primary transition-colors">
-        <div className="text-muted-foreground">Sin horario</div>
+      <div className="text-xs text-center p-1.5 bg-muted/50 rounded border border-dashed border-border hover:border-primary transition-colors">
+        <div className="text-muted-foreground text-[10px]">-</div>
       </div>
     );
   };
@@ -105,7 +105,7 @@ export const ScheduleCell = ({
         {getCellContent()}
       </div>
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen && !onVacation} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>

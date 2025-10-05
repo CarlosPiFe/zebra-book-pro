@@ -200,14 +200,14 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="p-4 text-left font-semibold min-w-[150px] sticky left-0 bg-card z-10">
+                <th className="p-3 text-left font-semibold w-32 sticky left-0 bg-card z-10">
                   Empleado
                 </th>
                 {weekDays.map((day) => (
-                  <th key={day.toISOString()} className="p-4 text-center font-semibold min-w-[180px]">
-                    <div>{format(day, "EEEE", { locale: es })}</div>
-                    <div className="text-sm font-normal text-muted-foreground">
-                      {format(day, "d MMM yyyy", { locale: es })}
+                  <th key={day.toISOString()} className="p-2 text-center font-semibold w-28">
+                    <div className="text-sm">{format(day, "EEE", { locale: es })}</div>
+                    <div className="text-xs font-normal text-muted-foreground">
+                      {format(day, "d MMM", { locale: es })}
                     </div>
                   </th>
                 ))}
@@ -216,10 +216,10 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
             <tbody>
               {employees.map((employee) => (
                 <tr key={employee.id} className="border-b hover:bg-muted/50">
-                  <td className="p-4 sticky left-0 bg-card z-10">
-                    <div className="font-medium">{employee.name}</div>
+                  <td className="p-3 sticky left-0 bg-card z-10">
+                    <div className="font-medium text-sm">{employee.name}</div>
                     {employee.position && (
-                      <div className="text-sm text-muted-foreground">{employee.position}</div>
+                      <div className="text-xs text-muted-foreground">{employee.position}</div>
                     )}
                   </td>
                   {weekDays.map((day) => {
@@ -227,7 +227,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                     const schedule = getScheduleForDay(employee.id, day);
 
                     return (
-                      <td key={`${employee.id}-${day.toISOString()}`} className="p-2">
+                      <td key={`${employee.id}-${day.toISOString()}`} className="p-1">
                         <ScheduleCell
                           employeeId={employee.id}
                           date={day}
