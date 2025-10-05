@@ -86,12 +86,13 @@ export function TablesView({ businessId }: TablesViewProps) {
       if (tablesError) throw tablesError;
 
       // Get bookings for selected date and time
+      // Using > (not >=) so end time is exclusive - table is free exactly at end_time
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
         .select("*")
         .eq("booking_date", selectedDate)
         .lte("start_time", filterTime)
-        .gte("end_time", filterTime)
+        .gt("end_time", filterTime)
         .in("status", ["reserved", "occupied"]);
 
       if (bookingsError) throw bookingsError;
