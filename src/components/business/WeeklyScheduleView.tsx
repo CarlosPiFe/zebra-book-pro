@@ -253,24 +253,19 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 relative">
+      {/* Overlay cuando está en modo de pegar */}
+      {copiedSchedule && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40 pointer-events-none" />
+      )}
+      
+      <div className="flex items-center justify-between relative z-50">
         <div>
           <h2 className="text-3xl font-bold">Horarios Semanales</h2>
           <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
-          {copiedSchedule && copiedSchedule.selectedDates.length > 0 && (
-            <p className="text-sm text-primary mt-1">
-              {copiedSchedule.selectedDates.length} día(s) seleccionado(s)
-            </p>
-          )}
         </div>
 
         <div className="flex items-center gap-4">
-          {copiedSchedule && copiedSchedule.selectedDates.length > 0 && (
-            <Button onClick={handleApplySchedule} variant="default">
-              Aplicar horario
-            </Button>
-          )}
           <Button
             variant="outline"
             size="icon"
@@ -293,6 +288,35 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
           </Button>
         </div>
       </div>
+      
+      {/* Barra de acción para pegar horario */}
+      {copiedSchedule && (
+        <Card className="p-4 border-2 border-primary bg-primary/5 relative z-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-lg">Modo: Pegar Horario</h3>
+              <p className="text-sm text-muted-foreground">
+                {copiedSchedule.selectedDates.length > 0 
+                  ? `${copiedSchedule.selectedDates.length} día(s) seleccionado(s)`
+                  : "Haz clic en las casillas del empleado para seleccionar los días donde pegar el horario"}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setCopiedSchedule(null)}
+              >
+                Cancelar
+              </Button>
+              {copiedSchedule.selectedDates.length > 0 && (
+                <Button onClick={handleApplySchedule}>
+                  Aplicar a {copiedSchedule.selectedDates.length} día(s)
+                </Button>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
 
       {employees.length === 0 ? (
         <Card className="p-8 text-center">
@@ -301,7 +325,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
           </p>
         </Card>
       ) : (
-        <Card className="overflow-x-auto">
+        <Card className="overflow-x-auto relative z-50">
           <table className="w-full">
             <thead>
               <tr className="border-b">
@@ -337,10 +361,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                     return (
                       <td 
                         key={`${employee.id}-${day.toISOString()}`} 
-                        className={cn(
-                          "p-1",
-                          hasCopiedSchedule && !onVacation && "cursor-pointer"
-                        )}
+                        className="p-1"
                         onClick={() => {
                           if (hasCopiedSchedule && !onVacation) {
                             toggleDateSelection(day);

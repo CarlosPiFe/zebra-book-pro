@@ -198,8 +198,9 @@ export const ScheduleCell = ({
     <>
       <div
         className={cn(
-          "cursor-pointer",
-          isSelected && "bg-primary/20 rounded"
+          "cursor-pointer transition-all",
+          isSelected && "bg-primary/20 rounded ring-2 ring-primary",
+          isInSelectionMode && !isSelected && "hover:bg-primary/10 hover:ring-1 hover:ring-primary/50 rounded"
         )}
         onClick={(e) => {
           if (!onVacation && !isInSelectionMode) {
