@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Settings, Upload, X } from "lucide-react";
+import { Settings, Upload, X, ImagePlus } from "lucide-react";
 import { BusinessHours } from "./BusinessHours";
+import { cn } from "@/lib/utils";
 
 interface Business {
   id: string;
@@ -248,72 +249,108 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                 </p>
               </div>
 
-              {/* File Upload Option */}
-              <div className="space-y-2">
-                <Label htmlFor="image_file">Subir Archivo</Label>
-                <div className="flex gap-2">
-                  <Input
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* File Upload Option - Visual Box */}
+                <div className="space-y-2">
+                  <Label>Subir Archivo</Label>
+                  <input
                     ref={fileInputRef}
                     id="image_file"
                     type="file"
                     accept="image/png,image/jpeg,image/jpg,image/gif"
                     onChange={handleFileSelect}
-                    className="flex-1"
+                    className="hidden"
                     disabled={!!formData.image_url}
                   />
-                  {selectedFile && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleRemoveFile}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => !formData.image_url && fileInputRef.current?.click()}
+                    disabled={!!formData.image_url}
+                    className={cn(
+                      "relative w-full aspect-square rounded-lg border-2 border-dashed transition-all",
+                      "flex flex-col items-center justify-center gap-3 p-4",
+                      "hover:border-primary hover:bg-primary/5",
+                      formData.image_url ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
+                      selectedFile && "border-primary bg-primary/10"
+                    )}
+                  >
+                    {selectedFile ? (
+                      <>
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <img
+                            src={previewUrl}
+                            alt="Preview"
+                            className="max-w-full max-h-full object-contain rounded"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveFile();
+                            }}
+                            className="absolute top-2 right-2 h-8 w-8"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <ImagePlus className="h-12 w-12 text-muted-foreground" />
+                        <div className="text-center">
+                          <p className="font-medium text-sm">Subir imagen</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            PNG, JPG, GIF (máx. 5MB)
+                          </p>
+                        </div>
+                      </>
+                    )}
+                  </button>
                 </div>
-                {selectedFile && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    {selectedFile.name}
-                  </p>
-                )}
-              </div>
 
-              {/* URL Option */}
-              <div className="space-y-2">
-                <Label htmlFor="image_url">O introduce una URL</Label>
-                <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) => {
-                    setFormData({ ...formData, image_url: e.target.value });
-                    // Clear file selection when URL is entered
-                    if (e.target.value && selectedFile) {
-                      handleRemoveFile();
-                    }
-                  }}
-                  placeholder="https://ejemplo.com/imagen.jpg"
-                  disabled={!!selectedFile}
-                />
-              </div>
-
-              {/* Image Preview */}
-              {(previewUrl || formData.image_url) && (
+                {/* URL Option */}
                 <div className="space-y-2">
-                  <Label>Vista previa</Label>
-                  <div className="relative w-full h-48 rounded-lg overflow-hidden border border-border">
-                    <img
-                      src={previewUrl || formData.image_url}
-                      alt="Vista previa"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800';
+                  <Label htmlFor="image_url">O introduce una URL</Label>
+                  <div className="space-y-3">
+                    <Input
+                      id="image_url"
+                      value={formData.image_url}
+                      onChange={(e) => {
+                        setFormData({ ...formData, image_url: e.target.value });
+                        if (e.target.value && selectedFile) {
+                          handleRemoveFile();
+                        }
                       }}
+                      placeholder="https://ejemplo.com/imagen.jpg"
+                      disabled={!!selectedFile}
+                      className="w-full"
                     />
+                    {formData.image_url && !selectedFile && (
+                      <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-border">
+                        <img
+                          src={formData.image_url}
+                          alt="Vista previa URL"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?w=800';
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          onClick={() => setFormData({ ...formData, image_url: "" })}
+                          className="absolute top-2 right-2 h-8 w-8"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
+              </div>
             </div>
 
             <Button
