@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { TimePicker } from "@/components/ui/time-picker";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Copy } from "lucide-react";
 
 interface Schedule {
   id?: string;
@@ -32,6 +32,7 @@ interface ScheduleCellProps {
   onVacation: boolean;
   onUpdate: (schedule: Schedule) => void;
   onDelete: (scheduleId: string) => void;
+  onCopy?: (employeeId: string, date: Date, schedules: Schedule[]) => void;
 }
 
 export const ScheduleCell = ({
@@ -41,6 +42,7 @@ export const ScheduleCell = ({
   onVacation,
   onUpdate,
   onDelete,
+  onCopy,
 }: ScheduleCellProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -85,15 +87,19 @@ export const ScheduleCell = ({
     // If day off is set, delete all time slots and create/update day off entry
     if (isDayOff) {
       // Delete all existing time slot schedules
-      schedules.filter(s => !s.is_day_off && s.id).forEach(s => onDelete(s.id!));
+      const deletePromises = schedules
+        .filter(s => !s.is_day_off && s.id)
+        .map(s => onDelete(s.id!));
       
-      // Create or update day off schedule
-      onUpdate({
-        id: dayOffSchedule?.id,
-        employee_id: employeeId,
-        date: dateStr,
-        is_day_off: true,
-        slot_order: 1,
+      Promise.all(deletePromises).then(() => {
+        // Create or update day off schedule
+        onUpdate({
+          id: dayOffSchedule?.id,
+          employee_id: employeeId,
+          date: dateStr,
+          is_day_off: true,
+          slot_order: 1,
+        });
       });
     } else {
       // Delete day off schedule if it exists
@@ -101,20 +107,29 @@ export const ScheduleCell = ({
         onDelete(dayOffSchedule.id);
       }
 
-      // Save all time slots
-      slots.forEach((slot, index) => {
-        if (slot.start && slot.end) {
-          const existingSchedule = schedules.find(s => s.id === slot.id);
-          onUpdate({
-            id: slot.id,
-            employee_id: employeeId,
-            date: dateStr,
-            is_day_off: false,
-            start_time: slot.start,
-            end_time: slot.end,
-            slot_order: index + 1,
-          });
-        }
+      // Find slots to delete (existing slots not in current slots array)
+      const currentSlotIds = slots.filter(s => s.id).map(s => s.id!);
+      const slotsToDelete = schedules.filter(
+        s => !s.is_day_off && s.id && !currentSlotIds.includes(s.id)
+      );
+      
+      const deletePromises = slotsToDelete.map(s => onDelete(s.id!));
+      
+      Promise.all(deletePromises).then(() => {
+        // Save all time slots
+        slots.forEach((slot, index) => {
+          if (slot.start && slot.end) {
+            onUpdate({
+              id: slot.id,
+              employee_id: employeeId,
+              date: dateStr,
+              is_day_off: false,
+              start_time: slot.start,
+              end_time: slot.end,
+              slot_order: index + 1,
+            });
+          }
+        });
       });
     }
     
@@ -169,8 +184,21 @@ export const ScheduleCell = ({
       <Dialog open={isOpen && !onVacation} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              Horario - {format(date, "EEEE, d 'de' MMMM yyyy", { locale: es })}
+            <DialogTitle className="flex items-center justify-between">
+              <span>Horario - {format(date, "EEEE, d 'de' MMMM yyyy", { locale: es })}</span>
+              {timeSlots.length > 0 && onCopy && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onCopy(employeeId, date, schedules.filter(s => !s.is_day_off));
+                    setIsOpen(false);
+                  }}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copiar horario
+                </Button>
+              )}
             </DialogTitle>
           </DialogHeader>
 

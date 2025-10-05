@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { format, startOfWeek, addDays, addWeeks, subWeeks } from "date-fns";
 import { es } from "date-fns/locale";
 import { ScheduleCell } from "./ScheduleCell";
+import { cn } from "@/lib/utils";
 
 interface Employee {
   id: string;
@@ -35,6 +36,11 @@ interface WeeklyScheduleViewProps {
   businessId: string;
 }
 
+interface CopiedSchedule {
+  employeeId: string;
+  schedules: Schedule[];
+}
+
 export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -43,6 +49,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(
     startOfWeek(new Date(), { weekStartsOn: 1 }) // Lunes
   );
+  const [copiedSchedule, setCopiedSchedule] = useState<CopiedSchedule | null>(null);
 
   useEffect(() => {
     loadData();
@@ -160,10 +167,55 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
 
       if (error) throw error;
       toast.success("Tramo eliminado");
-      loadSchedules();
+      await loadSchedules(); // Wait for reload to complete
     } catch (error) {
       console.error("Error deleting schedule:", error);
       toast.error("Error al eliminar tramo");
+    }
+  };
+
+  const handleCopySchedule = (employeeId: string, date: Date, schedulesToCopy: Schedule[]) => {
+    setCopiedSchedule({
+      employeeId,
+      schedules: schedulesToCopy,
+    });
+    toast.success("Horario copiado. Haz clic en otro día para pegarlo.");
+  };
+
+  const handlePasteSchedule = async (targetDate: Date) => {
+    if (!copiedSchedule) return;
+
+    try {
+      const dateStr = format(targetDate, "yyyy-MM-dd");
+      
+      // Delete existing schedules for this day
+      const existingSchedules = schedules.filter(
+        s => s.employee_id === copiedSchedule.employeeId && s.date === dateStr
+      );
+      
+      for (const schedule of existingSchedules) {
+        if (schedule.id) {
+          await deleteSchedule(schedule.id);
+        }
+      }
+
+      // Copy schedules to new day
+      for (const schedule of copiedSchedule.schedules) {
+        await updateSchedule({
+          employee_id: copiedSchedule.employeeId,
+          date: dateStr,
+          is_day_off: false,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          slot_order: schedule.slot_order,
+        });
+      }
+
+      toast.success("Horario pegado correctamente");
+      setCopiedSchedule(null);
+    } catch (error) {
+      console.error("Error pasting schedule:", error);
+      toast.error("Error al pegar horario");
     }
   };
 
@@ -248,9 +300,22 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                   {weekDays.map((day) => {
                     const onVacation = isOnVacation(employee.id, day);
                     const daySchedules = getSchedulesForDay(employee.id, day);
+                    const hasCopiedSchedule = copiedSchedule?.employeeId === employee.id;
+                    const dateStr = format(day, "yyyy-MM-dd");
 
                     return (
-                      <td key={`${employee.id}-${day.toISOString()}`} className="p-1">
+                      <td 
+                        key={`${employee.id}-${day.toISOString()}`} 
+                        className={cn(
+                          "p-1",
+                          hasCopiedSchedule && !onVacation && "bg-accent/10 cursor-pointer"
+                        )}
+                        onClick={() => {
+                          if (hasCopiedSchedule && !onVacation) {
+                            handlePasteSchedule(day);
+                          }
+                        }}
+                      >
                         <ScheduleCell
                           employeeId={employee.id}
                           date={day}
@@ -258,6 +323,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                           onVacation={onVacation}
                           onUpdate={updateSchedule}
                           onDelete={deleteSchedule}
+                          onCopy={handleCopySchedule}
                         />
                       </td>
                     );

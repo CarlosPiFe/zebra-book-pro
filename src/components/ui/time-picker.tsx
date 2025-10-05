@@ -2,6 +2,7 @@ import * as React from "react";
 import { Clock, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -21,35 +22,69 @@ export function TimePicker({ time, onTimeChange, placeholder = "Seleccionar hora
   const minutes = ['00', '15', '30', '45'];
 
   const [selectedHour, selectedMinute] = time ? time.split(':') : ['', ''];
+  const [inputValue, setInputValue] = React.useState(time || '');
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    setInputValue(time || '');
+  }, [time]);
 
   const handleTimeSelect = (hour: string, minute: string) => {
-    onTimeChange(`${hour}:${minute}`);
+    const newTime = `${hour}:${minute}`;
+    onTimeChange(newTime);
+    setInputValue(newTime);
+    setIsOpen(false);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+    
+    // Validate time format HH:MM
+    if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
+      onTimeChange(value);
+    }
   };
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation();
     onTimeChange('');
+    setInputValue('');
   };
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !time && "text-muted-foreground"
-          )}
-        >
-          <Clock className="mr-2 h-4 w-4" />
-          <span className="flex-1">{time || placeholder}</span>
-          {allowClear && time && (
-            <X 
-              className="h-4 w-4 ml-2 hover:text-destructive" 
-              onClick={handleClear}
-            />
-          )}
-        </Button>
+        <div className="relative">
+          <Input
+            value={inputValue}
+            onChange={handleInputChange}
+            placeholder={placeholder}
+            className={cn("pr-20", !time && "text-muted-foreground")}
+          />
+          <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {allowClear && time && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={handleClear}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0"
+              onClick={() => setIsOpen(!isOpen)}
+            >
+              <Clock className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
         <div className="flex">
