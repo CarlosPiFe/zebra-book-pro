@@ -267,8 +267,8 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                     onClick={() => !formData.image_url && fileInputRef.current?.click()}
                     disabled={!!formData.image_url}
                     className={cn(
-                      "relative w-full aspect-square rounded-lg border-2 border-dashed transition-all",
-                      "flex flex-col items-center justify-center gap-3 p-4",
+                      "relative w-full h-40 rounded-lg border-2 border-dashed transition-all",
+                      "flex flex-col items-center justify-center gap-2 p-4",
                       "hover:border-primary hover:bg-primary/5",
                       formData.image_url ? "opacity-50 cursor-not-allowed" : "cursor-pointer",
                       selectedFile && "border-primary bg-primary/10"
@@ -290,15 +290,15 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                               e.stopPropagation();
                               handleRemoveFile();
                             }}
-                            className="absolute top-2 right-2 h-8 w-8"
+                            className="absolute top-1 right-1 h-7 w-7"
                           >
-                            <X className="h-4 w-4" />
+                            <X className="h-3 w-3" />
                           </Button>
                         </div>
                       </>
                     ) : (
                       <>
-                        <ImagePlus className="h-12 w-12 text-muted-foreground" />
+                        <ImagePlus className="h-8 w-8 text-muted-foreground" />
                         <div className="text-center">
                           <p className="font-medium text-sm">Subir imagen</p>
                           <p className="text-xs text-muted-foreground mt-1">
@@ -328,7 +328,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                       className="w-full"
                     />
                     {formData.image_url && !selectedFile && (
-                      <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-border">
+                      <div className="relative w-full h-40 rounded-lg overflow-hidden border border-border">
                         <img
                           src={formData.image_url}
                           alt="Vista previa URL"
@@ -342,9 +342,9 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                           variant="destructive"
                           size="icon"
                           onClick={() => setFormData({ ...formData, image_url: "" })}
-                          className="absolute top-2 right-2 h-8 w-8"
+                          className="absolute top-1 right-1 h-7 w-7"
                         >
-                          <X className="h-4 w-4" />
+                          <X className="h-3 w-3" />
                         </Button>
                       </div>
                     )}
