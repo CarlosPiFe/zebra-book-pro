@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Settings } from "lucide-react";
+import { BusinessHours } from "./BusinessHours";
 
 interface Business {
   id: string;
@@ -72,6 +73,8 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
           Gestiona la información y configuración de tu negocio
         </p>
       </div>
+
+      <BusinessHours businessId={business.id} />
 
       <Card>
         <CardHeader>
