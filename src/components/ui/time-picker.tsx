@@ -37,12 +37,28 @@ export function TimePicker({ time, onTimeChange, placeholder = "Seleccionar hora
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setInputValue(value);
+    let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
     
-    // Validate time format HH:MM
-    if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(value)) {
-      onTimeChange(value);
+    // Auto-format: if 4 digits entered, format as HH:MM
+    if (value.length === 4) {
+      const hours = value.substring(0, 2);
+      const minutes = value.substring(2, 4);
+      const formattedTime = `${hours}:${minutes}`;
+      
+      // Validate the formatted time
+      if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(formattedTime)) {
+        setInputValue(formattedTime);
+        onTimeChange(formattedTime);
+        return;
+      }
+    }
+    
+    // Allow partial input or already formatted input
+    if (value.length <= 4) {
+      setInputValue(value);
+    } else if (/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(e.target.value)) {
+      setInputValue(e.target.value);
+      onTimeChange(e.target.value);
     }
   };
 

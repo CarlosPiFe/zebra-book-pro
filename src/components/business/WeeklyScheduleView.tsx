@@ -39,6 +39,7 @@ interface WeeklyScheduleViewProps {
 interface CopiedSchedule {
   employeeId: string;
   schedules: Schedule[];
+  selectedDates: string[]; // Array of date strings in yyyy-MM-dd format
 }
 
 export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
@@ -178,44 +179,63 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
     setCopiedSchedule({
       employeeId,
       schedules: schedulesToCopy,
+      selectedDates: [],
     });
-    toast.success("Horario copiado. Haz clic en otro día para pegarlo.");
+    toast.success("Horario copiado. Selecciona los días donde quieres pegarlo.");
   };
 
-  const handlePasteSchedule = async (targetDate: Date) => {
+  const toggleDateSelection = (date: Date) => {
     if (!copiedSchedule) return;
+    
+    const dateStr = format(date, "yyyy-MM-dd");
+    const isSelected = copiedSchedule.selectedDates.includes(dateStr);
+    
+    setCopiedSchedule({
+      ...copiedSchedule,
+      selectedDates: isSelected
+        ? copiedSchedule.selectedDates.filter(d => d !== dateStr)
+        : [...copiedSchedule.selectedDates, dateStr],
+    });
+  };
+
+  const handleApplySchedule = async () => {
+    if (!copiedSchedule || copiedSchedule.selectedDates.length === 0) {
+      toast.error("Selecciona al menos un día");
+      return;
+    }
 
     try {
-      const dateStr = format(targetDate, "yyyy-MM-dd");
-      
-      // Delete existing schedules for this day
-      const existingSchedules = schedules.filter(
-        s => s.employee_id === copiedSchedule.employeeId && s.date === dateStr
-      );
-      
-      for (const schedule of existingSchedules) {
-        if (schedule.id) {
-          await deleteSchedule(schedule.id);
+      // Apply schedule to all selected dates
+      for (const dateStr of copiedSchedule.selectedDates) {
+        // Delete existing schedules for this day
+        const existingSchedules = schedules.filter(
+          s => s.employee_id === copiedSchedule.employeeId && s.date === dateStr
+        );
+        
+        for (const schedule of existingSchedules) {
+          if (schedule.id) {
+            await deleteSchedule(schedule.id);
+          }
+        }
+
+        // Copy schedules to new day
+        for (const schedule of copiedSchedule.schedules) {
+          await updateSchedule({
+            employee_id: copiedSchedule.employeeId,
+            date: dateStr,
+            is_day_off: false,
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+            slot_order: schedule.slot_order,
+          });
         }
       }
 
-      // Copy schedules to new day
-      for (const schedule of copiedSchedule.schedules) {
-        await updateSchedule({
-          employee_id: copiedSchedule.employeeId,
-          date: dateStr,
-          is_day_off: false,
-          start_time: schedule.start_time,
-          end_time: schedule.end_time,
-          slot_order: schedule.slot_order,
-        });
-      }
-
-      toast.success("Horario pegado correctamente");
+      toast.success(`Horario aplicado a ${copiedSchedule.selectedDates.length} día(s)`);
       setCopiedSchedule(null);
     } catch (error) {
-      console.error("Error pasting schedule:", error);
-      toast.error("Error al pegar horario");
+      console.error("Error applying schedule:", error);
+      toast.error("Error al aplicar horario");
     }
   };
 
@@ -238,9 +258,19 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
         <div>
           <h2 className="text-3xl font-bold">Horarios Semanales</h2>
           <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
+          {copiedSchedule && copiedSchedule.selectedDates.length > 0 && (
+            <p className="text-sm text-primary mt-1">
+              {copiedSchedule.selectedDates.length} día(s) seleccionado(s)
+            </p>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
+          {copiedSchedule && copiedSchedule.selectedDates.length > 0 && (
+            <Button onClick={handleApplySchedule} variant="default">
+              Aplicar horario
+            </Button>
+          )}
           <Button
             variant="outline"
             size="icon"
@@ -302,17 +332,19 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                     const daySchedules = getSchedulesForDay(employee.id, day);
                     const hasCopiedSchedule = copiedSchedule?.employeeId === employee.id;
                     const dateStr = format(day, "yyyy-MM-dd");
+                    const isSelected = copiedSchedule?.selectedDates.includes(dateStr);
 
                     return (
                       <td 
                         key={`${employee.id}-${day.toISOString()}`} 
                         className={cn(
                           "p-1",
-                          hasCopiedSchedule && !onVacation && "bg-accent/10 cursor-pointer"
+                          hasCopiedSchedule && !onVacation && "cursor-pointer",
+                          isSelected && "bg-primary/20"
                         )}
                         onClick={() => {
                           if (hasCopiedSchedule && !onVacation) {
-                            handlePasteSchedule(day);
+                            toggleDateSelection(day);
                           }
                         }}
                       >
@@ -324,6 +356,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                           onUpdate={updateSchedule}
                           onDelete={deleteSchedule}
                           onCopy={handleCopySchedule}
+                          isInSelectionMode={hasCopiedSchedule && !onVacation}
                         />
                       </td>
                     );

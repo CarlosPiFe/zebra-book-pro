@@ -33,6 +33,7 @@ interface ScheduleCellProps {
   onUpdate: (schedule: Schedule) => void;
   onDelete: (scheduleId: string) => void;
   onCopy?: (employeeId: string, date: Date, schedules: Schedule[]) => void;
+  isInSelectionMode?: boolean;
 }
 
 export const ScheduleCell = ({
@@ -43,6 +44,7 @@ export const ScheduleCell = ({
   onUpdate,
   onDelete,
   onCopy,
+  isInSelectionMode = false,
 }: ScheduleCellProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -176,12 +178,17 @@ export const ScheduleCell = ({
     <>
       <div
         className="cursor-pointer"
-        onClick={() => !onVacation && setIsOpen(true)}
+        onClick={(e) => {
+          if (!onVacation && !isInSelectionMode) {
+            e.stopPropagation();
+            setIsOpen(true);
+          }
+        }}
       >
         {getCellContent()}
       </div>
 
-      <Dialog open={isOpen && !onVacation} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen && !onVacation && !isInSelectionMode} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
