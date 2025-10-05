@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -27,7 +27,6 @@ interface Business {
 const ManageBusiness = () => {
   const { businessId } = useParams();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [business, setBusiness] = useState<Business | null>(null);
   const [activeView, setActiveView] = useState("calendar");
   const [loading, setLoading] = useState(true);
@@ -35,14 +34,6 @@ const ManageBusiness = () => {
   useEffect(() => {
     loadBusiness();
   }, [businessId]);
-
-  useEffect(() => {
-    // Read view from URL params
-    const view = searchParams.get("view");
-    if (view) {
-      setActiveView(view);
-    }
-  }, [searchParams]);
 
   const loadBusiness = async () => {
     try {
@@ -91,10 +82,6 @@ const ManageBusiness = () => {
       case "menu":
         return <MenuView businessId={business.id} />;
       case "employees":
-        const tab = searchParams.get("tab");
-        if (tab === "schedule") {
-          return <WeeklyScheduleView businessId={business.id} />;
-        }
         return <EmployeesView businessId={business.id} />;
       case "schedules":
         return <WeeklyScheduleView businessId={business.id} />;

@@ -181,47 +181,6 @@ export type Database = {
           },
         ]
       }
-      calendar_events: {
-        Row: {
-          business_id: string
-          created_at: string
-          description: string | null
-          event_date: string
-          event_time: string | null
-          id: string
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          business_id: string
-          created_at?: string
-          description?: string | null
-          event_date: string
-          event_time?: string | null
-          id?: string
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          business_id?: string
-          created_at?: string
-          description?: string | null
-          event_date?: string
-          event_time?: string | null
-          id?: string
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "calendar_events_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       employee_schedules: {
         Row: {
           created_at: string
