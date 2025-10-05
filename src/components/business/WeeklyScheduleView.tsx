@@ -209,30 +209,38 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
       for (const dateStr of copiedSchedule.selectedDates) {
         // Delete existing schedules for this day
         const existingSchedules = schedules.filter(
-          s => s.employee_id === copiedSchedule.employeeId && s.date === dateStr
+          s => s.employee_id === copiedSchedule.employeeId && s.date === dateStr && s.id
         );
         
-        for (const schedule of existingSchedules) {
-          if (schedule.id) {
-            await deleteSchedule(schedule.id);
-          }
+        if (existingSchedules.length > 0) {
+          const { error: deleteError } = await supabase
+            .from("employee_weekly_schedules")
+            .delete()
+            .in('id', existingSchedules.map(s => s.id!));
+          
+          if (deleteError) throw deleteError;
         }
 
-        // Copy schedules to new day
-        for (const schedule of copiedSchedule.schedules) {
-          await updateSchedule({
-            employee_id: copiedSchedule.employeeId,
-            date: dateStr,
-            is_day_off: false,
-            start_time: schedule.start_time,
-            end_time: schedule.end_time,
-            slot_order: schedule.slot_order,
-          });
-        }
+        // Insert new schedules for this day
+        const newSchedules = copiedSchedule.schedules.map((schedule, index) => ({
+          employee_id: copiedSchedule.employeeId,
+          date: dateStr,
+          is_day_off: false,
+          start_time: schedule.start_time,
+          end_time: schedule.end_time,
+          slot_order: index + 1,
+        }));
+
+        const { error: insertError } = await supabase
+          .from("employee_weekly_schedules")
+          .insert(newSchedules);
+        
+        if (insertError) throw insertError;
       }
 
       toast.success(`Horario aplicado a ${copiedSchedule.selectedDates.length} día(s)`);
       setCopiedSchedule(null);
+      await loadSchedules(); // Reload schedules after all operations
     } catch (error) {
       console.error("Error applying schedule:", error);
       toast.error("Error al aplicar horario");
