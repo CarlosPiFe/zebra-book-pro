@@ -212,6 +212,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
       setVacationDateRange(undefined);
       setNewVacationNotes("");
       loadVacations(selectedEmployee.id);
+      loadEmployees(); // Refresh employee list to update vacation count
     } catch (error) {
       console.error("Error adding vacation:", error);
       toast.error("Error al añadir vacaciones");
@@ -231,6 +232,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
 
       toast.success("Vacaciones eliminadas");
       loadVacations(selectedEmployee.id);
+      loadEmployees(); // Refresh employee list to update vacation count
     } catch (error) {
       console.error("Error deleting vacation:", error);
       toast.error("Error al eliminar vacaciones");
