@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CalendarViewProps {
   businessId: string;
@@ -15,12 +16,57 @@ const MONTHS = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
-// Example closed days (business can configure these)
-const CLOSED_DAYS = [0]; // Sunday = 0
-
 export function CalendarView({ businessId }: CalendarViewProps) {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [openDays, setOpenDays] = useState<number[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadBusinessHours();
+  }, [businessId]);
+
+  useEffect(() => {
+    // Subscribe to realtime changes in availability_slots
+    const channel = supabase
+      .channel('availability-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'availability_slots',
+          filter: `business_id=eq.${businessId}`
+        },
+        () => {
+          loadBusinessHours();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [businessId]);
+
+  const loadBusinessHours = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("availability_slots")
+        .select("day_of_week")
+        .eq("business_id", businessId);
+
+      if (error) throw error;
+
+      // Get unique days that are open
+      const uniqueOpenDays = [...new Set(data?.map(slot => slot.day_of_week) || [])];
+      setOpenDays(uniqueOpenDays);
+    } catch (error) {
+      console.error("Error loading business hours:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
   
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -54,8 +100,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
     const date = new Date(year, month, day);
     const dayOfWeek = date.getDay();
     
-    // Check if it's a closed day
-    if (CLOSED_DAYS.includes(dayOfWeek)) {
+    // Check if it's a closed day (not in openDays)
+    if (!openDays.includes(dayOfWeek)) {
       return;
     }
 
@@ -66,7 +112,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
 
   const isClosedDay = (day: number) => {
     const date = new Date(year, month, day);
-    return CLOSED_DAYS.includes(date.getDay());
+    const dayOfWeek = date.getDay();
+    return !openDays.includes(dayOfWeek);
   };
 
   const isToday = (day: number) => {
@@ -89,6 +136,19 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   // Add actual days
   for (let day = 1; day <= daysInMonth; day++) {
     calendarDays.push(day);
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Calendario</h1>
+          <p className="text-muted-foreground">
+            Cargando horarios del negocio...
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
