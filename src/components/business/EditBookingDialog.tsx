@@ -19,6 +19,7 @@ import { z } from "zod";
 import { toMadridTime } from "@/lib/timezone";
 import { format, parse, addMinutes } from "date-fns";
 import { Info } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const bookingSchema = z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -75,6 +76,8 @@ export function EditBookingDialog({
   const [endTime, setEndTime] = useState(booking.end_time.substring(0, 5));
   const [partySize, setPartySize] = useState(booking.party_size.toString());
   const [notes, setNotes] = useState(booking.notes || "");
+  const [selectedTableId, setSelectedTableId] = useState<string>(booking.table_id || "auto");
+  const [tables, setTables] = useState<Array<{ id: string; table_number: number; max_capacity: number; isAvailable: boolean }>>([]);
 
   useEffect(() => {
     if (open) {
@@ -91,6 +94,7 @@ export function EditBookingDialog({
       setCustomEndTime(true); // Las reservas existentes tienen hora personalizada
       setPartySize(booking.party_size.toString());
       setNotes(booking.notes || "");
+      setSelectedTableId(booking.table_id || "auto");
 
       // Load business slot duration
       const loadBusinessSettings = async () => {
@@ -108,6 +112,55 @@ export function EditBookingDialog({
       loadBusinessSettings();
     }
   }, [open, booking, businessId]);
+
+  // Load available tables when date/time changes
+  useEffect(() => {
+    if (open && bookingDate && startTime && endTime) {
+      loadAvailableTables();
+    }
+  }, [open, bookingDate, startTime, endTime]);
+
+  const loadAvailableTables = async () => {
+    try {
+      const madridDate = toMadridTime(bookingDate!);
+      const dateString = format(madridDate, "yyyy-MM-dd");
+
+      // Get all tables
+      const { data: allTables, error: tablesError } = await supabase
+        .from("tables")
+        .select("*")
+        .eq("business_id", businessId)
+        .order("table_number", { ascending: true });
+
+      if (tablesError) throw tablesError;
+
+      // Get occupied tables for this time slot (excluding current booking)
+      const { data: existingBookings, error: bookingsError } = await supabase
+        .from("bookings")
+        .select("table_id")
+        .eq("booking_date", dateString)
+        .neq("status", "cancelled")
+        .neq("id", booking.id)
+        .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
+
+      if (bookingsError) throw bookingsError;
+
+      const occupiedTableIds = new Set(
+        existingBookings?.map((b) => b.table_id) || []
+      );
+
+      const tablesWithAvailability = allTables?.map((table) => ({
+        id: table.id,
+        table_number: table.table_number,
+        max_capacity: table.max_capacity,
+        isAvailable: !occupiedTableIds.has(table.id),
+      })) || [];
+
+      setTables(tablesWithAvailability);
+    } catch (error) {
+      console.error("Error loading tables:", error);
+    }
+  };
 
   // Auto-calculate end time when start time changes (only if not custom)
   useEffect(() => {
@@ -204,13 +257,32 @@ export function EditBookingDialog({
       const madridDate = toMadridTime(formData.booking_date);
       const dateString = format(madridDate, "yyyy-MM-dd");
 
-      const { tableId, status } = await findAvailableTable(
-        dateString,
-        formData.start_time,
-        formData.end_time,
-        formData.party_size,
-        booking.id
-      );
+      let tableId: string | null;
+      let status: "reserved" | "pending";
+
+      // Check if manual table selection was made
+      if (selectedTableId !== "auto") {
+        // Verify the selected table is still available
+        const selectedTable = tables.find(t => t.id === selectedTableId);
+        if (selectedTable && selectedTable.isAvailable) {
+          tableId = selectedTableId;
+          status = "reserved";
+        } else {
+          toast.error("La mesa seleccionada ya no está disponible");
+          return;
+        }
+      } else {
+        // Use automatic assignment
+        const result = await findAvailableTable(
+          dateString,
+          formData.start_time,
+          formData.end_time,
+          formData.party_size,
+          booking.id
+        );
+        tableId = result.tableId;
+        status = result.status;
+      }
 
       const { error: updateError } = await supabase
         .from("bookings")
@@ -230,8 +302,10 @@ export function EditBookingDialog({
 
       if (updateError) throw updateError;
 
-      if (status === "reserved") {
-        toast.success("Reserva actualizada y mesa asignada");
+      if (selectedTableId !== "auto") {
+        toast.success("Reserva actualizada con mesa asignada manualmente");
+      } else if (status === "reserved") {
+        toast.success("Reserva actualizada y mesa asignada automáticamente");
       } else {
         toast.warning("Reserva actualizada como pendiente - sin mesas disponibles");
       }
@@ -384,6 +458,50 @@ export function EditBookingDialog({
                   </Button>
                 )}
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="table_id">Mesa</Label>
+              <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Asignación automática" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Asignación automática</SelectItem>
+                  {tables.length > 0 && (
+                    <>
+                      {tables.filter(t => t.isAvailable).length > 0 && (
+                        <>
+                          <SelectItem value="divider-available" disabled className="text-xs font-semibold text-muted-foreground">
+                            Mesas disponibles
+                          </SelectItem>
+                          {tables.filter(t => t.isAvailable).map((table) => (
+                            <SelectItem key={table.id} value={table.id}>
+                              Mesa {table.table_number} (capacidad: {table.max_capacity})
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                      {tables.filter(t => !t.isAvailable).length > 0 && (
+                        <>
+                          <SelectItem value="divider-occupied" disabled className="text-xs font-semibold text-muted-foreground">
+                            Mesas ocupadas
+                          </SelectItem>
+                          {tables.filter(t => !t.isAvailable).map((table) => (
+                            <SelectItem key={table.id} value={table.id} disabled>
+                              Mesa {table.table_number} (ocupada)
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Info className="h-3 w-3" />
+                Puedes cambiar la mesa manualmente o dejar que el sistema la asigne
+              </p>
             </div>
 
             <div className="space-y-2">
