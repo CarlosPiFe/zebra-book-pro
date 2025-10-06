@@ -56,6 +56,7 @@ export type Database = {
         Row: {
           booking_date: string
           business_id: string
+          business_phone: string | null
           client_email: string | null
           client_id: string | null
           client_name: string | null
@@ -73,6 +74,7 @@ export type Database = {
         Insert: {
           booking_date: string
           business_id: string
+          business_phone?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
@@ -90,6 +92,7 @@ export type Database = {
         Update: {
           booking_date?: string
           business_id?: string
+          business_phone?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string | null
