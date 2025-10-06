@@ -24,14 +24,16 @@ import { z } from "zod";
 import { toMadridTime } from "@/lib/timezone";
 import { format } from "date-fns";
 
-const bookingSchema = z.object({
+const createBookingSchema = (isHospitality: boolean) => z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
   client_email: z.string().trim().email("Email inválido").max(255).optional().or(z.literal("")),
   client_phone: z.string().trim().max(20).optional().or(z.literal("")),
   booking_date: z.date(),
   start_time: z.string().regex(/^\d{2}:\d{2}$/, "Formato de hora inválido"),
   end_time: z.string().regex(/^\d{2}:\d{2}$/, "Formato de hora inválido"),
-  party_size: z.number().min(1, "Mínimo 1 persona").max(50),
+  party_size: isHospitality 
+    ? z.number().min(1, "Mínimo 1 persona").max(50) 
+    : z.number().optional(),
   notes: z.string().max(500).optional().or(z.literal("")),
 });
 
@@ -42,12 +44,14 @@ interface CreateBookingDialogProps {
 
 interface Business {
   booking_slot_duration_minutes: number;
+  category: string;
 }
 
 export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBookingDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [slotDuration, setSlotDuration] = useState(60);
+  const [businessCategory, setBusinessCategory] = useState("");
   
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -61,17 +65,18 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [selectedTableId, setSelectedTableId] = useState<string>("auto");
   const [tables, setTables] = useState<Array<{ id: string; table_number: number; max_capacity: number; isAvailable: boolean }>>([]);
 
-  // Load business slot duration
+  // Load business slot duration and category
   useEffect(() => {
     const loadBusinessSettings = async () => {
       const { data, error } = await supabase
         .from("businesses")
-        .select("booking_slot_duration_minutes")
+        .select("booking_slot_duration_minutes, category")
         .eq("id", businessId)
         .single();
 
       if (!error && data) {
         setSlotDuration(data.booking_slot_duration_minutes);
+        setBusinessCategory(data.category);
       }
     };
 
@@ -224,7 +229,10 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     try {
       setLoading(true);
 
+      const isHospitality = businessCategory === "Restaurante" || businessCategory === "Bar";
+
       // Validate form data
+      const bookingSchema = createBookingSchema(isHospitality);
       const formData = bookingSchema.parse({
         client_name: clientName,
         client_email: clientEmail || undefined,
@@ -232,7 +240,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         booking_date: bookingDate,
         start_time: startTime,
         end_time: endTime,
-        party_size: parseInt(partySize),
+        party_size: isHospitality ? parseInt(partySize) : undefined,
         notes: notes || undefined,
       });
 
@@ -240,30 +248,33 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
       const madridDate = toMadridTime(formData.booking_date);
       const dateString = format(madridDate, "yyyy-MM-dd");
 
-      let tableId: string | null;
-      let status: "reserved" | "pending";
+      let tableId: string | null = null;
+      let status: "reserved" | "pending" = "reserved";
 
-      // Check if manual table selection was made
-      if (selectedTableId !== "auto") {
-        // Verify the selected table is still available
-        const selectedTable = tables.find(t => t.id === selectedTableId);
-        if (selectedTable && selectedTable.isAvailable) {
-          tableId = selectedTableId;
-          status = "reserved";
+      // Only handle table assignment for hospitality businesses
+      if (isHospitality) {
+        // Check if manual table selection was made
+        if (selectedTableId !== "auto") {
+          // Verify the selected table is still available
+          const selectedTable = tables.find(t => t.id === selectedTableId);
+          if (selectedTable && selectedTable.isAvailable) {
+            tableId = selectedTableId;
+            status = "reserved";
+          } else {
+            toast.error("La mesa seleccionada ya no está disponible");
+            return;
+          }
         } else {
-          toast.error("La mesa seleccionada ya no está disponible");
-          return;
+          // Use automatic assignment
+          const result = await findAvailableTable(
+            dateString,
+            formData.start_time,
+            formData.end_time,
+            formData.party_size || 1
+          );
+          tableId = result.tableId;
+          status = result.status;
         }
-      } else {
-        // Use automatic assignment
-        const result = await findAvailableTable(
-          dateString,
-          formData.start_time,
-          formData.end_time,
-          formData.party_size
-        );
-        tableId = result.tableId;
-        status = result.status;
       }
 
       // Create booking
@@ -275,7 +286,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         booking_date: dateString,
         start_time: formData.start_time,
         end_time: formData.end_time,
-        party_size: formData.party_size,
+        party_size: formData.party_size || null,
         notes: formData.notes || null,
         table_id: tableId,
         status: status,
@@ -336,18 +347,20 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 />
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="party_size">Número de personas *</Label>
-                <Input
-                  id="party_size"
-                  type="number"
-                  min="1"
-                  max="50"
-                  value={partySize}
-                  onChange={(e) => setPartySize(e.target.value)}
-                  required
-                />
-              </div>
+              {(businessCategory === "Restaurante" || businessCategory === "Bar") && (
+                <div className="space-y-2">
+                  <Label htmlFor="party_size">Número de personas *</Label>
+                  <Input
+                    id="party_size"
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={partySize}
+                    onChange={(e) => setPartySize(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -425,51 +438,53 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="table_id">Mesa (opcional)</Label>
-              <Select value={selectedTableId} onValueChange={setSelectedTableId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Asignación automática" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="auto">Asignación automática</SelectItem>
-                  {tables.length > 0 && (
-                    <>
-                      {tables.filter(t => t.isAvailable).length > 0 && (
-                        <>
-                          <SelectItem value="divider-available" disabled className="text-xs font-semibold text-muted-foreground">
-                            Mesas disponibles
-                          </SelectItem>
-                          {tables.filter(t => t.isAvailable).map((table) => (
-                            <SelectItem key={table.id} value={table.id}>
-                              Mesa {table.table_number} (capacidad: {table.max_capacity})
+            {(businessCategory === "Restaurante" || businessCategory === "Bar") && (
+              <div className="space-y-2">
+                <Label htmlFor="table_id">Mesa (opcional)</Label>
+                <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Asignación automática" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Asignación automática</SelectItem>
+                    {tables.length > 0 && (
+                      <>
+                        {tables.filter(t => t.isAvailable).length > 0 && (
+                          <>
+                            <SelectItem value="divider-available" disabled className="text-xs font-semibold text-muted-foreground">
+                              Mesas disponibles
                             </SelectItem>
-                          ))}
-                        </>
-                      )}
-                      {tables.filter(t => !t.isAvailable).length > 0 && (
-                        <>
-                          <SelectItem value="divider-occupied" disabled className="text-xs font-semibold text-muted-foreground">
-                            Mesas ocupadas
-                          </SelectItem>
-                          {tables.filter(t => !t.isAvailable).map((table) => (
-                            <SelectItem key={table.id} value={table.id} disabled>
-                              Mesa {table.table_number} (ocupada)
+                            {tables.filter(t => t.isAvailable).map((table) => (
+                              <SelectItem key={table.id} value={table.id}>
+                                Mesa {table.table_number} (capacidad: {table.max_capacity})
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                        {tables.filter(t => !t.isAvailable).length > 0 && (
+                          <>
+                            <SelectItem value="divider-occupied" disabled className="text-xs font-semibold text-muted-foreground">
+                              Mesas ocupadas
                             </SelectItem>
-                          ))}
-                        </>
-                      )}
-                    </>
-                  )}
-                </SelectContent>
-              </Select>
-              {tables.length === 0 && startTime && endTime && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Info className="h-3 w-3" />
-                  Selecciona fecha y hora para ver mesas disponibles
-                </p>
-              )}
-            </div>
+                            {tables.filter(t => !t.isAvailable).map((table) => (
+                              <SelectItem key={table.id} value={table.id} disabled>
+                                Mesa {table.table_number} (ocupada)
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
+                {tables.length === 0 && startTime && endTime && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Selecciona fecha y hora para ver mesas disponibles
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="notes">Observaciones</Label>
