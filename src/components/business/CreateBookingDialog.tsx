@@ -65,8 +65,10 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [selectedTableId, setSelectedTableId] = useState<string>("auto");
   const [tables, setTables] = useState<Array<{ id: string; table_number: number; max_capacity: number; isAvailable: boolean }>>([]);
 
-  // Load business slot duration and category
+  // Load business slot duration and category when dialog opens
   useEffect(() => {
+    if (!open) return;
+    
     const loadBusinessSettings = async () => {
       const { data, error } = await supabase
         .from("businesses")
@@ -81,7 +83,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     };
 
     loadBusinessSettings();
-  }, [businessId]);
+  }, [businessId, open]);
 
   // Auto-calculate end time when start time changes (only if not custom)
   useEffect(() => {
