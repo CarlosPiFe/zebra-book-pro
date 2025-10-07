@@ -59,13 +59,13 @@ export type Database = {
           business_phone: string | null
           client_email: string | null
           client_id: string | null
-          client_name: string | null
-          client_phone: string | null
+          client_name: string
+          client_phone: string
           created_at: string
           end_time: string
           id: string
           notes: string | null
-          party_size: number | null
+          party_size: number
           start_time: string
           status: string
           table_id: string | null
@@ -77,13 +77,13 @@ export type Database = {
           business_phone?: string | null
           client_email?: string | null
           client_id?: string | null
-          client_name?: string | null
-          client_phone?: string | null
+          client_name?: string
+          client_phone?: string
           created_at?: string
           end_time: string
           id?: string
           notes?: string | null
-          party_size?: number | null
+          party_size?: number
           start_time: string
           status?: string
           table_id?: string | null
@@ -95,13 +95,13 @@ export type Database = {
           business_phone?: string | null
           client_email?: string | null
           client_id?: string | null
-          client_name?: string | null
-          client_phone?: string | null
+          client_name?: string
+          client_phone?: string
           created_at?: string
           end_time?: string
           id?: string
           notes?: string | null
-          party_size?: number | null
+          party_size?: number
           start_time?: string
           status?: string
           table_id?: string | null
