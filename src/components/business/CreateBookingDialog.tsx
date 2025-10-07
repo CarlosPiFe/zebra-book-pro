@@ -231,7 +231,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     try {
       setLoading(true);
 
-      const isHospitality = businessCategory === "Restaurante" || businessCategory === "Bar";
+      const isHospitality = businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar";
 
       // Validate form data
       const bookingSchema = createBookingSchema(isHospitality);
@@ -349,7 +349,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 />
               </div>
               
-              {(businessCategory === "Restaurante" || businessCategory === "Bar") && (
+              {(businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar") && (
                 <div className="space-y-2">
                   <Label htmlFor="party_size">Número de personas *</Label>
                   <Input
@@ -440,7 +440,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               </div>
             </div>
 
-            {(businessCategory === "Restaurante" || businessCategory === "Bar") && (
+            {(businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar") && (
               <div className="space-y-2">
                 <Label htmlFor="table_id">Mesa (opcional)</Label>
                 <Select value={selectedTableId} onValueChange={setSelectedTableId}>
