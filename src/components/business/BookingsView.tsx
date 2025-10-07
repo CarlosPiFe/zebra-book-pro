@@ -59,6 +59,8 @@ export function BookingsView({ businessId }: BookingsViewProps) {
       const madridDate = toMadridTime(selectedDate);
       const dateString = format(madridDate, "yyyy-MM-dd");
       
+      console.log("Loading bookings for:", { businessId, dateString, selectedTime });
+      
       let query = supabase
         .from("bookings")
         .select(`
@@ -79,12 +81,22 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
       const { data, error } = await query;
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching bookings:", error);
+        toast.error(`Error al cargar las reservas: ${error.message}`);
+        throw error;
+      }
 
+      console.log("Bookings loaded successfully:", data);
       setBookings(data || []);
-    } catch (error) {
-      console.error("Error loading bookings:", error);
-      toast.error("Error al cargar las reservas");
+    } catch (error: any) {
+      console.error("Error loading bookings (catch):", {
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code
+      });
+      toast.error("Error al cargar las reservas. Por favor, verifica los logs.");
     } finally {
       setLoading(false);
     }
