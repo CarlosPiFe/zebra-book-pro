@@ -560,6 +560,18 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_waiter_by_token: {
+        Args: { _token: string }
+        Returns: {
+          business_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          position: string
+          token: string
+        }[]
+      }
     }
     Enums: {
       user_role: "owner" | "client"

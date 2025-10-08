@@ -52,22 +52,20 @@ const WaiterInterface = () => {
   const loadWaiter = async () => {
     try {
       const { data, error } = await supabase
-        .from("waiters")
-        .select("*")
-        .eq("token", token)
-        .single();
+        .rpc("get_waiter_by_token", { _token: token });
 
       if (error) throw error;
 
-      if (!data) {
+      if (!data || data.length === 0) {
         toast.error("Link inválido");
         navigate("/");
         return;
       }
 
-      setWaiter(data);
-      loadTables(data.business_id);
-      loadMenuItems(data.business_id);
+      const waiterData = data[0];
+      setWaiter(waiterData);
+      loadTables(waiterData.business_id);
+      loadMenuItems(waiterData.business_id);
     } catch (error) {
       console.error("Error loading waiter:", error);
       toast.error("Error al cargar información");
