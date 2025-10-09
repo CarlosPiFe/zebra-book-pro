@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -101,7 +102,7 @@ export default function BusinessDetails() {
           clientName: bookingForm.clientName,
           clientEmail: bookingForm.clientEmail,
           clientPhone: bookingForm.clientPhone,
-          bookingDate: bookingForm.bookingDate.toISOString().split('T')[0],
+          bookingDate: format(bookingForm.bookingDate, "yyyy-MM-dd"),
           startTime: bookingForm.startTime,
           partySize: parseInt(bookingForm.partySize),
           notes: bookingForm.notes,

@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label";
 import { Copy, Plus, Trash2, UserPlus, Edit, Calendar } from "lucide-react";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
-import { toMadridTime } from "@/lib/timezone";
 import { format } from "date-fns";
 
 interface Employee {
@@ -199,12 +198,9 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
     }
 
     try {
-      // Convertir a zona horaria de Madrid antes de guardar
-      const madridStartDate = toMadridTime(vacationDateRange.from);
-      const madridEndDate = toMadridTime(vacationDateRange.to);
-      
-      const startDateString = format(madridStartDate, "yyyy-MM-dd");
-      const endDateString = format(madridEndDate, "yyyy-MM-dd");
+      // Usar las fechas directamente sin conversión de zona horaria
+      const startDateString = format(vacationDateRange.from, "yyyy-MM-dd");
+      const endDateString = format(vacationDateRange.to, "yyyy-MM-dd");
 
       const { error } = await supabase
         .from("employee_vacations")

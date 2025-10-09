@@ -21,7 +21,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useEffect } from "react";
 import { addMinutes } from "date-fns";
 import { z } from "zod";
-import { toMadridTime } from "@/lib/timezone";
 import { format } from "date-fns";
 
 const createBookingSchema = (isHospitality: boolean) => z.object({
@@ -106,8 +105,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
 
   const loadAvailableTables = async () => {
     try {
-      const madridDate = toMadridTime(bookingDate!);
-      const dateString = format(madridDate, "yyyy-MM-dd");
+      const dateString = format(bookingDate!, "yyyy-MM-dd");
 
       // Get all tables
       const { data: allTables, error: tablesError } = await supabase
@@ -246,9 +244,8 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         notes: notes || undefined,
       });
 
-      // Convertir a zona horaria de Madrid antes de guardar
-      const madridDate = toMadridTime(formData.booking_date);
-      const dateString = format(madridDate, "yyyy-MM-dd");
+      // Usar la fecha directamente sin conversión de zona horaria
+      const dateString = format(formData.booking_date, "yyyy-MM-dd");
 
       let tableId: string | null = null;
       let status: "reserved" | "pending" = "reserved";

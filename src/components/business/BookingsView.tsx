@@ -11,7 +11,6 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { Input } from "@/components/ui/input";
 import { CreateBookingDialog } from "./CreateBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
-import { toMadridTime } from "@/lib/timezone";
 import { format, parse } from "date-fns";
 
 interface Booking {
@@ -55,9 +54,8 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
   const loadBookings = async () => {
     try {
-      // Convertir fecha seleccionada a zona horaria de Madrid
-      const madridDate = toMadridTime(selectedDate);
-      const dateString = format(madridDate, "yyyy-MM-dd");
+      // Usar la fecha directamente sin conversión de zona horaria
+      const dateString = format(selectedDate, "yyyy-MM-dd");
       
       console.log("Loading bookings for:", { businessId, dateString, selectedTime });
       

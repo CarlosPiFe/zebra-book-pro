@@ -16,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { z } from "zod";
-import { toMadridTime } from "@/lib/timezone";
 import { format, parse, addMinutes } from "date-fns";
 import { Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -122,8 +121,7 @@ export function EditBookingDialog({
 
   const loadAvailableTables = async () => {
     try {
-      const madridDate = toMadridTime(bookingDate!);
-      const dateString = format(madridDate, "yyyy-MM-dd");
+      const dateString = format(bookingDate!, "yyyy-MM-dd");
 
       // Get all tables
       const { data: allTables, error: tablesError } = await supabase
@@ -253,9 +251,8 @@ export function EditBookingDialog({
         notes: notes || undefined,
       });
 
-      // Convertir a zona horaria de Madrid antes de guardar
-      const madridDate = toMadridTime(formData.booking_date);
-      const dateString = format(madridDate, "yyyy-MM-dd");
+      // Usar la fecha directamente sin conversión de zona horaria
+      const dateString = format(formData.booking_date, "yyyy-MM-dd");
 
       let tableId: string | null;
       let status: "reserved" | "pending";
