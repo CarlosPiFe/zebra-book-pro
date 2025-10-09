@@ -503,6 +503,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       waiters: {
         Row: {
           business_id: string
@@ -572,8 +593,20 @@ export type Database = {
           token: string
         }[]
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      waiter_can_access_table: {
+        Args: { _table_id: string; _waiter_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "owner" | "client"
       user_role: "owner" | "client"
     }
     CompositeTypes: {
@@ -702,6 +735,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["owner", "client"],
       user_role: ["owner", "client"],
     },
   },
