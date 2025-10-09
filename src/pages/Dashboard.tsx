@@ -96,11 +96,19 @@ const Dashboard = () => {
         // Load bookings for owner's businesses
         if (businessData && businessData.length > 0) {
           const businessIds = businessData.map((b) => b.id);
+          
+          // Get current date and time in local format
+          const now = new Date();
+          const currentDate = now.toISOString().split('T')[0];
+          const currentTime = now.toTimeString().split(' ')[0].substring(0, 8);
+          
           const { data: bookingData } = await supabase
             .from("bookings")
             .select("*, businesses(name), tables(table_number)")
             .in("business_id", businessIds)
-            .order("created_at", { ascending: false });
+            .or(`booking_date.gt.${currentDate},and(booking_date.eq.${currentDate},end_time.gte.${currentTime})`)
+            .order("booking_date", { ascending: true })
+            .order("start_time", { ascending: true });
           
           setBookings(bookingData || []);
         }
