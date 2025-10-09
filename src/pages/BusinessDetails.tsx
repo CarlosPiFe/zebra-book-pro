@@ -135,7 +135,7 @@ export default function BusinessDetails() {
   const openInGoogleMaps = () => {
     if (business?.address) {
       const encodedAddress = encodeURIComponent(business.address);
-      window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
+      window.open(`https://maps.google.com/?q=${encodedAddress}`, '_blank');
     }
   };
 
