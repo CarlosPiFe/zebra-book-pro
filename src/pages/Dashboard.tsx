@@ -12,6 +12,9 @@ interface Profile {
   id: string;
   email: string;
   full_name: string;
+}
+
+interface UserRole {
   role: "owner" | "client";
 }
 
@@ -36,6 +39,7 @@ interface Booking {
 const Dashboard = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [userRole, setUserRole] = useState<"owner" | "client">("client");
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,8 +67,19 @@ const Dashboard = () => {
       if (profileError) throw profileError;
       setProfile(profileData);
 
+      // Load user role from secure user_roles table
+      const { data: roleData, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", session.user.id)
+        .single();
+
+      if (roleError) throw roleError;
+      const role = roleData.role as "owner" | "client";
+      setUserRole(role);
+
       // Load data based on role
-      if (profileData.role === "owner") {
+      if (role === "owner") {
         const { data: businessData } = await supabase
           .from("businesses")
           .select("*")
@@ -126,7 +141,7 @@ const Dashboard = () => {
             ¡Hola, {profile?.full_name || "Usuario"}!
           </h1>
           <p className="text-muted-foreground text-lg">
-            {profile?.role === "owner"
+            {userRole === "owner"
               ? "Gestiona tus negocios y reservas"
               : "Revisa y gestiona tus reservas"}
           </p>
@@ -134,7 +149,7 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {profile?.role === "owner" && (
+          {userRole === "owner" && (
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium">Mis Negocios</CardTitle>
@@ -150,14 +165,14 @@ const Dashboard = () => {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">
-                {profile?.role === "owner" ? "Total Reservas" : "Mis Reservas"}
+                {userRole === "owner" ? "Total Reservas" : "Mis Reservas"}
               </CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{bookings.length}</div>
               <p className="text-xs text-muted-foreground">
-                {profile?.role === "owner" ? "Reservas recibidas" : "Reservas realizadas"}
+                {userRole === "owner" ? "Reservas recibidas" : "Reservas realizadas"}
               </p>
             </CardContent>
           </Card>
@@ -177,8 +192,8 @@ const Dashboard = () => {
         </div>
 
         {/* Content Tabs */}
-        <Tabs defaultValue={profile?.role === "owner" ? "businesses" : "bookings"} className="space-y-4">
-          {profile?.role === "owner" && (
+        <Tabs defaultValue={userRole === "owner" ? "businesses" : "bookings"} className="space-y-4">
+          {userRole === "owner" && (
             <>
               <TabsList>
                 <TabsTrigger value="businesses">Negocios</TabsTrigger>
@@ -238,7 +253,7 @@ const Dashboard = () => {
 
           <TabsContent value="bookings" className="space-y-4">
             <h2 className="text-2xl font-bold">
-              {profile?.role === "owner" ? "Reservas Recibidas" : "Mis Reservas"}
+              {userRole === "owner" ? "Reservas Recibidas" : "Mis Reservas"}
             </h2>
 
             {bookings.length === 0 ? (
@@ -246,7 +261,7 @@ const Dashboard = () => {
                 <CardContent className="pt-6 text-center py-12">
                   <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">
-                    {profile?.role === "owner"
+                    {userRole === "owner"
                       ? "No tienes reservas aún"
                       : "No has realizado ninguna reserva"}
                   </p>
