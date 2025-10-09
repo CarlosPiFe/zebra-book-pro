@@ -469,7 +469,7 @@ export default function BusinessDetails() {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={submitting}>
+                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg" disabled={submitting}>
                     <Calendar className="mr-2 h-4 w-4" />
                     {submitting ? "Enviando..." : "Confirmar reserva"}
                   </Button>
