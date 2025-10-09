@@ -172,7 +172,7 @@ export default function BusinessDetails() {
     if (business?.address) {
       const encodedAddress = encodeURIComponent(business.address);
       const link = document.createElement('a');
-      link.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+      link.href = `https://www.google.com/maps?q=${encodedAddress}`;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
       link.click();
