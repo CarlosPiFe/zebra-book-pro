@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Calendar, Clock, MapPin, Star } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 import heroImage from "@/assets/hero-bg.jpg";
 
 interface Business {
@@ -20,9 +21,12 @@ interface Business {
 
 const Index = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeSearchQuery, setActiveSearchQuery] = useState("");
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSearchBar, setShowSearchBar] = useState(true);
 
   useEffect(() => {
     loadBusinesses();
@@ -44,11 +48,30 @@ const Index = () => {
     }
   };
 
+  const handleSearch = () => {
+    setActiveSearchQuery(searchQuery);
+    if (isMobile && searchQuery.trim()) {
+      setShowSearchBar(false);
+    }
+  };
+
+  const handleShowSearchBar = () => {
+    setShowSearchBar(true);
+    setSearchQuery("");
+    setActiveSearchQuery("");
+  };
+
+  // En escritorio: filtrar en tiempo real
+  // En móvil: solo filtrar cuando activeSearchQuery cambie
   const filteredBusinesses = businesses.filter(
-    (business) =>
-      business.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      business.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      business.description?.toLowerCase().includes(searchQuery.toLowerCase())
+    (business) => {
+      const query = isMobile ? activeSearchQuery : searchQuery;
+      if (!query) return true;
+      
+      return business.name.toLowerCase().includes(query.toLowerCase()) ||
+        business.category.toLowerCase().includes(query.toLowerCase()) ||
+        business.description?.toLowerCase().includes(query.toLowerCase());
+    }
   );
 
   return (
@@ -78,18 +101,50 @@ const Index = () => {
           </div>
 
           {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Buscar restaurantes, peluquerías, gimnasios..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-4 py-6 text-lg bg-white/95 backdrop-blur-sm border-0 shadow-strong"
-              />
+          {(!isMobile || showSearchBar) && (
+            <div className="max-w-2xl mx-auto">
+              <div className="relative flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar restaurantes, peluquerías, gimnasios..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch();
+                      }
+                    }}
+                    className="pl-12 pr-4 py-6 text-lg bg-white/95 backdrop-blur-sm border-0 shadow-strong"
+                  />
+                </div>
+                {isMobile && (
+                  <Button
+                    onClick={handleSearch}
+                    size="lg"
+                    className="px-6 py-6 bg-accent hover:bg-accent/90 shadow-strong"
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Botón para volver a mostrar el buscador en móvil */}
+          {isMobile && !showSearchBar && (
+            <div className="max-w-2xl mx-auto">
+              <Button
+                onClick={handleShowSearchBar}
+                variant="outline"
+                className="w-full py-6 bg-white/95 backdrop-blur-sm border-0 shadow-strong"
+              >
+                <Search className="h-5 w-5 mr-2" />
+                Nueva búsqueda
+              </Button>
+            </div>
+          )}
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto">
