@@ -97,7 +97,13 @@ export function TablesView({ businessId }: TablesViewProps) {
 
   const loadTables = async () => {
     try {
-      const selectedDate = filterDate.toISOString().split('T')[0];
+      // Usar formato de fecha local sin conversión UTC
+      const year = filterDate.getFullYear();
+      const month = String(filterDate.getMonth() + 1).padStart(2, '0');
+      const day = String(filterDate.getDate()).padStart(2, '0');
+      const selectedDate = `${year}-${month}-${day}`;
+      
+      console.log('Loading tables for date:', selectedDate, 'time:', filterTime);
       
       // Get tables
       const { data: tablesData, error: tablesError } = await supabase
@@ -113,12 +119,15 @@ export function TablesView({ businessId }: TablesViewProps) {
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
         .select("*")
+        .eq("business_id", businessId)
         .eq("booking_date", selectedDate)
         .lte("start_time", filterTime)
         .gt("end_time", filterTime)
         .in("status", ["reserved", "occupied"]);
 
       if (bookingsError) throw bookingsError;
+
+      console.log('Bookings found:', bookingsData?.length || 0);
 
       // Get orders for today's occupied tables
       const occupiedTableIds = bookingsData
