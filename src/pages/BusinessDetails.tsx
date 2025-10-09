@@ -287,6 +287,35 @@ export default function BusinessDetails() {
               </CardContent>
             </Card>
 
+            {/* Google Maps Location */}
+            {business.address && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h2 className="text-2xl font-semibold mb-4">Ubicación</h2>
+                  <div className="space-y-4">
+                    <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        style={{ border: 0 }}
+                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(business.address)}`}
+                        allowFullScreen
+                      />
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={openInGoogleMaps}
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Abrir en Google Maps
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Social Media */}
             {business.social_media && Object.keys(business.social_media).length > 0 && (
               <Card>
@@ -339,9 +368,8 @@ export default function BusinessDetails() {
             )}
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Booking Form */}
+          {/* Sidebar - Booking Form Only */}
+          <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-semibold mb-4">Haz tu reserva</h3>
@@ -478,35 +506,6 @@ export default function BusinessDetails() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Google Maps */}
-            {business.address && (
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="text-xl font-semibold mb-4">Ubicación</h3>
-                  <div className="space-y-4">
-                    <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        style={{ border: 0 }}
-                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(business.address)}`}
-                        allowFullScreen
-                      />
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={openInGoogleMaps}
-                    >
-                      <MapPin className="mr-2 h-4 w-4" />
-                      Abrir en Google Maps
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </div>
