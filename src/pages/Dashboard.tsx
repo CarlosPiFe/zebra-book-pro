@@ -168,18 +168,31 @@ const Dashboard = () => {
           ) : (
             // Vista centrada en el negocio
             <div className="space-y-8">
-              {/* Encabezado del negocio con banner */}
-              <div className="space-y-4">
-                {mainBusiness.image_url && (
-                  <div className="w-full h-48 md:h-64 rounded-lg overflow-hidden bg-muted">
-                    <img 
-                      src={mainBusiness.image_url} 
-                      alt={mainBusiness.name}
-                      className="w-full h-full object-cover"
-                    />
+              {/* Banner del negocio - idéntico a la vista pública */}
+              {mainBusiness.image_url ? (
+                <div className="relative h-96 w-full rounded-xl overflow-hidden mb-6">
+                  <img
+                    src={mainBusiness.image_url}
+                    alt={mainBusiness.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 p-8">
+                    <h1 className="text-4xl font-bold text-foreground mb-2">
+                      {mainBusiness.name}
+                    </h1>
+                    <p className="text-lg text-muted-foreground">{mainBusiness.category}</p>
                   </div>
-                )}
-                <div className="flex-1">
+                  {businesses.length > 1 && (
+                    <div className="absolute top-4 right-4">
+                      <span className="px-3 py-1 bg-background/80 backdrop-blur-sm rounded-full text-sm text-foreground">
+                        +{businesses.length - 1} más
+                      </span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="mb-6">
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-4xl font-bold">{mainBusiness.name}</h1>
                     {businesses.length > 1 && (
@@ -189,11 +202,8 @@ const Dashboard = () => {
                     )}
                   </div>
                   <p className="text-lg text-muted-foreground capitalize">{mainBusiness.category}</p>
-                  {mainBusiness.description && (
-                    <p className="text-muted-foreground mt-2">{mainBusiness.description}</p>
-                  )}
                 </div>
-              </div>
+              )}
 
               {/* Botón principal de gestión */}
               <div className="flex justify-center py-4">
