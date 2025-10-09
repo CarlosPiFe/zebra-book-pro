@@ -491,7 +491,7 @@ export function TablesView({ businessId }: TablesViewProps) {
     const booking = table.current_booking;
     
     if (booking.status === "occupied") {
-      return "Comiendo";
+      return "En curso";
     }
     
     if (booking.status === "reserved") {
@@ -501,13 +501,43 @@ export function TablesView({ businessId }: TablesViewProps) {
       const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000); // +5 minutos
       
       if (now >= delayThreshold) {
-        return "Tarde";
+        return "Retraso";
       }
       
       return "Reservado";
     }
     
     return null;
+  };
+
+  const getTableStatusLabelColor = (table: Table): string => {
+    // Rojo oscuro - fuera de servicio
+    if (table.is_out_of_service) {
+      return "text-red-700 bg-red-500/30";
+    }
+    
+    if (!table.current_booking) return "";
+    
+    const booking = table.current_booking;
+    
+    if (booking.status === "occupied") {
+      return "text-green-700 bg-green-500/30"; // Verde oscuro
+    }
+    
+    if (booking.status === "reserved") {
+      // Calcular si la reserva está retrasada (más de 5 minutos)
+      const now = new Date();
+      const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
+      const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000);
+      
+      if (now >= delayThreshold) {
+        return "text-yellow-700 bg-yellow-500/30"; // Amarillo oscuro
+      }
+      
+      return "text-orange-700 bg-orange-500/30"; // Naranja oscuro
+    }
+    
+    return "";
   };
 
   if (loading) {
@@ -665,14 +695,14 @@ export function TablesView({ businessId }: TablesViewProps) {
                 >
                   <Trash2 className="h-3 w-3 text-destructive" />
                 </button>
-                <div className="text-lg font-bold text-foreground">
-                  {table.table_number}
-                </div>
                 {getTableStatusLabel(table) && (
-                  <div className="text-[9px] font-semibold text-foreground/80 px-1.5 py-0.5 rounded bg-background/50">
+                  <div className={`absolute top-1 left-1 right-1 text-[9px] font-bold text-center px-1 py-0.5 rounded ${getTableStatusLabelColor(table)}`}>
                     {getTableStatusLabel(table)}
                   </div>
                 )}
+                <div className="text-lg font-bold text-foreground mt-4">
+                  {table.table_number}
+                </div>
                 <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                   <Users className="h-3 w-3" />
                   <span>{table.max_capacity}</span>
