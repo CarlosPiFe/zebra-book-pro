@@ -480,6 +480,36 @@ export function TablesView({ businessId }: TablesViewProps) {
     return "bg-muted";
   };
 
+  const getTableStatusLabel = (table: Table): string | null => {
+    // Rojo - fuera de servicio (prioridad máxima)
+    if (table.is_out_of_service) {
+      return "Fuera de servicio";
+    }
+    
+    if (!table.current_booking) return null; // Sin etiqueta para mesas libres
+    
+    const booking = table.current_booking;
+    
+    if (booking.status === "occupied") {
+      return "Comiendo";
+    }
+    
+    if (booking.status === "reserved") {
+      // Calcular si la reserva está retrasada (más de 5 minutos)
+      const now = new Date();
+      const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
+      const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000); // +5 minutos
+      
+      if (now >= delayThreshold) {
+        return "Tarde";
+      }
+      
+      return "Reservado";
+    }
+    
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="h-64 flex items-center justify-center">
@@ -638,6 +668,11 @@ export function TablesView({ businessId }: TablesViewProps) {
                 <div className="text-lg font-bold text-foreground">
                   {table.table_number}
                 </div>
+                {getTableStatusLabel(table) && (
+                  <div className="text-[9px] font-semibold text-foreground/80 px-1.5 py-0.5 rounded bg-background/50">
+                    {getTableStatusLabel(table)}
+                  </div>
+                )}
                 <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                   <Users className="h-3 w-3" />
                   <span>{table.max_capacity}</span>
