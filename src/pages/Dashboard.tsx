@@ -192,27 +192,15 @@ const Dashboard = () => {
               </div>
 
               {/* Botón principal de gestión */}
-              <Card className="border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer"
-                onClick={() => navigate(`/business/${mainBusiness.id}/manage`)}>
-                <CardContent className="pt-6">
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Settings className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-semibold mb-1">Panel de Gestión</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Configura horarios, empleados, reservas y más
-                        </p>
-                      </div>
-                    </div>
-                    <Button size="lg" className="bg-accent hover:bg-accent/90">
-                      Gestionar Negocio
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex justify-center py-4">
+                <Button 
+                  size="lg" 
+                  className="bg-accent hover:bg-accent/90"
+                  onClick={() => navigate(`/business/${mainBusiness.id}/manage`)}
+                >
+                  Gestionar Negocio
+                </Button>
+              </div>
 
               {/* Selector de negocios si hay más de uno */}
               {businesses.length > 1 && (
