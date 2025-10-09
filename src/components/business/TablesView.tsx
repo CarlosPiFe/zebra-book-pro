@@ -19,6 +19,7 @@ interface Table {
   max_capacity: number;
   current_booking?: Booking | null;
   total_spent?: number;
+  is_out_of_service?: boolean;
 }
 
 interface Booking {
@@ -407,7 +408,34 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
+  const handleToggleOutOfService = async () => {
+    if (!selectedTable) return;
+
+    try {
+      const newStatus = !selectedTable.is_out_of_service;
+      
+      const { error } = await supabase
+        .from("tables")
+        .update({ is_out_of_service: newStatus } as any)
+        .eq("id", selectedTable.id);
+
+      if (error) throw error;
+
+      toast.success(newStatus ? "Mesa marcada fuera de servicio" : "Mesa reactivada");
+      setIsActionDialogOpen(false);
+      loadTables();
+    } catch (error) {
+      console.error("Error toggling out of service:", error);
+      toast.error("Error al actualizar el estado de la mesa");
+    }
+  };
+
   const getTableColor = (table: Table) => {
+    // Rojo - fuera de servicio (prioridad máxima)
+    if (table.is_out_of_service) {
+      return "bg-red-500/20 border-red-500";
+    }
+    
     if (!table.current_booking) return "bg-muted"; // Gris - disponible
     
     const booking = table.current_booking;
@@ -620,7 +648,20 @@ export function TablesView({ businessId }: TablesViewProps) {
                 </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col gap-3 py-4">
-                {!selectedTable?.current_booking ? (
+                {selectedTable?.is_out_of_service ? (
+                  <>
+                    <div className="text-sm text-muted-foreground mb-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <p className="text-red-600 font-semibold">⚠️ Mesa fuera de servicio</p>
+                      <p className="text-xs mt-1">Esta mesa está bloqueada y no acepta reservas</p>
+                    </div>
+                    <Button
+                      onClick={handleToggleOutOfService}
+                      className="bg-green-500 hover:bg-green-600 text-white h-12"
+                    >
+                      Reactivar Mesa
+                    </Button>
+                  </>
+                ) : !selectedTable?.current_booking ? (
                   <>
                     <Button
                       className="bg-green-500 hover:bg-green-600 text-white h-12"
@@ -633,6 +674,13 @@ export function TablesView({ businessId }: TablesViewProps) {
                       onClick={handleReserveClick}
                     >
                       Reservar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-red-500 text-red-600 hover:bg-red-50 h-12"
+                      onClick={handleToggleOutOfService}
+                    >
+                      Marcar Fuera de Servicio
                     </Button>
                   </>
                 ) : selectedTable.current_booking.status === "reserved" ? (
