@@ -145,7 +145,9 @@ export type Database = {
           name: string
           owner_id: string
           phone: string | null
+          social_media: Json | null
           updated_at: string
+          website: string | null
         }
         Insert: {
           address?: string | null
@@ -160,7 +162,9 @@ export type Database = {
           name: string
           owner_id: string
           phone?: string | null
+          social_media?: Json | null
           updated_at?: string
+          website?: string | null
         }
         Update: {
           address?: string | null
@@ -175,7 +179,9 @@ export type Database = {
           name?: string
           owner_id?: string
           phone?: string | null
+          social_media?: Json | null
           updated_at?: string
+          website?: string | null
         }
         Relationships: [
           {

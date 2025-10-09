@@ -21,6 +21,8 @@ interface Business {
   address: string;
   image_url: string;
   booking_slot_duration_minutes: number;
+  website: string | null;
+  social_media: any;
 }
 
 interface BusinessSettingsProps {
@@ -42,6 +44,13 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     description: business.description || "",
     image_url: business.image_url || "",
     booking_slot_duration_minutes: business.booking_slot_duration_minutes || 60,
+    website: business.website || "",
+    social_media: {
+      facebook: business.social_media?.facebook || "",
+      instagram: business.social_media?.instagram || "",
+      twitter: business.social_media?.twitter || "",
+      linkedin: business.social_media?.linkedin || "",
+    },
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -150,6 +159,8 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
           description: formData.description,
           image_url: finalImageUrl,
           booking_slot_duration_minutes: formData.booking_slot_duration_minutes,
+          website: formData.website,
+          social_media: formData.social_media,
         })
         .eq("id", business.id);
 
@@ -456,6 +467,84 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="website">Sitio Web</Label>
+              <Input
+                id="website"
+                type="url"
+                value={formData.website}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                placeholder="https://tunegocio.com"
+              />
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label>Redes Sociales</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Añade los enlaces a tus perfiles en redes sociales
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="facebook">Facebook</Label>
+                  <Input
+                    id="facebook"
+                    type="url"
+                    value={formData.social_media.facebook}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      social_media: { ...formData.social_media, facebook: e.target.value }
+                    })}
+                    placeholder="https://facebook.com/tunegocio"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <Input
+                    id="instagram"
+                    type="url"
+                    value={formData.social_media.instagram}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      social_media: { ...formData.social_media, instagram: e.target.value }
+                    })}
+                    placeholder="https://instagram.com/tunegocio"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="twitter">Twitter / X</Label>
+                  <Input
+                    id="twitter"
+                    type="url"
+                    value={formData.social_media.twitter}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      social_media: { ...formData.social_media, twitter: e.target.value }
+                    })}
+                    placeholder="https://twitter.com/tunegocio"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin">LinkedIn</Label>
+                  <Input
+                    id="linkedin"
+                    type="url"
+                    value={formData.social_media.linkedin}
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      social_media: { ...formData.social_media, linkedin: e.target.value }
+                    })}
+                    placeholder="https://linkedin.com/company/tunegocio"
+                  />
                 </div>
               </div>
             </div>
