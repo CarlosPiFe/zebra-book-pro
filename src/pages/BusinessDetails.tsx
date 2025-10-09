@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users } from "lucide-react";
+import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 
 interface Business {
   id: string;
@@ -30,6 +32,7 @@ export default function BusinessDetails() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [availabilityMessage, setAvailabilityMessage] = useState<string>("");
   
   // Booking form state
   const [bookingForm, setBookingForm] = useState({
@@ -41,6 +44,14 @@ export default function BusinessDetails() {
     startTime: "",
     notes: "",
   });
+
+  // Use availability hook
+  const {
+    isDateAvailable,
+    getAvailableTimeSlots,
+    getNextAvailableSlot,
+    loading: availabilityLoading,
+  } = useBookingAvailability(businessId);
 
   useEffect(() => {
     loadBusiness();
@@ -121,16 +132,41 @@ export default function BusinessDetails() {
     }
   };
 
-  const generateTimeSlots = () => {
-    const slots = [];
-    for (let hour = 8; hour <= 23; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
-        const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
-        slots.push(time);
+  // Handle date change
+  const handleDateChange = (date: Date | undefined) => {
+    setBookingForm({ ...bookingForm, bookingDate: date, startTime: "" });
+    setAvailabilityMessage("");
+
+    if (date && !isDateAvailable(date)) {
+      setAvailabilityMessage("El negocio está cerrado este día.");
+      toast.error("El negocio está cerrado este día");
+    }
+  };
+
+  // Get available time slots for selected date
+  const availableTimeSlots = bookingForm.bookingDate
+    ? getAvailableTimeSlots(bookingForm.bookingDate, parseInt(bookingForm.partySize))
+    : [];
+
+  // Handle party size change
+  const handlePartySizeChange = (value: string) => {
+    setBookingForm({ ...bookingForm, partySize: value, startTime: "" });
+    setAvailabilityMessage("");
+  };
+
+  // Check if selected time is available
+  useEffect(() => {
+    if (bookingForm.bookingDate && bookingForm.startTime && availableTimeSlots.length > 0) {
+      if (!availableTimeSlots.includes(bookingForm.startTime)) {
+        const nextSlot = getNextAvailableSlot(bookingForm.bookingDate, parseInt(bookingForm.partySize));
+        if (nextSlot) {
+          setAvailabilityMessage(`No hay hueco en este horario. Próximo disponible: ${nextSlot}`);
+        } else {
+          setAvailabilityMessage(`No hay disponibilidad para ${bookingForm.partySize} personas en este día.`);
+        }
       }
     }
-    return slots;
-  };
+  }, [bookingForm.bookingDate, bookingForm.startTime, bookingForm.partySize, availableTimeSlots]);
 
   const openInGoogleMaps = () => {
     if (business?.address) {
@@ -409,7 +445,7 @@ export default function BusinessDetails() {
                     <Label>Número de personas *</Label>
                     <Select
                       value={bookingForm.partySize}
-                      onValueChange={(value) => setBookingForm({ ...bookingForm, partySize: value })}
+                      onValueChange={handlePartySizeChange}
                     >
                       <SelectTrigger>
                         <SelectValue />
@@ -431,29 +467,50 @@ export default function BusinessDetails() {
                     <Label>Fecha *</Label>
                     <DatePicker
                       date={bookingForm.bookingDate}
-                      onDateChange={(date) => setBookingForm({ ...bookingForm, bookingDate: date })}
+                      onDateChange={handleDateChange}
                       placeholder="Seleccionar fecha"
+                      disabled={(date) => !isDateAvailable(date)}
                     />
                   </div>
+
+                  {availabilityMessage && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{availabilityMessage}</AlertDescription>
+                    </Alert>
+                  )}
 
                   <div>
                     <Label>Hora de entrada *</Label>
                     <Select
                       value={bookingForm.startTime}
                       onValueChange={(value) => setBookingForm({ ...bookingForm, startTime: value })}
+                      disabled={!bookingForm.bookingDate || availableTimeSlots.length === 0}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar hora" />
+                        <SelectValue placeholder={
+                          !bookingForm.bookingDate 
+                            ? "Primero selecciona una fecha"
+                            : availableTimeSlots.length === 0
+                            ? "No hay horarios disponibles"
+                            : "Seleccionar hora"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
-                        {generateTimeSlots().map((time) => (
-                          <SelectItem key={time} value={time}>
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              {time}
-                            </div>
+                        {availableTimeSlots.length > 0 ? (
+                          availableTimeSlots.map((time) => (
+                            <SelectItem key={time} value={time}>
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                {time}
+                              </div>
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-slots" disabled>
+                            No hay disponibilidad para {bookingForm.partySize} personas
                           </SelectItem>
-                        ))}
+                        )}
                       </SelectContent>
                     </Select>
                   </div>

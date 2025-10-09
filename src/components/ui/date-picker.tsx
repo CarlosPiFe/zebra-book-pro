@@ -15,9 +15,10 @@ interface DatePickerProps {
   date?: Date;
   onDateChange: (date: Date | undefined) => void;
   placeholder?: string;
+  disabled?: (date: Date) => boolean;
 }
 
-export function DatePicker({ date, onDateChange, placeholder = "Seleccionar fecha" }: DatePickerProps) {
+export function DatePicker({ date, onDateChange, placeholder = "Seleccionar fecha", disabled }: DatePickerProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -37,6 +38,7 @@ export function DatePicker({ date, onDateChange, placeholder = "Seleccionar fech
           mode="single"
           selected={date}
           onSelect={onDateChange}
+          disabled={disabled}
           initialFocus
           className="pointer-events-auto"
         />
