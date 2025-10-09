@@ -248,12 +248,11 @@ export default function BusinessDetails() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1fr] gap-8 items-start">
+          {/* Column 1: About Us */}
+          <div className="space-y-6">
             {business.description && (
-              <Card>
+              <Card className="h-full">
                 <CardContent className="pt-6">
                   <h2 className="text-2xl font-semibold mb-4">Acerca de nosotros</h2>
                   <p className="text-muted-foreground leading-relaxed">
@@ -262,36 +261,10 @@ export default function BusinessDetails() {
                 </CardContent>
               </Card>
             )}
+          </div>
 
-            {/* Google Maps Location */}
-            {business.address && (
-              <Card>
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-semibold mb-4">Ubicación</h2>
-                  <div className="space-y-4">
-                    <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        style={{ border: 0 }}
-                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD3G8p1Ca5ZxGiQfdDcKRZZwQI0TL40oVk&q=${encodeURIComponent(business.address)}`}
-                        allowFullScreen
-                      />
-                    </div>
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={openInGoogleMaps}
-                    >
-                      <MapPin className="mr-2 h-4 w-4" />
-                      Abrir en Google Maps
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
+          {/* Column 2: Contact Info + Map */}
+          <div className="space-y-6">
             {/* Contact Information */}
             <Card>
               <CardContent className="pt-6">
@@ -357,6 +330,35 @@ export default function BusinessDetails() {
               </CardContent>
             </Card>
 
+            {/* Google Maps Location */}
+            {business.address && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h2 className="text-2xl font-semibold mb-4">Ubicación</h2>
+                  <div className="space-y-4">
+                    <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        style={{ border: 0 }}
+                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD3G8p1Ca5ZxGiQfdDcKRZZwQI0TL40oVk&q=${encodeURIComponent(business.address)}`}
+                        allowFullScreen
+                      />
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={openInGoogleMaps}
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Abrir en Google Maps
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Social Media */}
             {business.social_media && Object.keys(business.social_media).length > 0 && (
               <Card>
@@ -409,8 +411,8 @@ export default function BusinessDetails() {
             )}
           </div>
 
-          {/* Sidebar - Booking Form Only */}
-          <div className="lg:col-span-1">
+          {/* Column 3: Booking Form (Sticky) */}
+          <div>
             <Card className="sticky top-4">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-semibold mb-4">Haz tu reserva</h3>
