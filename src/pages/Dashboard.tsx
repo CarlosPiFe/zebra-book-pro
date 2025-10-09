@@ -4,7 +4,7 @@ import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, Clock, Settings } from "lucide-react";
+import { Calendar, Building2, Clock, Settings, Users } from "lucide-react";
 import { toast } from "sonner";
 
 interface Profile {
@@ -33,8 +33,12 @@ interface Booking {
   end_time: string;
   status: string;
   client_name: string;
+  party_size: number;
   businesses: {
     name: string;
+  };
+  tables?: {
+    table_number: number;
   };
 }
 
@@ -92,14 +96,11 @@ const Dashboard = () => {
         // Load bookings for owner's businesses
         if (businessData && businessData.length > 0) {
           const businessIds = businessData.map((b) => b.id);
-          const now = new Date();
           const { data: bookingData } = await supabase
             .from("bookings")
-            .select("*, businesses(name)")
+            .select("*, businesses(name), tables(table_number)")
             .in("business_id", businessIds)
-            .gte("booking_date", now.toISOString().split('T')[0])
-            .order("booking_date", { ascending: true })
-            .order("start_time", { ascending: true });
+            .order("created_at", { ascending: false });
           
           setBookings(bookingData || []);
         }
@@ -280,7 +281,7 @@ const Dashboard = () => {
                       <Card key={booking.id}>
                         <CardHeader>
                           <div className="flex justify-between items-start">
-                            <div>
+                            <div className="flex-1">
                               <CardTitle className="text-base">{booking.client_name}</CardTitle>
                               <CardDescription>
                                 {new Date(booking.booking_date).toLocaleDateString("es-ES", {
@@ -309,9 +310,21 @@ const Dashboard = () => {
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4 mr-2" />
-                            {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
+                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center">
+                              <Clock className="h-4 w-4 mr-2" />
+                              {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
+                            </div>
+                            <div className="flex items-center">
+                              <Users className="h-4 w-4 mr-2" />
+                              {booking.party_size} {booking.party_size === 1 ? "persona" : "personas"}
+                            </div>
+                            {booking.tables && (
+                              <div className="flex items-center">
+                                <Building2 className="h-4 w-4 mr-2" />
+                                Mesa {booking.tables.table_number}
+                              </div>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
