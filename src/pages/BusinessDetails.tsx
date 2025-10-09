@@ -2,10 +2,15 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar } from "lucide-react";
+import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Business {
   id: string;
@@ -24,6 +29,18 @@ export default function BusinessDetails() {
   const { businessId } = useParams();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  
+  // Booking form state
+  const [bookingForm, setBookingForm] = useState({
+    clientName: "",
+    clientEmail: "",
+    clientPhone: "",
+    partySize: "2",
+    bookingDate: undefined as Date | undefined,
+    startTime: "",
+    notes: "",
+  });
 
   useEffect(() => {
     loadBusiness();
@@ -46,6 +63,79 @@ export default function BusinessDetails() {
       toast.error("No se pudo cargar la información del negocio");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!bookingForm.clientName || !bookingForm.clientPhone || !bookingForm.bookingDate || !bookingForm.startTime) {
+      toast.error("Por favor completa todos los campos obligatorios");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      
+      const response = await fetch(`${supabaseUrl}/functions/v1/public-booking`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({
+          businessId,
+          clientName: bookingForm.clientName,
+          clientEmail: bookingForm.clientEmail,
+          clientPhone: bookingForm.clientPhone,
+          bookingDate: bookingForm.bookingDate.toISOString().split('T')[0],
+          startTime: bookingForm.startTime,
+          partySize: parseInt(bookingForm.partySize),
+          notes: bookingForm.notes,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Error al crear la reserva");
+      }
+
+      toast.success("¡Reserva enviada correctamente!");
+      setBookingForm({
+        clientName: "",
+        clientEmail: "",
+        clientPhone: "",
+        partySize: "2",
+        bookingDate: undefined,
+        startTime: "",
+        notes: "",
+      });
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      toast.error("Error al enviar la reserva");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const generateTimeSlots = () => {
+    const slots = [];
+    for (let hour = 8; hour <= 23; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+        slots.push(time);
+      }
+    }
+    return slots;
+  };
+
+  const openInGoogleMaps = () => {
+    if (business?.address) {
+      const encodedAddress = encodeURIComponent(business.address);
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodedAddress}`, '_blank');
     }
   };
 
@@ -251,15 +341,118 @@ export default function BusinessDetails() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Booking Form */}
             <Card className="sticky top-4">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-semibold mb-4">Haz tu reserva</h3>
-                <p className="text-muted-foreground mb-6">
-                  Contacta directamente con el negocio para hacer tu reserva
-                </p>
-                <div className="space-y-3">
+                <form onSubmit={handleBookingSubmit} className="space-y-4">
+                  <div>
+                    <Label htmlFor="clientName">Nombre *</Label>
+                    <Input
+                      id="clientName"
+                      value={bookingForm.clientName}
+                      onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="clientPhone">Teléfono *</Label>
+                    <Input
+                      id="clientPhone"
+                      type="tel"
+                      value={bookingForm.clientPhone}
+                      onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="clientEmail">Email</Label>
+                    <Input
+                      id="clientEmail"
+                      type="email"
+                      value={bookingForm.clientEmail}
+                      onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Número de personas *</Label>
+                    <Select
+                      value={bookingForm.partySize}
+                      onValueChange={(value) => setBookingForm({ ...bookingForm, partySize: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                          <SelectItem key={num} value={String(num)}>
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              {num} {num === 1 ? 'persona' : 'personas'}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Fecha *</Label>
+                    <DatePicker
+                      date={bookingForm.bookingDate}
+                      onDateChange={(date) => setBookingForm({ ...bookingForm, bookingDate: date })}
+                      placeholder="Seleccionar fecha"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Hora de entrada *</Label>
+                    <Select
+                      value={bookingForm.startTime}
+                      onValueChange={(value) => setBookingForm({ ...bookingForm, startTime: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar hora" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {generateTimeSlots().map((time) => (
+                          <SelectItem key={time} value={time}>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              {time}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="notes">Notas adicionales</Label>
+                    <Textarea
+                      id="notes"
+                      value={bookingForm.notes}
+                      onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
+                      placeholder="Ej: Necesito silla alta para bebé"
+                      rows={3}
+                    />
+                  </div>
+
+                  <Button type="submit" className="w-full" disabled={submitting}>
+                    <Calendar className="mr-2 h-4 w-4" />
+                    {submitting ? "Enviando..." : "Confirmar reserva"}
+                  </Button>
+                </form>
+
+                <div className="mt-6 pt-6 border-t border-border space-y-3">
+                  <p className="text-sm text-muted-foreground text-center mb-3">
+                    O contacta directamente
+                  </p>
                   {business.phone && (
-                    <Button className="w-full" asChild>
+                    <Button variant="outline" className="w-full" asChild>
                       <a href={`tel:${business.phone}`}>
                         <Phone className="mr-2 h-4 w-4" />
                         Llamar ahora
@@ -285,6 +478,35 @@ export default function BusinessDetails() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Google Maps */}
+            {business.address && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-xl font-semibold mb-4">Ubicación</h3>
+                  <div className="space-y-4">
+                    <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        style={{ border: 0 }}
+                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(business.address)}`}
+                        allowFullScreen
+                      />
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={openInGoogleMaps}
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Abrir en Google Maps
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
