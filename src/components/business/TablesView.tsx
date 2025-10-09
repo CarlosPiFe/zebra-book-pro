@@ -698,7 +698,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                 
                 {/* Estado - parte superior sin recuadro */}
                 {getTableStatusLabel(table) && (
-                  <div className={`text-[10px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
+                  <div className={`text-[9px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
                     {getTableStatusLabel(table)}
                   </div>
                 )}
@@ -706,19 +706,19 @@ export function TablesView({ businessId }: TablesViewProps) {
                 {/* Contenido central */}
                 <div className="flex flex-col items-center gap-1 flex-1 justify-center">
                   {/* Número de mesa */}
-                  <div className="text-2xl font-bold text-foreground">
+                  <div className="text-lg font-bold text-foreground">
                     {table.table_number}
                   </div>
                   
                   {/* Capacidad */}
-                  <div className="flex items-center gap-1 text-xs text-foreground/80 font-medium">
-                    <Users className="h-3.5 w-3.5" />
-                    <span>{table.max_capacity} personas</span>
+                  <div className="flex items-center gap-0.5 text-[10px] text-foreground/80 font-medium">
+                    <Users className="h-3 w-3" />
+                    <span>{table.max_capacity}</span>
                   </div>
                   
                   {/* Nombre del reservante */}
                   {table.current_booking && table.current_booking.client_name && (
-                    <div className="text-[11px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
+                    <div className="text-[9px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
                       {table.current_booking.client_name}
                     </div>
                   )}
