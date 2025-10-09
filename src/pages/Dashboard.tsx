@@ -39,7 +39,6 @@ interface Booking {
   };
   tables?: {
     table_number: number;
-    is_out_of_service?: boolean;
   };
 }
 
@@ -130,7 +129,7 @@ const Dashboard = () => {
           
           const { data: bookingData } = await supabase
             .from("bookings")
-            .select("*, businesses(name), tables(table_number, is_out_of_service)")
+            .select("*, businesses(name), tables(table_number)")
             .in("business_id", businessIds)
             .or(`booking_date.gt.${currentDate},and(booking_date.eq.${currentDate},end_time.gte.${currentTime})`)
             .order("booking_date", { ascending: true })
@@ -313,14 +312,6 @@ const Dashboard = () => {
                   <div className="space-y-4">
                     {bookings.slice(0, 5).map((booking) => {
                       const getBookingStatus = () => {
-                        // Mesa fuera de servicio tiene prioridad
-                        if (booking.tables?.is_out_of_service) {
-                          return {
-                            label: "Fuera de servicio",
-                            className: "bg-red-500/20 text-red-700 border border-red-500"
-                          };
-                        }
-
                         // Cliente ha llegado y está comiendo
                         if (booking.status === "occupied") {
                           return {
