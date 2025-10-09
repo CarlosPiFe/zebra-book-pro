@@ -248,166 +248,169 @@ export default function BusinessDetails() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Acerca de nosotros - Ocupa columnas 1 y 2 */}
-          {business.description && (
-            <Card className="lg:col-span-2">
-              <CardContent className="pt-6">
-                <h2 className="text-2xl font-semibold mb-4">Acerca de nosotros</h2>
-                <p className="text-muted-foreground leading-relaxed">
-                  {business.description}
-                </p>
-              </CardContent>
-            </Card>
-          )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          {/* Columna izquierda: Secciones de información - Columnas 1 y 2 */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Acerca de nosotros */}
+            {business.description && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h2 className="text-2xl font-semibold mb-4">Acerca de nosotros</h2>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {business.description}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
 
-          {/* Ubicación (Mapa) - Ocupa columnas 1 y 2 */}
-          {business.address && (
-            <Card className="lg:col-span-2">
-              <CardContent className="pt-6">
-                <h2 className="text-2xl font-semibold mb-4">Ubicación</h2>
-                <div className="space-y-4">
-                  <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      style={{ border: 0 }}
-                      src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD3G8p1Ca5ZxGiQfdDcKRZZwQI0TL40oVk&q=${encodeURIComponent(business.address)}`}
-                      allowFullScreen
-                    />
+            {/* Ubicación (Mapa) */}
+            {business.address && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h2 className="text-2xl font-semibold mb-4">Ubicación</h2>
+                  <div className="space-y-4">
+                    <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
+                      <iframe
+                        width="100%"
+                        height="100%"
+                        frameBorder="0"
+                        style={{ border: 0 }}
+                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD3G8p1Ca5ZxGiQfdDcKRZZwQI0TL40oVk&q=${encodeURIComponent(business.address)}`}
+                        allowFullScreen
+                      />
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={openInGoogleMaps}
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Abrir en Google Maps
+                    </Button>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={openInGoogleMaps}
-                  >
-                    <MapPin className="mr-2 h-4 w-4" />
-                    Abrir en Google Maps
-                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Información de contacto */}
+            <Card>
+              <CardContent className="pt-6">
+                <h2 className="text-2xl font-semibold mb-4">Información de contacto</h2>
+                <div className="space-y-4">
+                  {business.phone && (
+                    <div className="flex items-start gap-3">
+                      <Phone className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium">Teléfono</p>
+                        <a
+                          href={`tel:${business.phone}`}
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          {business.phone}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {business.email && (
+                    <div className="flex items-start gap-3">
+                      <Mail className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium">Correo electrónico</p>
+                        <a
+                          href={`mailto:${business.email}`}
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          {business.email}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {business.address && (
+                    <div className="flex items-start gap-3">
+                      <MapPin className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium">Dirección</p>
+                        <p className="text-muted-foreground">{business.address}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {business.website && (
+                    <div className="flex items-start gap-3">
+                      <Globe className="h-5 w-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium">Sitio web</p>
+                        <a
+                          href={business.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          {business.website}
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Información de contacto - Ocupa columnas 1 y 2 */}
-          <Card className="lg:col-span-2">
-            <CardContent className="pt-6">
-              <h2 className="text-2xl font-semibold mb-4">Información de contacto</h2>
-              <div className="space-y-4">
-                {business.phone && (
-                  <div className="flex items-start gap-3">
-                    <Phone className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-medium">Teléfono</p>
+            {/* Social Media */}
+            {business.social_media && Object.keys(business.social_media).length > 0 && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h2 className="text-2xl font-semibold mb-4">Redes sociales</h2>
+                  <div className="flex flex-wrap gap-3">
+                    {business.social_media.facebook && (
                       <a
-                        href={`tel:${business.phone}`}
-                        className="text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        {business.phone}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {business.email && (
-                  <div className="flex items-start gap-3">
-                    <Mail className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-medium">Correo electrónico</p>
-                      <a
-                        href={`mailto:${business.email}`}
-                        className="text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        {business.email}
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {business.address && (
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-medium">Dirección</p>
-                      <p className="text-muted-foreground">{business.address}</p>
-                    </div>
-                  </div>
-                )}
-
-                {business.website && (
-                  <div className="flex items-start gap-3">
-                    <Globe className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-medium">Sitio web</p>
-                      <a
-                        href={business.website}
+                        href={business.social_media.facebook}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-muted-foreground hover:text-primary transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
                       >
-                        {business.website}
+                        <span className="font-medium">Facebook</span>
                       </a>
-                    </div>
+                    )}
+                    {business.social_media.instagram && (
+                      <a
+                        href={business.social_media.instagram}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
+                      >
+                        <span className="font-medium">Instagram</span>
+                      </a>
+                    )}
+                    {business.social_media.twitter && (
+                      <a
+                        href={business.social_media.twitter}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
+                      >
+                        <span className="font-medium">Twitter</span>
+                      </a>
+                    )}
+                    {business.social_media.linkedin && (
+                      <a
+                        href={business.social_media.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
+                      >
+                        <span className="font-medium">LinkedIn</span>
+                      </a>
+                    )}
                   </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
-          {/* Social Media - Ocupa columnas 1 y 2 */}
-          {business.social_media && Object.keys(business.social_media).length > 0 && (
-            <Card className="lg:col-span-2">
-              <CardContent className="pt-6">
-                <h2 className="text-2xl font-semibold mb-4">Redes sociales</h2>
-                <div className="flex flex-wrap gap-3">
-                  {business.social_media.facebook && (
-                    <a
-                      href={business.social_media.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
-                    >
-                      <span className="font-medium">Facebook</span>
-                    </a>
-                  )}
-                  {business.social_media.instagram && (
-                    <a
-                      href={business.social_media.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
-                    >
-                      <span className="font-medium">Instagram</span>
-                    </a>
-                  )}
-                  {business.social_media.twitter && (
-                    <a
-                      href={business.social_media.twitter}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
-                    >
-                      <span className="font-medium">Twitter</span>
-                    </a>
-                  )}
-                  {business.social_media.linkedin && (
-                    <a
-                      href={business.social_media.linkedin}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
-                    >
-                      <span className="font-medium">LinkedIn</span>
-                    </a>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Formulario de reserva - Columna 3, sticky */}
-          <div className="lg:col-span-1 lg:row-start-1 lg:row-end-5">
+          {/* Columna derecha: Formulario de reserva - Columna 3, sticky */}
+          <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-semibold mb-4">Haz tu reserva</h3>
