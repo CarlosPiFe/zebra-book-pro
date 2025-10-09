@@ -513,7 +513,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   const getTableStatusLabelColor = (table: Table): string => {
     // Rojo oscuro - fuera de servicio
     if (table.is_out_of_service) {
-      return "text-red-700 bg-red-500/30";
+      return "text-red-800";
     }
     
     if (!table.current_booking) return "";
@@ -521,7 +521,7 @@ export function TablesView({ businessId }: TablesViewProps) {
     const booking = table.current_booking;
     
     if (booking.status === "occupied") {
-      return "text-green-700 bg-green-500/30"; // Verde oscuro
+      return "text-green-800"; // Verde oscuro
     }
     
     if (booking.status === "reserved") {
@@ -531,10 +531,10 @@ export function TablesView({ businessId }: TablesViewProps) {
       const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000);
       
       if (now >= delayThreshold) {
-        return "text-yellow-700 bg-yellow-500/30"; // Amarillo oscuro
+        return "text-yellow-800"; // Amarillo oscuro
       }
       
-      return "text-orange-700 bg-orange-500/30"; // Naranja oscuro
+      return "text-orange-800"; // Naranja oscuro
     }
     
     return "";
@@ -684,7 +684,7 @@ export function TablesView({ businessId }: TablesViewProps) {
               <button
                 key={table.id}
                 onClick={() => handleTableClick(table)}
-                className={`relative aspect-square border-2 rounded-lg p-1.5 flex flex-col items-center justify-center gap-0.5 hover:shadow-md transition-all group ${getTableColor(table)}`}
+                className={`relative aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-between hover:shadow-md transition-all group ${getTableColor(table)}`}
               >
                 <button
                   onClick={(e) => {
@@ -695,29 +695,40 @@ export function TablesView({ businessId }: TablesViewProps) {
                 >
                   <Trash2 className="h-3 w-3 text-destructive" />
                 </button>
+                
+                {/* Estado - parte superior sin recuadro */}
                 {getTableStatusLabel(table) && (
-                  <div className={`absolute top-1 left-1 right-1 text-[9px] font-bold text-center px-1 py-0.5 rounded ${getTableStatusLabelColor(table)}`}>
+                  <div className={`text-[10px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
                     {getTableStatusLabel(table)}
                   </div>
                 )}
-                <div className="text-lg font-bold text-foreground mt-4">
-                  {table.table_number}
-                </div>
-                <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                  <Users className="h-3 w-3" />
-                  <span>{table.max_capacity}</span>
-                </div>
-                {table.current_booking && (
-                  <>
-                    <div className="text-[9px] text-muted-foreground truncate w-full text-center px-0.5">
+                
+                {/* Contenido central */}
+                <div className="flex flex-col items-center gap-1 flex-1 justify-center">
+                  {/* Número de mesa */}
+                  <div className="text-2xl font-bold text-foreground">
+                    {table.table_number}
+                  </div>
+                  
+                  {/* Capacidad */}
+                  <div className="flex items-center gap-1 text-xs text-foreground/80 font-medium">
+                    <Users className="h-3.5 w-3.5" />
+                    <span>{table.max_capacity} personas</span>
+                  </div>
+                  
+                  {/* Nombre del reservante */}
+                  {table.current_booking && table.current_booking.client_name && (
+                    <div className="text-[11px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
                       {table.current_booking.client_name}
                     </div>
-                    {table.current_booking.status === "occupied" && table.total_spent! > 0 && (
-                      <div className="text-[10px] font-bold text-primary">
-                        ${table.total_spent!.toFixed(2)}
-                      </div>
-                    )}
-                  </>
+                  )}
+                </div>
+                
+                {/* Total gastado - parte inferior */}
+                {table.current_booking?.status === "occupied" && table.total_spent! > 0 && (
+                  <div className="text-xs font-bold text-primary">
+                    ${table.total_spent!.toFixed(2)}
+                  </div>
                 )}
               </button>
             ))}
