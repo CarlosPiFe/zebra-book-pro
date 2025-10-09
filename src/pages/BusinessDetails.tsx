@@ -171,7 +171,11 @@ export default function BusinessDetails() {
   const openInGoogleMaps = () => {
     if (business?.address) {
       const encodedAddress = encodeURIComponent(business.address);
-      window.open(`https://www.google.com/maps/search/${encodedAddress}`, '_blank');
+      const link = document.createElement('a');
+      link.href = `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.click();
     }
   };
 
