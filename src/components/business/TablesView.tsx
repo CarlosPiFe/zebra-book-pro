@@ -409,8 +409,26 @@ export function TablesView({ businessId }: TablesViewProps) {
 
   const getTableColor = (table: Table) => {
     if (!table.current_booking) return "bg-muted"; // Gris - disponible
-    if (table.current_booking.status === "occupied") return "bg-green-500/20 border-green-500"; // Verde - comiendo
-    if (table.current_booking.status === "reserved") return "bg-orange-500/20 border-orange-500"; // Naranja - reservada
+    
+    const booking = table.current_booking;
+    
+    if (booking.status === "occupied") {
+      return "bg-green-500/20 border-green-500"; // Verde - comiendo
+    }
+    
+    if (booking.status === "reserved") {
+      // Calcular si la reserva está retrasada (más de 5 minutos)
+      const now = new Date();
+      const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
+      const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000); // +5 minutos
+      
+      if (now >= delayThreshold) {
+        return "bg-yellow-500/20 border-yellow-500"; // Amarillo - reserva retrasada
+      }
+      
+      return "bg-orange-500/20 border-orange-500"; // Naranja - reservada (futura)
+    }
+    
     return "bg-muted";
   };
 
