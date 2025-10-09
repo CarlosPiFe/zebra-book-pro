@@ -353,6 +353,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
           date={selectedDate}
           businessId={businessId}
           isClosed={isClosedDay(selectedDate.getDate())}
+          onEventChange={loadMonthEvents}
         />
       )}
     </div>

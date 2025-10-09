@@ -41,9 +41,10 @@ interface DayDetailsDialogProps {
   date: Date;
   businessId: string;
   isClosed: boolean;
+  onEventChange?: () => void;
 }
 
-export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClosed }: DayDetailsDialogProps) {
+export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClosed, onEventChange }: DayDetailsDialogProps) {
   const navigate = useNavigate();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
@@ -108,6 +109,7 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
       toast.success("Evento añadido");
       setNewEvent({ title: "", description: "", time: "", color: EVENT_COLORS[0].value });
       loadEvents();
+      onEventChange?.();
     } catch (error) {
       console.error("Error adding event:", error);
       toast.error("Error al añadir evento");
@@ -125,6 +127,7 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
 
       toast.success("Evento eliminado");
       loadEvents();
+      onEventChange?.();
     } catch (error) {
       console.error("Error deleting event:", error);
       toast.error("Error al eliminar evento");
