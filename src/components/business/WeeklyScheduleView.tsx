@@ -4,7 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format, startOfWeek, addDays, addWeeks, subWeeks } from "date-fns";
 import { es } from "date-fns/locale";
 import { ScheduleCell } from "./ScheduleCell";
@@ -62,6 +72,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
   });
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [calendarDialogOpen, setCalendarDialogOpen] = useState(false);
+  const [deleteWeekDialogOpen, setDeleteWeekDialogOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -196,6 +207,27 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
     }
   };
 
+  const deleteWeekSchedules = async () => {
+    try {
+      const weekEnd = addDays(currentWeekStart, 6);
+      
+      const { error } = await supabase
+        .from("employee_weekly_schedules")
+        .delete()
+        .gte("date", format(currentWeekStart, "yyyy-MM-dd"))
+        .lte("date", format(weekEnd, "yyyy-MM-dd"));
+
+      if (error) throw error;
+      
+      toast.success("Todos los horarios de la semana han sido eliminados");
+      setDeleteWeekDialogOpen(false);
+      await loadSchedules();
+    } catch (error) {
+      console.error("Error deleting week schedules:", error);
+      toast.error("Error al eliminar los horarios de la semana");
+    }
+  };
+
   const handleCopySchedule = (employeeId: string, date: Date, schedulesToCopy: Schedule[]) => {
     setCopiedSchedule({
       schedules: schedulesToCopy,
@@ -319,8 +351,40 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
           >
             <ChevronRight className="w-4 h-4" />
           </Button>
+          <Button
+            variant="destructive"
+            onClick={() => setDeleteWeekDialogOpen(true)}
+            className="gap-2"
+          >
+            <Trash2 className="w-4 h-4" />
+            Eliminar Semana
+          </Button>
         </div>
       </div>
+      
+      {/* Diálogo de confirmación para eliminar semana */}
+      <AlertDialog open={deleteWeekDialogOpen} onOpenChange={setDeleteWeekDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará todos los horarios de la semana del{" "}
+              <strong>{format(currentWeekStart, "d 'de' MMMM", { locale: es })}</strong> al{" "}
+              <strong>{format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}</strong>.
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={deleteWeekSchedules}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar Todo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       
       {/* Barra de acción para pegar horario */}
       {copiedSchedule && (
