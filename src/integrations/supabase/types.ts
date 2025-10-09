@@ -196,6 +196,7 @@ export type Database = {
       calendar_events: {
         Row: {
           business_id: string
+          color: string
           created_at: string
           description: string | null
           event_date: string
@@ -206,6 +207,7 @@ export type Database = {
         }
         Insert: {
           business_id: string
+          color?: string
           created_at?: string
           description?: string | null
           event_date: string
@@ -216,6 +218,7 @@ export type Database = {
         }
         Update: {
           business_id?: string
+          color?: string
           created_at?: string
           description?: string | null
           event_date?: string

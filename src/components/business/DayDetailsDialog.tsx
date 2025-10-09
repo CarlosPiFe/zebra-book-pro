@@ -19,9 +19,21 @@ interface CalendarEvent {
   event_time: string | null;
   event_date: string;
   business_id: string;
+  color: string;
   created_at: string;
   updated_at: string;
 }
+
+const EVENT_COLORS = [
+  { name: "Azul", value: "#3b82f6" },
+  { name: "Verde", value: "#10b981" },
+  { name: "Naranja", value: "#f97316" },
+  { name: "Púrpura", value: "#a855f7" },
+  { name: "Rosa", value: "#ec4899" },
+  { name: "Amarillo", value: "#eab308" },
+  { name: "Rojo", value: "#ef4444" },
+  { name: "Turquesa", value: "#06b6d4" },
+];
 
 interface DayDetailsDialogProps {
   open: boolean;
@@ -39,6 +51,7 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
     title: "",
     description: "",
     time: "",
+    color: EVENT_COLORS[0].value,
   });
 
   useEffect(() => {
@@ -87,12 +100,13 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
         title: newEvent.title.trim(),
         description: newEvent.description.trim() || null,
         event_time: newEvent.time || null,
+        color: newEvent.color,
       }]);
 
       if (error) throw error;
 
       toast.success("Evento añadido");
-      setNewEvent({ title: "", description: "", time: "" });
+      setNewEvent({ title: "", description: "", time: "", color: EVENT_COLORS[0].value });
       loadEvents();
     } catch (error) {
       console.error("Error adding event:", error);
@@ -163,11 +177,15 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
             ) : (
               <div className="space-y-2">
                 {events.map((event) => (
-                  <Card key={event.id}>
+                  <Card key={event.id} className="border-l-4" style={{ borderLeftColor: event.color }}>
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 space-y-1">
                           <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full flex-shrink-0" 
+                              style={{ backgroundColor: event.color }}
+                            />
                             <span className="font-semibold">{event.title}</span>
                             {event.event_time && (
                               <span className="text-xs text-muted-foreground flex items-center gap-1">
@@ -228,6 +246,29 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
                     value={newEvent.time}
                     onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="color">Color del evento</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {EVENT_COLORS.map((color) => (
+                      <button
+                        key={color.value}
+                        type="button"
+                        onClick={() => setNewEvent({ ...newEvent, color: color.value })}
+                        className={`h-10 rounded-lg border-2 transition-all flex items-center justify-center ${
+                          newEvent.color === color.value 
+                            ? "border-foreground scale-105" 
+                            : "border-border hover:border-foreground/50"
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                        title={color.name}
+                      >
+                        {newEvent.color === color.value && (
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <Button onClick={handleAddEvent} className="w-full">
                   Añadir Evento

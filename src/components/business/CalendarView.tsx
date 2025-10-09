@@ -16,20 +16,28 @@ const MONTHS = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
+interface CalendarEvent {
+  id: string;
+  event_date: string;
+  color: string;
+}
+
 export function CalendarView({ businessId }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [openDays, setOpenDays] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [monthEvents, setMonthEvents] = useState<CalendarEvent[]>([]);
 
   useEffect(() => {
     loadBusinessHours();
-  }, [businessId]);
+    loadMonthEvents();
+  }, [businessId, currentDate]);
 
   useEffect(() => {
-    // Subscribe to realtime changes in availability_slots
-    const channel = supabase
+    // Subscribe to realtime changes in availability_slots and calendar_events
+    const availabilityChannel = supabase
       .channel('availability-changes')
       .on(
         'postgres_changes',
@@ -45,10 +53,27 @@ export function CalendarView({ businessId }: CalendarViewProps) {
       )
       .subscribe();
 
+    const eventsChannel = supabase
+      .channel('calendar-events-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'calendar_events',
+          filter: `business_id=eq.${businessId}`
+        },
+        () => {
+          loadMonthEvents();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(availabilityChannel);
+      supabase.removeChannel(eventsChannel);
     };
-  }, [businessId]);
+  }, [businessId, currentDate]);
 
   const loadBusinessHours = async () => {
     try {
@@ -66,6 +91,27 @@ export function CalendarView({ businessId }: CalendarViewProps) {
       console.error("Error loading business hours:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadMonthEvents = async () => {
+    try {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      const { data, error } = await supabase
+        .from("calendar_events")
+        .select("id, event_date, color")
+        .eq("business_id", businessId)
+        .gte("event_date", firstDay.toISOString().split('T')[0])
+        .lte("event_date", lastDay.toISOString().split('T')[0]);
+
+      if (error) throw error;
+      setMonthEvents((data || []) as CalendarEvent[]);
+    } catch (error) {
+      console.error("Error loading month events:", error);
     }
   };
   
@@ -116,6 +162,11 @@ export function CalendarView({ businessId }: CalendarViewProps) {
       month === today.getMonth() &&
       year === today.getFullYear()
     );
+  };
+
+  const getDayEvents = (day: number) => {
+    const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+    return monthEvents.filter(event => event.event_date === dateStr);
   };
 
   // Generate calendar days
@@ -232,6 +283,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
 
                 const closed = isClosedDay(day);
                 const today = isToday(day);
+                const dayEvents = getDayEvents(day);
 
                 return (
                   <button
@@ -245,15 +297,28 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                       !closed && !today && "bg-background border border-border hover:border-accent"
                     )}
                   >
-                    <div className="flex flex-col items-center justify-center h-full">
+                    <div className="flex flex-col items-center justify-center h-full gap-1">
                       <span className={cn("text-sm", today && "font-bold")}>
                         {day}
                       </span>
-                      {closed && (
+                      {closed ? (
                         <span className="text-[10px] text-muted-foreground">
                           Cerrado
                         </span>
-                      )}
+                      ) : dayEvents.length > 0 ? (
+                        <div className="flex gap-0.5 flex-wrap justify-center">
+                          {dayEvents.slice(0, 3).map((event) => (
+                            <div
+                              key={event.id}
+                              className="w-1.5 h-1.5 rounded-full"
+                              style={{ backgroundColor: event.color }}
+                            />
+                          ))}
+                          {dayEvents.length > 3 && (
+                            <span className="text-[8px] text-muted-foreground">+{dayEvents.length - 3}</span>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   </button>
                 );
