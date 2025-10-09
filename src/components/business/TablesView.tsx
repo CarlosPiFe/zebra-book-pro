@@ -286,6 +286,26 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
+  const handleConfirmArrival = async () => {
+    if (!selectedTable?.current_booking) return;
+
+    try {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "occupied" })
+        .eq("id", selectedTable.current_booking.id);
+
+      if (error) throw error;
+
+      toast.success("Cliente confirmado - mesa ocupada");
+      setIsActionDialogOpen(false);
+      loadTables();
+    } catch (error) {
+      console.error("Error confirming arrival:", error);
+      toast.error("Error al confirmar la llegada");
+    }
+  };
+
   const handleReserveClick = () => {
     if (!selectedTable) return;
     
@@ -693,19 +713,28 @@ export function TablesView({ businessId }: TablesViewProps) {
                       {selectedTable.current_booking.start_time && (
                         <p><strong>Hora:</strong> {selectedTable.current_booking.start_time}</p>
                       )}
+                      {selectedTable.current_booking.party_size && (
+                        <p><strong>Comensales:</strong> {selectedTable.current_booking.party_size}</p>
+                      )}
                     </div>
                     <Button
-                      variant="destructive"
-                      className="h-12"
-                      onClick={handleCancelReservation}
+                      className="bg-green-500 hover:bg-green-600 text-white h-12"
+                      onClick={handleConfirmArrival}
                     >
-                      Cancelar Reserva
+                      Cliente ha llegado / Está comiendo
                     </Button>
                     <Button
                       className="bg-orange-500 hover:bg-orange-600 text-white h-12"
                       onClick={handleEditReservation}
                     >
                       Cambiar Reserva
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="h-12"
+                      onClick={handleCancelReservation}
+                    >
+                      Cancelar Reserva
                     </Button>
                   </>
                 ) : (
