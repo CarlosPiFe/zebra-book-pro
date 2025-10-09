@@ -32,6 +32,7 @@ interface Booking {
   start_time: string;
   end_time: string;
   status: string;
+  client_name: string;
   businesses: {
     name: string;
   };
@@ -91,11 +92,14 @@ const Dashboard = () => {
         // Load bookings for owner's businesses
         if (businessData && businessData.length > 0) {
           const businessIds = businessData.map((b) => b.id);
+          const now = new Date();
           const { data: bookingData } = await supabase
             .from("bookings")
             .select("*, businesses(name)")
             .in("business_id", businessIds)
-            .order("booking_date", { ascending: true });
+            .gte("booking_date", now.toISOString().split('T')[0])
+            .order("booking_date", { ascending: true })
+            .order("start_time", { ascending: true });
           
           setBookings(bookingData || []);
         }
@@ -164,10 +168,10 @@ const Dashboard = () => {
           ) : (
             // Vista centrada en el negocio
             <div className="space-y-8">
-              {/* Encabezado del negocio */}
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              {/* Encabezado del negocio con banner */}
+              <div className="space-y-4">
                 {mainBusiness.image_url && (
-                  <div className="w-24 h-24 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                  <div className="w-full h-48 md:h-64 rounded-lg overflow-hidden bg-muted">
                     <img 
                       src={mainBusiness.image_url} 
                       alt={mainBusiness.name}
@@ -267,7 +271,7 @@ const Dashboard = () => {
                         <CardHeader>
                           <div className="flex justify-between items-start">
                             <div>
-                              <CardTitle className="text-base">{booking.businesses.name}</CardTitle>
+                              <CardTitle className="text-base">{booking.client_name}</CardTitle>
                               <CardDescription>
                                 {new Date(booking.booking_date).toLocaleDateString("es-ES", {
                                   weekday: "long",
@@ -297,7 +301,7 @@ const Dashboard = () => {
                         <CardContent>
                           <div className="flex items-center text-sm text-muted-foreground">
                             <Clock className="h-4 w-4 mr-2" />
-                            {booking.start_time} - {booking.end_time}
+                            {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
                           </div>
                         </CardContent>
                       </Card>
