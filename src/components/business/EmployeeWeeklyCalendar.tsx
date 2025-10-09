@@ -202,7 +202,7 @@ export function EmployeeWeeklyCalendar({
           }}
         >
           <span className="truncate w-full text-center font-semibold text-[11px]">
-            {schedule.start_time} - {schedule.end_time}
+            {schedule.start_time?.substring(0, 5)} - {schedule.end_time?.substring(0, 5)}
           </span>
         </div>
       );
