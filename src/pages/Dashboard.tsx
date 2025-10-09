@@ -39,6 +39,7 @@ interface Booking {
   };
   tables?: {
     table_number: number;
+    is_out_of_service?: boolean;
   };
 }
 
@@ -53,6 +54,31 @@ const Dashboard = () => {
   useEffect(() => {
     loadUserData();
   }, []);
+
+  // Setup realtime subscription for bookings updates
+  useEffect(() => {
+    if (businesses.length === 0) return;
+
+    const channel = supabase
+      .channel('dashboard-bookings')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings'
+        },
+        () => {
+          // Reload bookings when any change occurs
+          loadUserData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [businesses]);
 
   const loadUserData = async () => {
     try {
@@ -104,7 +130,7 @@ const Dashboard = () => {
           
           const { data: bookingData } = await supabase
             .from("bookings")
-            .select("*, businesses(name), tables(table_number)")
+            .select("*, businesses(name), tables(table_number, is_out_of_service)")
             .in("business_id", businessIds)
             .or(`booking_date.gt.${currentDate},and(booking_date.eq.${currentDate},end_time.gte.${currentTime})`)
             .order("booking_date", { ascending: true })
@@ -285,58 +311,103 @@ const Dashboard = () => {
                 <div>
                   <h2 className="text-2xl font-bold mb-4">Reservas Recientes</h2>
                   <div className="space-y-4">
-                    {bookings.slice(0, 5).map((booking) => (
-                      <Card key={booking.id}>
-                        <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1">
-                              <CardTitle className="text-base">{booking.client_name}</CardTitle>
-                              <CardDescription>
-                                {new Date(booking.booking_date).toLocaleDateString("es-ES", {
-                                  weekday: "long",
-                                  year: "numeric",
-                                  month: "long",
-                                  day: "numeric",
-                                })}
-                              </CardDescription>
-                            </div>
-                            <span
-                              className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                booking.status === "confirmed"
-                                  ? "bg-accent/10 text-accent"
-                                  : booking.status === "cancelled"
-                                  ? "bg-destructive/10 text-destructive"
-                                  : "bg-muted text-muted-foreground"
-                              }`}
-                            >
-                              {booking.status === "confirmed"
-                                ? "Confirmada"
-                                : booking.status === "cancelled"
-                                ? "Cancelada"
-                                : "Pendiente"}
-                            </span>
-                          </div>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-2" />
-                              {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
-                            </div>
-                            <div className="flex items-center">
-                              <Users className="h-4 w-4 mr-2" />
-                              {booking.party_size} {booking.party_size === 1 ? "persona" : "personas"}
-                            </div>
-                            {booking.tables && (
-                              <div className="flex items-center">
-                                <Building2 className="h-4 w-4 mr-2" />
-                                Mesa {booking.tables.table_number}
+                    {bookings.slice(0, 5).map((booking) => {
+                      const getBookingStatus = () => {
+                        // Mesa fuera de servicio tiene prioridad
+                        if (booking.tables?.is_out_of_service) {
+                          return {
+                            label: "Fuera de servicio",
+                            className: "bg-red-500/20 text-red-700 border border-red-500"
+                          };
+                        }
+
+                        // Cliente ha llegado y está comiendo
+                        if (booking.status === "occupied") {
+                          return {
+                            label: "En curso",
+                            className: "bg-green-500/20 text-green-700 border border-green-500"
+                          };
+                        }
+
+                        // Reserva futura
+                        if (booking.status === "reserved") {
+                          const now = new Date();
+                          const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
+                          const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000);
+
+                          // Cliente llega tarde (más de 5 minutos de retraso)
+                          if (now >= delayThreshold) {
+                            return {
+                              label: "Retraso",
+                              className: "bg-yellow-500/20 text-yellow-700 border border-yellow-500"
+                            };
+                          }
+
+                          // Reserva confirmada (naranja)
+                          return {
+                            label: "Reservado",
+                            className: "bg-orange-500/20 text-orange-700 border border-orange-500"
+                          };
+                        }
+
+                        // Pendiente (sin mesa asignada o esperando confirmación)
+                        if (booking.status === "pending") {
+                          return {
+                            label: "Pendiente",
+                            className: "bg-muted text-muted-foreground"
+                          };
+                        }
+
+                        // Estado por defecto
+                        return {
+                          label: booking.status,
+                          className: "bg-muted text-muted-foreground"
+                        };
+                      };
+
+                      const status = getBookingStatus();
+
+                      return (
+                        <Card key={booking.id}>
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <CardTitle className="text-base">{booking.client_name}</CardTitle>
+                                <CardDescription>
+                                  {new Date(booking.booking_date).toLocaleDateString("es-ES", {
+                                    weekday: "long",
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  })}
+                                </CardDescription>
                               </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.className}`}>
+                                {status.label}
+                              </span>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                              <div className="flex items-center">
+                                <Clock className="h-4 w-4 mr-2" />
+                                {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
+                              </div>
+                              <div className="flex items-center">
+                                <Users className="h-4 w-4 mr-2" />
+                                {booking.party_size} {booking.party_size === 1 ? "persona" : "personas"}
+                              </div>
+                              {booking.tables && (
+                                <div className="flex items-center">
+                                  <Building2 className="h-4 w-4 mr-2" />
+                                  Mesa {booking.tables.table_number}
+                                </div>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
                   </div>
                 </div>
               )}
