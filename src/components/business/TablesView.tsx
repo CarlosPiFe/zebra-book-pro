@@ -71,6 +71,28 @@ export function TablesView({ businessId }: TablesViewProps) {
 
   useEffect(() => {
     loadTables();
+
+    // Subscribe to realtime changes in bookings table
+    const channel = supabase
+      .channel('bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: `business_id=eq.${businessId}`
+        },
+        (payload) => {
+          console.log('Booking change detected:', payload);
+          loadTables(); // Reload tables when any booking changes
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [businessId, filterDate, filterTime]);
 
   const loadTables = async () => {
