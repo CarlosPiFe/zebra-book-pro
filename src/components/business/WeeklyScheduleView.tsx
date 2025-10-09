@@ -318,47 +318,50 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
   }
 
   return (
-    <div className="space-y-6 relative">
+    <div className="space-y-6">
       {/* Overlay cuando está en modo de pegar */}
       {copiedSchedule && (
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-30 pointer-events-none" />
       )}
       
-      <div className="flex items-center justify-between relative z-40">
-        <div>
-          <h2 className="text-3xl font-bold">Horarios Semanales</h2>
-          <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <div className="text-center min-w-[200px]">
-            <p className="font-semibold">
-              {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
-              {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}
-            </p>
+      {/* Header sticky con backdrop blur */}
+      <div className="sticky top-20 -mx-6 -mt-6 px-6 pt-6 pb-4 bg-background/80 backdrop-blur-md z-40 border-b border-border/40">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold">Horarios Semanales</h2>
+            <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setDeleteWeekDialogOpen(true)}
-            className="gap-2"
-          >
-            <Trash2 className="w-4 h-4" />
-            Eliminar Semana
-          </Button>
+
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="text-center min-w-[200px]">
+              <p className="font-semibold">
+                {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
+                {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => setDeleteWeekDialogOpen(true)}
+              className="gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              Eliminar Semana
+            </Button>
+          </div>
         </div>
       </div>
       
@@ -388,7 +391,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
       
       {/* Barra de acción para pegar horario */}
       {copiedSchedule && (
-        <Card className="p-4 border-2 border-primary bg-primary/5 relative z-40">
+        <Card className="p-4 border-2 border-primary bg-primary/5 z-30 relative">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-lg">Modo: Pegar Horario</h3>
@@ -422,11 +425,11 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
           </p>
         </Card>
       ) : (
-        <Card className="overflow-x-auto relative z-10">
+        <Card className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="p-3 text-left font-semibold w-32 sticky left-0 bg-card z-10">
+                <th className="p-3 text-left font-semibold w-32 sticky left-0 bg-card z-20">
                   Empleado
                 </th>
                 {weekDays.map((day) => {
@@ -452,7 +455,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
             <tbody>
               {employees.map((employee) => (
                 <tr key={employee.id} className="border-b hover:bg-muted/50">
-                  <td className="p-3 sticky left-0 bg-card z-10">
+                  <td className="p-3 sticky left-0 bg-card z-20">
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
                         <div className="font-medium text-sm">{employee.name}</div>
