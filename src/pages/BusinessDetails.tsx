@@ -52,7 +52,13 @@ export default function BusinessDetails() {
     getAvailableTimeSlots,
     getNextAvailableSlot,
     loading: availabilityLoading,
+    tables,
   } = useBookingAvailability(businessId);
+
+  // Calculate maximum capacity based on largest table
+  const maxTableCapacity = tables.length > 0 
+    ? Math.max(...tables.map(table => table.max_capacity))
+    : 20; // Default fallback if no tables
 
   useEffect(() => {
     loadBusiness();
@@ -456,7 +462,7 @@ export default function BusinessDetails() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                        {Array.from({ length: maxTableCapacity }, (_, i) => i + 1).map((num) => (
                           <SelectItem key={num} value={String(num)}>
                             <div className="flex items-center gap-2">
                               <Users className="h-4 w-4" />
@@ -466,6 +472,11 @@ export default function BusinessDetails() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {parseInt(bookingForm.partySize) > maxTableCapacity && (
+                      <p className="text-sm text-destructive mt-1">
+                        Para reservas de más de {maxTableCapacity} personas, contáctanos.
+                      </p>
+                    )}
                   </div>
 
                   <div>

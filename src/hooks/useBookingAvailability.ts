@@ -224,5 +224,6 @@ export function useBookingAvailability(businessId: string | undefined) {
     getNextAvailableSlot,
     loading,
     slotDuration,
+    tables,
   };
 }
