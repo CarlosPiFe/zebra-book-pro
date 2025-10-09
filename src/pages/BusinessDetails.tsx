@@ -36,7 +36,7 @@ export default function BusinessDetails() {
         .select("*")
         .eq("id", businessId)
         .eq("is_active", true)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
 
