@@ -50,7 +50,52 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
   useEffect(() => {
     loadBookings();
+    
+    // Check for delayed bookings every minute
+    const interval = setInterval(() => {
+      checkAndUpdateDelayedBookings();
+    }, 60000); // Check every minute
+
+    // Initial check
+    checkAndUpdateDelayedBookings();
+
+    return () => clearInterval(interval);
   }, [businessId, selectedDate, selectedTime]);
+
+  const checkAndUpdateDelayedBookings = async () => {
+    try {
+      const now = new Date();
+      const currentDate = format(now, "yyyy-MM-dd");
+      const currentTime = format(now, "HH:mm");
+
+      // Get all reserved bookings for today
+      const { data: reservedBookings, error } = await supabase
+        .from("bookings")
+        .select("id, start_time, booking_date")
+        .eq("business_id", businessId)
+        .eq("booking_date", currentDate)
+        .eq("status", "reserved");
+
+      if (error) throw error;
+
+      // Update bookings that are delayed
+      for (const booking of reservedBookings || []) {
+        if (booking.start_time < currentTime) {
+          await supabase
+            .from("bookings")
+            .update({ status: "pending" })
+            .eq("id", booking.id);
+        }
+      }
+
+      // Reload bookings if any were updated
+      if (reservedBookings && reservedBookings.length > 0) {
+        loadBookings();
+      }
+    } catch (error) {
+      console.error("Error checking delayed bookings:", error);
+    }
+  };
 
   const loadBookings = async () => {
     try {

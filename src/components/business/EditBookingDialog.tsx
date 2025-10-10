@@ -17,7 +17,7 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { z } from "zod";
 import { format, parse, addMinutes } from "date-fns";
-import { Info } from "lucide-react";
+import { Info, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const bookingSchema = z.object({
@@ -345,22 +345,29 @@ export function EditBookingDialog({
     }
   };
 
-  const handleMarkArrived = async () => {
+  const handleStatusChange = async (newStatus: string) => {
     try {
       setLoading(true);
       const { error } = await supabase
         .from("bookings")
-        .update({ status: "occupied" })
+        .update({ status: newStatus })
         .eq("id", booking.id);
 
       if (error) throw error;
 
-      toast.success("Cliente marcado como llegado");
+      const statusMessages: Record<string, string> = {
+        occupied: "Cliente marcado como llegado",
+        reserved: "Reserva marcada como reservada",
+        pending: "Reserva marcada en retraso",
+        completed: "Reserva marcada como completada",
+      };
+
+      toast.success(statusMessages[newStatus] || "Estado actualizado");
       onOpenChange(false);
       onBookingUpdated();
     } catch (error) {
-      console.error("Error marking arrival:", error);
-      toast.error("Error al marcar llegada");
+      console.error("Error updating status:", error);
+      toast.error("Error al actualizar el estado");
     } finally {
       setLoading(false);
     }
@@ -558,42 +565,43 @@ export function EditBookingDialog({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 flex-col sm:flex-row">
+          <DialogFooter className="gap-2 flex-col sm:flex-row sm:justify-between">
+            {/* Left side: Status control buttons */}
             <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                type="button"
+                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => handleStatusChange("occupied")}
+                disabled={loading}
+              >
+                Han llegado
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1 sm:flex-none border-gray-500 text-gray-700 hover:bg-gray-100"
+                onClick={handleCancel}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+            </div>
+            
+            {/* Right side: Data action buttons */}
+            <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+              <Button type="submit" disabled={loading} className="flex-1 sm:flex-none bg-black hover:bg-black/90 text-white">
+                {loading ? "Guardando..." : "Guardar cambios"}
+              </Button>
               <Button
                 type="button"
                 variant="destructive"
                 onClick={handleDelete}
                 disabled={loading}
-                className="flex-1 sm:flex-none"
+                className="sm:w-auto w-12 p-0"
               >
-                Eliminar
+                <Trash2 className="h-4 w-4" />
               </Button>
-              {booking.status !== "cancelled" && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={loading}
-                  className="flex-1 sm:flex-none"
-                >
-                  Cancelar
-                </Button>
-              )}
-              {booking.status === "reserved" && (
-                <Button
-                  type="button"
-                  className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600"
-                  onClick={handleMarkArrived}
-                  disabled={loading}
-                >
-                  Han llegado
-                </Button>
-              )}
             </div>
-            <Button type="submit" disabled={loading} className="flex-1 sm:flex-none ml-auto">
-              {loading ? "Guardando..." : "Guardar Cambios"}
-            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
