@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,6 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Plus, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useEffect } from "react";
 import { addMinutes } from "date-fns";
 import { z } from "zod";
 import { format } from "date-fns";
@@ -51,6 +50,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [loading, setLoading] = useState(false);
   const [slotDuration, setSlotDuration] = useState(60);
   const [businessCategory, setBusinessCategory] = useState("");
+  const [openDays, setOpenDays] = useState<number[]>([]);
   
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -64,7 +64,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [selectedTableId, setSelectedTableId] = useState<string>("auto");
   const [tables, setTables] = useState<Array<{ id: string; table_number: number; max_capacity: number; isAvailable: boolean }>>([]);
 
-  // Load business slot duration and category when dialog opens
+  // Load business slot duration, category, and availability when dialog opens
   useEffect(() => {
     if (!open) return;
     
@@ -79,10 +79,27 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         setSlotDuration(data.booking_slot_duration_minutes);
         setBusinessCategory(data.category);
       }
+
+      // Load availability slots to determine open days
+      const { data: availabilityData, error: availabilityError } = await supabase
+        .from("availability_slots")
+        .select("day_of_week")
+        .eq("business_id", businessId);
+
+      if (!availabilityError && availabilityData) {
+        const uniqueDays = [...new Set(availabilityData.map(slot => slot.day_of_week))];
+        setOpenDays(uniqueDays);
+      }
     };
 
     loadBusinessSettings();
   }, [businessId, open]);
+
+  // Function to check if a date is available (business is open)
+  const isDateAvailable = (date: Date): boolean => {
+    const dayOfWeek = date.getDay();
+    return openDays.includes(dayOfWeek);
+  };
 
   // Auto-calculate end time when start time changes (only if not custom)
   useEffect(() => {
@@ -392,6 +409,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 date={bookingDate}
                 onDateChange={setBookingDate}
                 placeholder="Seleccionar fecha"
+                disabled={(date) => !isDateAvailable(date)}
               />
             </div>
 
