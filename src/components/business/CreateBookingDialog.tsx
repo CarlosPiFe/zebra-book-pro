@@ -22,6 +22,7 @@ import { useEffect } from "react";
 import { addMinutes } from "date-fns";
 import { z } from "zod";
 import { format } from "date-fns";
+import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 
 const createBookingSchema = (isHospitality: boolean) => z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -63,6 +64,12 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [notes, setNotes] = useState("");
   const [selectedTableId, setSelectedTableId] = useState<string>("auto");
   const [tables, setTables] = useState<Array<{ id: string; table_number: number; max_capacity: number; isAvailable: boolean }>>([]);
+
+  // Use booking availability hook
+  const {
+    isDateAvailable,
+    getAvailableTimeSlots,
+  } = useBookingAvailability(businessId);
 
   // Load business slot duration and category when dialog opens
   useEffect(() => {
@@ -390,19 +397,44 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               <Label>Fecha de reserva *</Label>
               <DatePicker
                 date={bookingDate}
-                onDateChange={setBookingDate}
+                onDateChange={(date) => {
+                  setBookingDate(date);
+                  setStartTime(""); // Reset time when date changes
+                }}
                 placeholder="Seleccionar fecha"
+                disabled={(date) => !isDateAvailable(date)}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="start_time">Hora de inicio *</Label>
-                <TimePicker
-                  time={startTime}
-                  onTimeChange={setStartTime}
-                  placeholder="14:00"
-                />
+                {bookingDate ? (
+                  <Select value={startTime} onValueChange={setStartTime}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar hora" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {getAvailableTimeSlots(bookingDate, parseInt(partySize)).length > 0 ? (
+                        getAvailableTimeSlots(bookingDate, parseInt(partySize)).map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-slots" disabled>
+                          No hay horarios disponibles
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Select disabled>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Primero selecciona una fecha" />
+                    </SelectTrigger>
+                  </Select>
+                )}
               </div>
               
               <div className="space-y-2">
