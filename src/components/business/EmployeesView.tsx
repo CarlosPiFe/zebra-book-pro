@@ -4,6 +4,16 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Copy, Plus, Trash2, UserPlus, Edit, Calendar } from "lucide-react";
@@ -45,6 +55,8 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
   const [vacations, setVacations] = useState<Vacation[]>([]);
   const [vacationDateRange, setVacationDateRange] = useState<DateRange>();
   const [newVacationNotes, setNewVacationNotes] = useState("");
+  const [deleteEmployeeId, setDeleteEmployeeId] = useState<string | null>(null);
+  const [deleteVacationId, setDeleteVacationId] = useState<string | null>(null);
 
   useEffect(() => {
     loadEmployees();
@@ -118,16 +130,19 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
     }
   };
 
-  const handleDeleteEmployee = async (employeeId: string) => {
+  const handleDeleteEmployee = async () => {
+    if (!deleteEmployeeId) return;
+    
     try {
       const { error } = await supabase
         .from("waiters")
         .delete()
-        .eq("id", employeeId);
+        .eq("id", deleteEmployeeId);
 
       if (error) throw error;
 
       toast.success("Empleado eliminado");
+      setDeleteEmployeeId(null);
       loadEmployees();
     } catch (error) {
       console.error("Error deleting employee:", error);
@@ -224,20 +239,21 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
     }
   };
 
-  const handleDeleteVacation = async (vacationId: string) => {
-    if (!selectedEmployee) return;
+  const handleDeleteVacation = async () => {
+    if (!selectedEmployee || !deleteVacationId) return;
 
     try {
       const { error } = await supabase
         .from("employee_vacations")
         .delete()
-        .eq("id", vacationId);
+        .eq("id", deleteVacationId);
 
       if (error) throw error;
 
       toast.success("Vacaciones eliminadas");
+      setDeleteVacationId(null);
       loadVacations(selectedEmployee.id);
-      loadEmployees(); // Refresh employee list to update vacation count
+      loadEmployees();
     } catch (error) {
       console.error("Error deleting vacation:", error);
       toast.error("Error al eliminar vacaciones");
@@ -344,7 +360,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleDeleteEmployee(employee.id)}
+                    onClick={() => setDeleteEmployeeId(employee.id)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -424,7 +440,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleDeleteVacation(vacation.id)}
+                              onClick={() => setDeleteVacationId(vacation.id)}
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -464,6 +480,40 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteEmployeeId !== null} onOpenChange={(open) => !open && setDeleteEmployeeId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro que quieres eliminar este empleado?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El empleado será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEmployee} className="bg-destructive hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={deleteVacationId !== null} onOpenChange={(open) => !open && setDeleteVacationId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro que quieres eliminar estas vacaciones?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El período de vacaciones será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteVacation} className="bg-destructive hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

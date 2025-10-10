@@ -11,6 +11,16 @@ import { useNavigate } from "react-router-dom";
 import { format, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CalendarEvent {
   id: string;
@@ -48,6 +58,7 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
   const navigate = useNavigate();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deleteEventId, setDeleteEventId] = useState<string | null>(null);
   const [newEvent, setNewEvent] = useState({
     title: "",
     description: "",
@@ -116,16 +127,19 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
     }
   };
 
-  const handleDeleteEvent = async (eventId: string) => {
+  const handleDeleteEvent = async () => {
+    if (!deleteEventId) return;
+
     try {
       const { error } = await (supabase as any)
         .from("calendar_events")
         .delete()
-        .eq("id", eventId);
+        .eq("id", deleteEventId);
 
       if (error) throw error;
 
       toast.success("Evento eliminado");
+      setDeleteEventId(null);
       loadEvents();
       onEventChange?.();
     } catch (error) {
@@ -204,7 +218,7 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => handleDeleteEvent(event.id)}
+                          onClick={() => setDeleteEventId(event.id)}
                           className="h-8 w-8"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -304,6 +318,23 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
           </div>
         </div>
       </DialogContent>
+
+      <AlertDialog open={deleteEventId !== null} onOpenChange={(open) => !open && setDeleteEventId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro que quieres eliminar este evento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El evento será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEvent} className="bg-destructive hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

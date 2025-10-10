@@ -10,6 +10,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -67,6 +77,8 @@ export function EditBookingDialog({
   const [loading, setLoading] = useState(false);
   const [slotDuration, setSlotDuration] = useState(60);
   const [customEndTime, setCustomEndTime] = useState(true);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [clientName, setClientName] = useState(booking.client_name);
   const [clientEmail, setClientEmail] = useState(booking.client_email || "");
   const [clientPhone, setClientPhone] = useState(booking.client_phone || "");
@@ -323,8 +335,6 @@ export function EditBookingDialog({
   };
 
   const handleDelete = async () => {
-    if (!confirm("¿Estás seguro de eliminar esta reserva?")) return;
-
     try {
       setLoading(true);
       const { error } = await supabase
@@ -335,6 +345,7 @@ export function EditBookingDialog({
       if (error) throw error;
 
       toast.success("Reserva eliminada");
+      setDeleteDialogOpen(false);
       onOpenChange(false);
       onBookingUpdated();
     } catch (error) {
@@ -374,8 +385,6 @@ export function EditBookingDialog({
   };
 
   const handleCancel = async () => {
-    if (!confirm("¿Estás seguro de cancelar esta reserva? Se guardará pero no ocupará mesa ni horario.")) return;
-
     try {
       setLoading(true);
       const { error } = await supabase
@@ -386,6 +395,7 @@ export function EditBookingDialog({
       if (error) throw error;
 
       toast.success("Reserva cancelada");
+      setCancelDialogOpen(false);
       onOpenChange(false);
       onBookingUpdated();
     } catch (error) {
@@ -580,7 +590,7 @@ export function EditBookingDialog({
                 type="button"
                 variant="outline"
                 className="flex-1 sm:flex-none border-gray-500 text-gray-700 hover:bg-gray-100"
-                onClick={handleCancel}
+                onClick={() => setCancelDialogOpen(true)}
                 disabled={loading}
               >
                 Cancelar
@@ -595,7 +605,7 @@ export function EditBookingDialog({
               <Button
                 type="button"
                 variant="ghost"
-                onClick={handleDelete}
+                onClick={() => setDeleteDialogOpen(true)}
                 disabled={loading}
                 className="sm:w-auto w-12 p-3 hover:bg-transparent"
               >
@@ -605,6 +615,40 @@ export function EditBookingDialog({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro que quieres eliminar esta reserva?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. La reserva será eliminada permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro de cancelar esta reserva?</AlertDialogTitle>
+            <AlertDialogDescription>
+              La reserva se guardará pero no ocupará mesa ni horario.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancel} className="bg-destructive hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }

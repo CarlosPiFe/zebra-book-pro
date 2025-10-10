@@ -4,6 +4,16 @@ import { toast } from "sonner";
 import { Plus, Users, Trash2, Edit, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -52,6 +62,8 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [tableNumber, setTableNumber] = useState("");
   const [maxCapacity, setMaxCapacity] = useState("");
   const [orders, setOrders] = useState<any[]>([]);
+  const [deleteTableId, setDeleteTableId] = useState<string | null>(null);
+  const [deleteBookingDialogOpen, setDeleteBookingDialogOpen] = useState(false);
   
   // Filter states
   const [filterDate, setFilterDate] = useState<Date>(new Date());
@@ -232,13 +244,16 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
-  const handleDeleteTable = async (tableId: string) => {
+  const handleDeleteTable = async () => {
+    if (!deleteTableId) return;
+
     try {
-      const { error } = await supabase.from("tables").delete().eq("id", tableId);
+      const { error } = await supabase.from("tables").delete().eq("id", deleteTableId);
 
       if (error) throw error;
 
       toast.success("Mesa eliminada correctamente");
+      setDeleteTableId(null);
       loadTables();
     } catch (error) {
       console.error("Error deleting table:", error);
@@ -460,6 +475,7 @@ export function TablesView({ businessId }: TablesViewProps) {
       if (error) throw error;
 
       toast.success("Reserva cancelada correctamente");
+      setDeleteBookingDialogOpen(false);
       setIsActionDialogOpen(false);
       loadTables();
     } catch (error) {
@@ -480,6 +496,7 @@ export function TablesView({ businessId }: TablesViewProps) {
       if (error) throw error;
 
       toast.success("Reserva eliminada correctamente");
+      setDeleteBookingDialogOpen(false);
       setIsBookingDialogOpen(false);
       loadTables();
     } catch (error) {
@@ -749,7 +766,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDeleteTable(table.id);
+                    setDeleteTableId(table.id);
                   }}
                   className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded"
                 >
@@ -866,12 +883,12 @@ export function TablesView({ businessId }: TablesViewProps) {
                       Cambiar Reserva
                     </Button>
                     <Button
-                      variant="destructive"
-                      className="h-12"
-                      onClick={handleCancelReservation}
-                    >
-                      Cancelar Reserva
-                    </Button>
+                     variant="destructive"
+                     className="h-12"
+                     onClick={() => setDeleteBookingDialogOpen(true)}
+                   >
+                     Cancelar Reserva
+                   </Button>
                   </>
                 ) : (
                   <>
@@ -1033,7 +1050,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                 {selectedTable?.current_booking && (
                   <Button 
                     variant="destructive" 
-                    onClick={handleDeleteBooking}
+                    onClick={() => setDeleteBookingDialogOpen(true)}
                     className="w-full sm:w-auto"
                   >
                     Eliminar Reserva
@@ -1066,6 +1083,49 @@ export function TablesView({ businessId }: TablesViewProps) {
             orders={orders}
             totalAmount={selectedTable?.total_spent || 0}
           />
+
+          <AlertDialog open={deleteTableId !== null} onOpenChange={(open) => !open && setDeleteTableId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Estás seguro que quieres eliminar esta mesa?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción no se puede deshacer. La mesa será eliminada permanentemente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteTable} className="bg-destructive hover:bg-destructive/90">
+                  Confirmar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog open={deleteBookingDialogOpen} onOpenChange={setDeleteBookingDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>¿Estás seguro que quieres eliminar esta reserva?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta acción no se puede deshacer. La reserva será eliminada permanentemente.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={() => {
+                    if (isBookingDialogOpen) {
+                      handleDeleteBooking();
+                    } else {
+                      handleCancelReservation();
+                    }
+                  }} 
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Confirmar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
     </div>

@@ -7,6 +7,16 @@ import { toast } from "sonner";
 import { Clock, Plus, Trash2 } from "lucide-react";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface BusinessHoursProps {
   businessId: string;
@@ -35,6 +45,7 @@ export function BusinessHours({ businessId }: BusinessHoursProps) {
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [startTime, setStartTime] = useState<string>("");
   const [endTime, setEndTime] = useState<string>("");
+  const [deleteEntry, setDeleteEntry] = useState<HourEntry | null>(null);
 
   useEffect(() => {
     loadHours();
@@ -106,19 +117,22 @@ export function BusinessHours({ businessId }: BusinessHoursProps) {
     }
   };
 
-  const handleDeleteEntry = async (entry: HourEntry) => {
+  const handleDeleteEntry = async () => {
+    if (!deleteEntry) return;
+
     try {
       const { error } = await supabase
         .from("availability_slots")
         .delete()
         .eq("business_id", businessId)
-        .eq("start_time", entry.start_time)
-        .eq("end_time", entry.end_time)
-        .in("day_of_week", entry.days);
+        .eq("start_time", deleteEntry.start_time)
+        .eq("end_time", deleteEntry.end_time)
+        .in("day_of_week", deleteEntry.days);
 
       if (error) throw error;
 
       toast.success("Horario eliminado");
+      setDeleteEntry(null);
       loadHours();
     } catch (error) {
       console.error("Error deleting hours:", error);
@@ -170,7 +184,7 @@ export function BusinessHours({ businessId }: BusinessHoursProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleDeleteEntry(entry)}
+                    onClick={() => setDeleteEntry(entry)}
                     className="h-8 w-8"
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
@@ -234,6 +248,23 @@ export function BusinessHours({ businessId }: BusinessHoursProps) {
           </Button>
         </div>
       </CardContent>
+
+      <AlertDialog open={deleteEntry !== null} onOpenChange={(open) => !open && setDeleteEntry(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro que quieres eliminar este horario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El horario será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEntry} className="bg-destructive hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

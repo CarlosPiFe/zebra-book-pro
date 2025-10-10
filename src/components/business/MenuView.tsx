@@ -4,6 +4,16 @@ import { toast } from "sonner";
 import { Plus, Pencil, Trash2, UtensilsCrossed, Wine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -27,6 +37,7 @@ export function MenuView({ businessId }: MenuViewProps) {
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -118,13 +129,16 @@ export function MenuView({ businessId }: MenuViewProps) {
     }
   };
 
-  const handleDeleteItem = async (itemId: string) => {
+  const handleDeleteItem = async () => {
+    if (!deleteItemId) return;
+
     try {
-      const { error } = await supabase.from("menu_items").delete().eq("id", itemId);
+      const { error } = await supabase.from("menu_items").delete().eq("id", deleteItemId);
 
       if (error) throw error;
 
       toast.success("Artículo eliminado correctamente");
+      setDeleteItemId(null);
       loadMenuItems();
     } catch (error) {
       console.error("Error deleting menu item:", error);
@@ -266,7 +280,7 @@ export function MenuView({ businessId }: MenuViewProps) {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleDeleteItem(item.id)}
+                          onClick={() => setDeleteItemId(item.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -321,7 +335,7 @@ export function MenuView({ businessId }: MenuViewProps) {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleDeleteItem(item.id)}
+                          onClick={() => setDeleteItemId(item.id)}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -334,6 +348,23 @@ export function MenuView({ businessId }: MenuViewProps) {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={deleteItemId !== null} onOpenChange={(open) => !open && setDeleteItemId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro que quieres eliminar este artículo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El artículo será eliminado permanentemente del menú.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteItem} className="bg-destructive hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

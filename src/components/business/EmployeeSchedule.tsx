@@ -7,6 +7,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from "@/components/ui/label";
 import { Clock, Plus, Trash2 } from "lucide-react";
 import { TimePicker } from "@/components/ui/time-picker";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface ScheduleEntry {
   id: string;
@@ -30,6 +40,7 @@ export function EmployeeSchedule({ employeeId, employeeName }: EmployeeScheduleP
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [startTime, setStartTime] = useState<string>("09:00");
   const [endTime, setEndTime] = useState<string>("17:00");
+  const [deleteScheduleKey, setDeleteScheduleKey] = useState<string | null>(null);
 
   useEffect(() => {
     loadSchedules();
@@ -89,16 +100,24 @@ export function EmployeeSchedule({ employeeId, employeeName }: EmployeeScheduleP
     }
   };
 
-  const handleDeleteSchedule = async (scheduleId: string) => {
-    try {
-      const { error } = await supabase
-        .from("employee_schedules")
-        .delete()
-        .eq("id", scheduleId);
+  const handleDeleteSchedule = async () => {
+    if (!deleteScheduleKey) return;
 
-      if (error) throw error;
+    const schedule = groupedSchedules[deleteScheduleKey];
+    if (!schedule) return;
+
+    try {
+      const deletePromises = schedule.days.map(d => 
+        supabase
+          .from("employee_schedules")
+          .delete()
+          .eq("id", d.id)
+      );
+      
+      await Promise.all(deletePromises);
 
       toast.success("Horario eliminado");
+      setDeleteScheduleKey(null);
       loadSchedules();
     } catch (error) {
       console.error("Error deleting schedule:", error);
@@ -197,7 +216,7 @@ export function EmployeeSchedule({ employeeId, employeeName }: EmployeeScheduleP
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => schedule.days.forEach(d => handleDeleteSchedule(d.id))}
+                  onClick={() => setDeleteScheduleKey(key)}
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -206,6 +225,23 @@ export function EmployeeSchedule({ employeeId, employeeName }: EmployeeScheduleP
           </div>
         )}
       </CardContent>
+
+      <AlertDialog open={deleteScheduleKey !== null} onOpenChange={(open) => !open && setDeleteScheduleKey(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro que quieres eliminar este horario?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El horario será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSchedule} className="bg-destructive hover:bg-destructive/90">
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
