@@ -412,10 +412,13 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 {bookingDate ? (
                   <TimeSelector
                     value={startTime}
-                    onValueChange={setStartTime}
+                    onValueChange={(time) => {
+                      setStartTime(time);
+                      setCustomEndTime(false); // Reset custom end time when start time changes
+                    }}
                     availableSlots={getAvailableTimeSlots(bookingDate, parseInt(partySize))}
                     placeholder="Seleccionar hora"
-                    allowManualInput={true}
+                    allowManualInput={false}
                   />
                 ) : (
                   <TimeSelector
@@ -424,7 +427,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                     availableSlots={[]}
                     placeholder="Primero selecciona una fecha"
                     disabled={true}
-                    allowManualInput={true}
+                    allowManualInput={false}
                   />
                 )}
               </div>
@@ -439,32 +442,24 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                   }}
                   availableSlots={startTime && endTime ? (() => {
                     // Generate available end time slots starting from calculated end time
-                    const slots = [endTime];
+                    const slots = [];
                     const [hours, minutes] = endTime.split(":").map(Number);
                     const baseDate = new Date();
                     baseDate.setHours(hours, minutes, 0, 0);
                     
-                    // Add additional 30-minute slots for flexibility (up to 2 hours extra)
-                    for (let i = 1; i <= 4; i++) {
+                    // Start from the calculated end time and add slots every 30 minutes (up to 3 hours extra)
+                    for (let i = 0; i <= 6; i++) {
                       const slotDate = addMinutes(baseDate, 30 * i);
                       slots.push(`${String(slotDate.getHours()).padStart(2, "0")}:${String(slotDate.getMinutes()).padStart(2, "0")}`);
                     }
                     return slots;
                   })() : []}
-                  placeholder="Calculada automáticamente"
-                  allowManualInput={true}
+                  placeholder="Seleccionar hora de fin"
+                  allowManualInput={false}
                 />
                 {startTime && endTime && (
                   <p className="text-xs text-muted-foreground">
-                    {customEndTime 
-                      ? `Duración personalizada: ${(() => {
-                          const [startH, startM] = startTime.split(":").map(Number);
-                          const [endH, endM] = endTime.split(":").map(Number);
-                          const diff = (endH * 60 + endM) - (startH * 60 + startM);
-                          return `${diff} minutos`;
-                        })()}`
-                      : `Aplicado automáticamente ${slotDuration} minutos según duración de reserva`
-                    }
+                    *Duración de reserva: {slotDuration} minutos. Esta duración se puede cambiar desde la sección de configuración.
                   </p>
                 )}
               </div>
