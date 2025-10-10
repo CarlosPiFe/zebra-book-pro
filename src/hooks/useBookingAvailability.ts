@@ -93,6 +93,46 @@ export function useBookingAvailability(businessId: string | undefined) {
     };
 
     loadData();
+
+    // Subscribe to real-time updates for bookings
+    const bookingsChannel = supabase
+      .channel('bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: `business_id=eq.${businessId}`
+        },
+        () => {
+          // Reload bookings when changes occur
+          loadData();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to tables changes
+    const tablesChannel = supabase
+      .channel('tables-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tables',
+          filter: `business_id=eq.${businessId}`
+        },
+        () => {
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(bookingsChannel);
+      supabase.removeChannel(tablesChannel);
+    };
   }, [businessId]);
 
   // Check if a date is available (business is open)
@@ -173,42 +213,82 @@ export function useBookingAvailability(businessId: string | undefined) {
     const endMinute = endMinutes % 60;
     const endTime = `${String(endHour).padStart(2, '0')}:${String(endMinute).padStart(2, '0')}`;
 
-    // Check if any suitable table is available
-    return suitableTables.some(table => {
-      // Check if this table is booked during this time
-      const isBooked = bookings.some(booking => {
-        if (booking.booking_date !== date) return false;
-        if (booking.table_id !== table.id) return false;
+    // Helper function to check if two time ranges overlap
+    const timesOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
+      const [s1Hour, s1Minute] = start1.split(':').map(Number);
+      const [e1Hour, e1Minute] = end1.split(':').map(Number);
+      const [s2Hour, s2Minute] = start2.split(':').map(Number);
+      const [e2Hour, e2Minute] = end2.split(':').map(Number);
 
-        // Convertir todas las horas a minutos para comparación correcta
-        const [bookingStartHour, bookingStartMinute] = booking.start_time.split(':').map(Number);
-        const [bookingEndHour, bookingEndMinute] = booking.end_time.split(':').map(Number);
-        const [slotStartHour, slotStartMinute] = startTime.split(':').map(Number);
-        const [slotEndHour, slotEndMinute] = endTime.split(':').map(Number);
+      let s1Minutes = s1Hour * 60 + s1Minute;
+      let e1Minutes = e1Hour * 60 + e1Minute;
+      let s2Minutes = s2Hour * 60 + s2Minute;
+      let e2Minutes = e2Hour * 60 + e2Minute;
 
-        let bookingStartMinutes = bookingStartHour * 60 + bookingStartMinute;
-        let bookingEndMinutes = bookingEndHour * 60 + bookingEndMinute;
-        let slotStartMinutes = slotStartHour * 60 + slotStartMinute;
-        let slotEndMinutes = slotEndHour * 60 + slotEndMinute;
+      // Handle midnight crossing
+      if (e1Minutes < s1Minutes) e1Minutes += 24 * 60;
+      if (e2Minutes < s2Minutes) e2Minutes += 24 * 60;
+      
+      // Normalize early morning hours (0-6) to be considered as next day
+      if (s1Hour < 6) s1Minutes += 24 * 60;
+      if (e1Hour < 6) e1Minutes += 24 * 60;
+      if (s2Hour < 6) s2Minutes += 24 * 60;
+      if (e2Hour < 6) e2Minutes += 24 * 60;
 
-        // Si las horas son de madrugada (0-6), considerarlas como del día siguiente
-        if (bookingEndMinutes < bookingStartMinutes) bookingEndMinutes += 24 * 60;
-        if (slotEndMinutes < slotStartMinutes) slotEndMinutes += 24 * 60;
-        
-        // Normalizar horas de madrugada en el slot
-        if (slotStartHour < 6 && slotStartMinutes < 360) slotStartMinutes += 24 * 60;
-        if (slotEndHour < 6 && slotEndMinutes < 360) slotEndMinutes += 24 * 60;
-        
-        // Normalizar horas de madrugada en la reserva
-        if (bookingStartHour < 6 && bookingStartMinutes < 360) bookingStartMinutes += 24 * 60;
-        if (bookingEndHour < 6 && bookingEndMinutes < 360) bookingEndMinutes += 24 * 60;
+      // Check for overlap: ranges overlap if they don't end before the other starts
+      return !(e1Minutes <= s2Minutes || s1Minutes >= e2Minutes);
+    };
 
-        // Check for time overlap
-        return !(bookingEndMinutes <= slotStartMinutes || bookingStartMinutes >= slotEndMinutes);
-      });
-
-      return !isBooked;
+    // Get all bookings for this date and time slot
+    const overlappingBookings = bookings.filter(booking => {
+      if (booking.booking_date !== date) return false;
+      return timesOverlap(booking.start_time, booking.end_time, startTime, endTime);
     });
+
+    console.log(`[Availability Check] Date: ${date}, Time: ${startTime}-${endTime}, Party: ${partySize}`);
+    console.log(`[Availability Check] Suitable tables: ${suitableTables.length}`, suitableTables.map(t => `T${t.table_number}(${t.max_capacity})`));
+    console.log(`[Availability Check] Overlapping bookings: ${overlappingBookings.length}`, overlappingBookings);
+
+    // Count how many suitable tables are occupied
+    const occupiedTableIds = new Set(
+      overlappingBookings
+        .filter(booking => booking.table_id)
+        .map(booking => booking.table_id)
+    );
+
+    // Check if at least one suitable table is available
+    const availableTables = suitableTables.filter(table => !occupiedTableIds.has(table.id));
+
+    console.log(`[Availability Check] Available tables: ${availableTables.length}`, availableTables.map(t => `T${t.table_number}(${t.max_capacity})`));
+
+    // Also need to consider bookings without assigned tables (auto-assign)
+    // These consume table capacity but don't have table_id yet
+    const autoBookings = overlappingBookings.filter(booking => !booking.table_id);
+    
+    console.log(`[Availability Check] Auto bookings (no table assigned): ${autoBookings.length}`, autoBookings);
+
+    // Calculate total capacity needed vs available
+    let totalAutoCapacityNeeded = 0;
+    autoBookings.forEach(booking => {
+      totalAutoCapacityNeeded += booking.party_size;
+    });
+
+    // Calculate available capacity from unoccupied suitable tables
+    let totalAvailableCapacity = 0;
+    availableTables.forEach(table => {
+      totalAvailableCapacity += table.max_capacity;
+    });
+
+    // Check if we have enough capacity for the new booking plus existing auto bookings
+    const requiredCapacity = partySize + totalAutoCapacityNeeded;
+    
+    console.log(`[Availability Check] Required capacity: ${requiredCapacity} (${partySize} new + ${totalAutoCapacityNeeded} auto), Available capacity: ${totalAvailableCapacity}`);
+    
+    const isAvailable = availableTables.length > 0 && totalAvailableCapacity >= requiredCapacity;
+    console.log(`[Availability Check] Result: ${isAvailable ? 'AVAILABLE' : 'NOT AVAILABLE'}`);
+    
+    // We need at least one available table AND enough total capacity
+    return isAvailable;
   };
 
   // Get next available time slot
