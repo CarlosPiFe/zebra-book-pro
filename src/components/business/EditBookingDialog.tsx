@@ -588,18 +588,18 @@ export function EditBookingDialog({
             </div>
             
             {/* Right side: Data action buttons */}
-            <div className="flex gap-2 w-full sm:w-auto sm:ml-auto">
+            <div className="flex gap-3 w-full sm:w-auto sm:ml-auto">
               <Button type="submit" disabled={loading} className="flex-1 sm:flex-none bg-black hover:bg-black/90 text-white">
                 {loading ? "Guardando..." : "Guardar cambios"}
               </Button>
               <Button
                 type="button"
-                variant="destructive"
+                variant="ghost"
                 onClick={handleDelete}
                 disabled={loading}
-                className="sm:w-auto w-12 p-0"
+                className="sm:w-auto w-12 p-3 hover:bg-transparent"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-5 w-5 text-red-600" />
               </Button>
             </div>
           </DialogFooter>
