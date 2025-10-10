@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { TimePicker } from "@/components/ui/time-picker";
 import { Plus, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect } from "react";
@@ -23,6 +22,7 @@ import { addMinutes } from "date-fns";
 import { z } from "zod";
 import { format } from "date-fns";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
+import { TimeSelector } from "./TimeSelector";
 
 const createBookingSchema = (isHospitality: boolean) => z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -410,30 +410,22 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               <div className="space-y-2">
                 <Label htmlFor="start_time">Hora de inicio *</Label>
                 {bookingDate ? (
-                  <Select value={startTime} onValueChange={setStartTime}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar hora" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAvailableTimeSlots(bookingDate, parseInt(partySize)).length > 0 ? (
-                        getAvailableTimeSlots(bookingDate, parseInt(partySize)).map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-slots" disabled>
-                          No hay horarios disponibles
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <TimeSelector
+                    value={startTime}
+                    onValueChange={setStartTime}
+                    availableSlots={getAvailableTimeSlots(bookingDate, parseInt(partySize))}
+                    placeholder="Seleccionar hora"
+                    allowManualInput={true}
+                  />
                 ) : (
-                  <Select disabled>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Primero selecciona una fecha" />
-                    </SelectTrigger>
-                  </Select>
+                  <TimeSelector
+                    value={startTime}
+                    onValueChange={setStartTime}
+                    availableSlots={[]}
+                    placeholder="Primero selecciona una fecha"
+                    disabled={true}
+                    allowManualInput={true}
+                  />
                 )}
               </div>
               
@@ -441,13 +433,15 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 <Label htmlFor="end_time" className="flex items-center gap-2">
                   Hora de fin {!customEndTime && "(automática)"}
                 </Label>
-                <TimePicker
-                  time={endTime}
-                  onTimeChange={(time) => {
+                <TimeSelector
+                  value={endTime}
+                  onValueChange={(time) => {
                     setEndTime(time);
                     setCustomEndTime(true);
                   }}
+                  availableSlots={startTime ? [endTime] : []}
                   placeholder="Calculada automáticamente"
+                  allowManualInput={true}
                 />
                 {!customEndTime && startTime && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
