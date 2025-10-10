@@ -5,6 +5,7 @@ import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-reac
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { DayDetailsDialog } from "./DayDetailsDialog";
+import { format } from "date-fns";
 
 interface CalendarViewProps {
   businessId: string;
@@ -105,8 +106,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
         .from("calendar_events")
         .select("id, event_date, color")
         .eq("business_id", businessId)
-        .gte("event_date", firstDay.toISOString().split('T')[0])
-        .lte("event_date", lastDay.toISOString().split('T')[0]);
+        .gte("event_date", format(firstDay, "yyyy-MM-dd"))
+        .lte("event_date", format(lastDay, "yyyy-MM-dd"));
 
       if (error) throw error;
       setMonthEvents((data || []) as CalendarEvent[]);
@@ -165,7 +166,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   };
 
   const getDayEvents = (day: number) => {
-    const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+    const dateStr = format(new Date(year, month, day), "yyyy-MM-dd");
     return monthEvents.filter(event => event.event_date === dateStr);
   };
 
