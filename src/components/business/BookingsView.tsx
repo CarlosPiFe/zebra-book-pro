@@ -69,14 +69,14 @@ export function BookingsView({ businessId }: BookingsViewProps) {
       const currentTime = format(now, "HH:mm");
 
       // Get all reserved bookings for today
-      const { data: reservedBookings, error } = await supabase
+      const { data: reservedBookings, error: reservedError } = await supabase
         .from("bookings")
         .select("id, start_time, booking_date")
         .eq("business_id", businessId)
         .eq("booking_date", currentDate)
         .eq("status", "reserved");
 
-      if (error) throw error;
+      if (reservedError) throw reservedError;
 
       // Update bookings that are delayed
       for (const booking of reservedBookings || []) {
@@ -88,8 +88,29 @@ export function BookingsView({ businessId }: BookingsViewProps) {
         }
       }
 
+      // Get all non-cancelled bookings that should be completed
+      const { data: activeBookings, error: completedError } = await supabase
+        .from("bookings")
+        .select("id, end_time, booking_date")
+        .eq("business_id", businessId)
+        .eq("booking_date", currentDate)
+        .neq("status", "cancelled")
+        .neq("status", "completed");
+
+      if (completedError) throw completedError;
+
+      // Update bookings that have finished
+      for (const booking of activeBookings || []) {
+        if (booking.end_time < currentTime) {
+          await supabase
+            .from("bookings")
+            .update({ status: "completed" })
+            .eq("id", booking.id);
+        }
+      }
+
       // Reload bookings if any were updated
-      if (reservedBookings && reservedBookings.length > 0) {
+      if ((reservedBookings && reservedBookings.length > 0) || (activeBookings && activeBookings.length > 0)) {
         loadBookings();
       }
     } catch (error) {
