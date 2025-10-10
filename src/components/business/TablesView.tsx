@@ -12,6 +12,7 @@ import { OrdersDialog } from "./OrdersDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
+import { addMinutes } from "date-fns";
 
 interface Table {
   id: string;
@@ -94,6 +95,34 @@ export function TablesView({ businessId }: TablesViewProps) {
       supabase.removeChannel(channel);
     };
   }, [businessId, filterDate, filterTime]);
+
+  // Auto-calculate end time when start time changes
+  useEffect(() => {
+    if (startTime && businessId) {
+      const [hours, minutes] = startTime.split(":").map(Number);
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        const startDate = new Date();
+        startDate.setHours(hours, minutes, 0, 0);
+        
+        // Load slot duration and calculate end time
+        const loadSlotDuration = async () => {
+          const { data } = await supabase
+            .from("businesses")
+            .select("booking_slot_duration_minutes")
+            .eq("id", businessId)
+            .single();
+          
+          if (data) {
+            const endDate = addMinutes(startDate, data.booking_slot_duration_minutes);
+            const calculatedEndTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
+            setEndTime(calculatedEndTime);
+          }
+        };
+        
+        loadSlotDuration();
+      }
+    }
+  }, [startTime, businessId]);
 
   const loadTables = async () => {
     try {
@@ -818,7 +847,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                         <p><strong>Teléfono:</strong> {selectedTable.current_booking.client_phone}</p>
                       )}
                       {selectedTable.current_booking.start_time && (
-                        <p><strong>Hora:</strong> {selectedTable.current_booking.start_time}</p>
+                        <p><strong>Hora:</strong> {selectedTable.current_booking.start_time.substring(0, 5)}</p>
                       )}
                       {selectedTable.current_booking.party_size && (
                         <p><strong>Comensales:</strong> {selectedTable.current_booking.party_size}</p>

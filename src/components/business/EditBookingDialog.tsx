@@ -160,17 +160,18 @@ export function EditBookingDialog({
     }
   };
 
-  // Auto-calculate end time when start time changes (only if not custom)
+  // Auto-calculate end time when start time changes
   useEffect(() => {
-    if (startTime && !customEndTime) {
+    if (startTime && slotDuration) {
       const [hours, minutes] = startTime.split(":").map(Number);
       const startDate = new Date();
       startDate.setHours(hours, minutes, 0, 0);
       const endDate = addMinutes(startDate, slotDuration);
       const calculatedEndTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
       setEndTime(calculatedEndTime);
+      setCustomEndTime(false);
     }
-  }, [startTime, slotDuration, customEndTime]);
+  }, [startTime, slotDuration]);
 
   const findAvailableTable = async (
     date: string,
@@ -339,6 +340,27 @@ export function EditBookingDialog({
     } catch (error) {
       console.error("Error deleting booking:", error);
       toast.error("Error al eliminar la reserva");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkArrived = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "occupied" })
+        .eq("id", booking.id);
+
+      if (error) throw error;
+
+      toast.success("Cliente marcado como llegado");
+      onOpenChange(false);
+      onBookingUpdated();
+    } catch (error) {
+      console.error("Error marking arrival:", error);
+      toast.error("Error al marcar llegada");
     } finally {
       setLoading(false);
     }
@@ -513,26 +535,42 @@ export function EditBookingDialog({
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={loading}
-            >
-              Eliminar
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Guardando..." : "Guardar Cambios"}
-            </Button>
+          <DialogFooter className="gap-2 flex-col sm:flex-row">
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={loading}
+                className="flex-1 sm:flex-none"
+              >
+                Eliminar
+              </Button>
+              {booking.status === "reserved" && (
+                <Button
+                  type="button"
+                  className="flex-1 sm:flex-none bg-green-500 hover:bg-green-600"
+                  onClick={handleMarkArrived}
+                  disabled={loading}
+                >
+                  Han llegado
+                </Button>
+              )}
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto ml-auto">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+                className="flex-1 sm:flex-none"
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading} className="flex-1 sm:flex-none">
+                {loading ? "Guardando..." : "Guardar Cambios"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
