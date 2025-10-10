@@ -3,7 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users, AlertCircle } from "lucide-react";
+import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 
 interface Business {
@@ -33,7 +32,6 @@ export default function BusinessDetails() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [availabilityMessage, setAvailabilityMessage] = useState<string>("");
   
   // Booking form state
   const [bookingForm, setBookingForm] = useState({
@@ -94,16 +92,6 @@ export default function BusinessDetails() {
       return;
     }
 
-    // Check availability before submitting
-    const dateString = format(bookingForm.bookingDate, "yyyy-MM-dd");
-    const hasAvailability = await hasAvailableTables(dateString, bookingForm.startTime, parseInt(bookingForm.partySize));
-    
-    if (!hasAvailability) {
-      setAvailabilityMessage("* No queda disponibilidad para esta hora");
-      toast.error("No hay disponibilidad para esta hora y número de comensales");
-      return;
-    }
-
     setSubmitting(true);
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -154,12 +142,6 @@ export default function BusinessDetails() {
   // Handle date change
   const handleDateChange = (date: Date | undefined) => {
     setBookingForm({ ...bookingForm, bookingDate: date, startTime: "" });
-    setAvailabilityMessage("");
-
-    if (date && !isDateAvailable(date)) {
-      setAvailabilityMessage("El negocio está cerrado este día.");
-      toast.error("El negocio está cerrado este día");
-    }
   };
 
   // Get all time slots with availability info for selected date
@@ -175,36 +157,7 @@ export default function BusinessDetails() {
   // Handle party size change
   const handlePartySizeChange = (value: string) => {
     setBookingForm({ ...bookingForm, partySize: value, startTime: "" });
-    setAvailabilityMessage("");
   };
-
-  // Check if selected time is available
-  useEffect(() => {
-    const checkTimeAvailability = async () => {
-      if (bookingForm.bookingDate && bookingForm.startTime && availableTimeSlots.length > 0) {
-        if (!availableTimeSlots.includes(bookingForm.startTime)) {
-          const nextSlot = getNextAvailableSlot(bookingForm.bookingDate, parseInt(bookingForm.partySize));
-          if (nextSlot) {
-            setAvailabilityMessage(`No hay hueco en este horario. Próximo disponible: ${nextSlot}`);
-          } else {
-            setAvailabilityMessage(`No hay disponibilidad para ${bookingForm.partySize} personas en este día.`);
-          }
-        } else {
-          // Verify availability with hasAvailableTables
-          const dateString = format(bookingForm.bookingDate, "yyyy-MM-dd");
-          const hasAvailability = await hasAvailableTables(dateString, bookingForm.startTime, parseInt(bookingForm.partySize));
-          
-          if (!hasAvailability) {
-            setAvailabilityMessage("* No queda disponibilidad para esta hora");
-          } else {
-            setAvailabilityMessage("");
-          }
-        }
-      }
-    };
-    
-    checkTimeAvailability();
-  }, [bookingForm.bookingDate, bookingForm.startTime, bookingForm.partySize, availableTimeSlots]);
 
   const openInGoogleMaps = () => {
     if (business?.address) {
@@ -520,13 +473,6 @@ export default function BusinessDetails() {
                     />
                   </div>
 
-                  {availabilityMessage && (
-                    <Alert variant="destructive">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>{availabilityMessage}</AlertDescription>
-                    </Alert>
-                  )}
-
                   <div>
                     <Label>Hora de entrada *</Label>
                     <Select
@@ -535,7 +481,6 @@ export default function BusinessDetails() {
                         const slot = timeSlotsWithAvailability.find(s => s.time === value);
                         if (slot && slot.available) {
                           setBookingForm({ ...bookingForm, startTime: value });
-                          setAvailabilityMessage("");
                         }
                       }}
                       disabled={!bookingForm.bookingDate || timeSlotsWithAvailability.length === 0}
@@ -597,7 +542,7 @@ export default function BusinessDetails() {
                   <Button 
                     type="submit" 
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg" 
-                    disabled={submitting || availabilityMessage.includes("No queda disponibilidad")}
+                    disabled={submitting || !bookingForm.startTime}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {submitting ? "Enviando..." : "Confirmar reserva"}
