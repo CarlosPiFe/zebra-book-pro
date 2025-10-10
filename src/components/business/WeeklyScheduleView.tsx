@@ -324,7 +324,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-30 pointer-events-none" />
       )}
       
-      <div className="flex items-center justify-between relative z-40">
+      <div className="flex items-center justify-between relative z-10">
         <div>
           <h2 className="text-3xl font-bold">Horarios Semanales</h2>
           <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
@@ -388,7 +388,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
       
       {/* Barra de acción para pegar horario */}
       {copiedSchedule && (
-        <Card className="p-4 border-2 border-primary bg-primary/5 relative z-40">
+        <Card className="p-4 border-2 border-primary bg-primary/5 relative z-10">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-lg">Modo: Pegar Horario</h3>
