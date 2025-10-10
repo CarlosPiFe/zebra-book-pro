@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus, Info } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect } from "react";
 import { addMinutes } from "date-fns";
@@ -430,35 +430,42 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="end_time" className="flex items-center gap-2">
-                  Hora de fin {!customEndTime && "(automática)"}
-                </Label>
+                <Label htmlFor="end_time">Hora de fin</Label>
                 <TimeSelector
                   value={endTime}
                   onValueChange={(time) => {
                     setEndTime(time);
                     setCustomEndTime(true);
                   }}
-                  availableSlots={startTime ? [endTime] : []}
+                  availableSlots={startTime && endTime ? (() => {
+                    // Generate available end time slots starting from calculated end time
+                    const slots = [endTime];
+                    const [hours, minutes] = endTime.split(":").map(Number);
+                    const baseDate = new Date();
+                    baseDate.setHours(hours, minutes, 0, 0);
+                    
+                    // Add additional 30-minute slots for flexibility (up to 2 hours extra)
+                    for (let i = 1; i <= 4; i++) {
+                      const slotDate = addMinutes(baseDate, 30 * i);
+                      slots.push(`${String(slotDate.getHours()).padStart(2, "0")}:${String(slotDate.getMinutes()).padStart(2, "0")}`);
+                    }
+                    return slots;
+                  })() : []}
                   placeholder="Calculada automáticamente"
                   allowManualInput={true}
                 />
-                {!customEndTime && startTime && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Info className="h-3 w-3" />
-                    Duración: {slotDuration} minutos (configurable en Ajustes)
+                {startTime && endTime && (
+                  <p className="text-xs text-muted-foreground">
+                    {customEndTime 
+                      ? `Duración personalizada: ${(() => {
+                          const [startH, startM] = startTime.split(":").map(Number);
+                          const [endH, endM] = endTime.split(":").map(Number);
+                          const diff = (endH * 60 + endM) - (startH * 60 + startM);
+                          return `${diff} minutos`;
+                        })()}`
+                      : `Aplicado automáticamente ${slotDuration} minutos según duración de reserva`
+                    }
                   </p>
-                )}
-                {customEndTime && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCustomEndTime(false)}
-                    className="h-6 text-xs"
-                  >
-                    Usar duración automática
-                  </Button>
                 )}
               </div>
             </div>
@@ -503,8 +510,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                   </SelectContent>
                 </Select>
                 {tables.length === 0 && startTime && endTime && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Info className="h-3 w-3" />
+                  <p className="text-xs text-muted-foreground">
                     Selecciona fecha y hora para ver mesas disponibles
                   </p>
                 )}
