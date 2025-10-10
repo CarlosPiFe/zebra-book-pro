@@ -141,13 +141,12 @@ export function useBookingAvailability(businessId: string | undefined) {
     return availabilitySlots.some(slot => slot.day_of_week === dayOfWeek);
   };
 
-  // Get available time slots for a specific date
-  const getAvailableTimeSlots = (date: Date, partySize: number): string[] => {
+  // Get all time slots for a specific date (regardless of availability)
+  const getAllTimeSlots = (date: Date): string[] => {
     if (!date) return [];
 
     const dayOfWeek = date.getDay();
-    const dateStr = date.toISOString().split('T')[0];
-
+    
     // Get slots for this day of week
     const daySlots = availabilitySlots.filter(slot => slot.day_of_week === dayOfWeek);
     if (daySlots.length === 0) return [];
@@ -180,12 +179,7 @@ export function useBookingAvailability(businessId: string | undefined) {
       }
     });
 
-    // Filter out slots that don't have available tables
-    const availableSlots = allTimeSlots.filter(timeSlot => {
-      return hasAvailableTables(dateStr, timeSlot, partySize);
-    });
-
-    return availableSlots.sort((a, b) => {
+    return allTimeSlots.sort((a, b) => {
       // Ordenar considerando que las horas de madrugada vienen después de las nocturnas
       const [aHour] = a.split(':').map(Number);
       const [bHour] = b.split(':').map(Number);
@@ -197,6 +191,34 @@ export function useBookingAvailability(businessId: string | undefined) {
       if (aTime !== bTime) return aTime - bTime;
       return a.localeCompare(b);
     });
+  };
+
+  // Get time slots with availability info for a specific date
+  const getTimeSlotsWithAvailability = (date: Date, partySize: number): Array<{time: string, available: boolean}> => {
+    if (!date) return [];
+
+    const dateStr = date.toISOString().split('T')[0];
+    const allSlots = getAllTimeSlots(date);
+    
+    return allSlots.map(timeSlot => ({
+      time: timeSlot,
+      available: hasAvailableTables(dateStr, timeSlot, partySize)
+    }));
+  };
+
+  // Get available time slots for a specific date
+  const getAvailableTimeSlots = (date: Date, partySize: number): string[] => {
+    if (!date) return [];
+
+    const dateStr = date.toISOString().split('T')[0];
+    const allSlots = getAllTimeSlots(date);
+
+    // Filter out slots that don't have available tables
+    const availableSlots = allSlots.filter(timeSlot => {
+      return hasAvailableTables(dateStr, timeSlot, partySize);
+    });
+
+    return availableSlots;
   };
 
   // Check if there are available tables for a time slot
@@ -299,6 +321,8 @@ export function useBookingAvailability(businessId: string | undefined) {
 
   return {
     isDateAvailable,
+    getAllTimeSlots,
+    getTimeSlotsWithAvailability,
     getAvailableTimeSlots,
     hasAvailableTables,
     getNextAvailableSlot,

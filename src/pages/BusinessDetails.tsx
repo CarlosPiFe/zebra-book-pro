@@ -49,6 +49,7 @@ export default function BusinessDetails() {
   // Use availability hook
   const {
     isDateAvailable,
+    getTimeSlotsWithAvailability,
     getAvailableTimeSlots,
     getNextAvailableSlot,
     hasAvailableTables,
@@ -161,6 +162,11 @@ export default function BusinessDetails() {
     }
   };
 
+  // Get all time slots with availability info for selected date
+  const timeSlotsWithAvailability = bookingForm.bookingDate
+    ? getTimeSlotsWithAvailability(bookingForm.bookingDate, parseInt(bookingForm.partySize))
+    : [];
+  
   // Get available time slots for selected date
   const availableTimeSlots = bookingForm.bookingDate
     ? getAvailableTimeSlots(bookingForm.bookingDate, parseInt(bookingForm.partySize))
@@ -525,35 +531,56 @@ export default function BusinessDetails() {
                     <Label>Hora de entrada *</Label>
                     <Select
                       value={bookingForm.startTime}
-                      onValueChange={(value) => setBookingForm({ ...bookingForm, startTime: value })}
-                      disabled={!bookingForm.bookingDate || availableTimeSlots.length === 0}
+                      onValueChange={(value) => {
+                        const slot = timeSlotsWithAvailability.find(s => s.time === value);
+                        if (slot && slot.available) {
+                          setBookingForm({ ...bookingForm, startTime: value });
+                          setAvailabilityMessage("");
+                        }
+                      }}
+                      disabled={!bookingForm.bookingDate || timeSlotsWithAvailability.length === 0}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={
                           !bookingForm.bookingDate 
                             ? "Primero selecciona una fecha"
-                            : availableTimeSlots.length === 0
+                            : timeSlotsWithAvailability.length === 0
                             ? "No hay horarios disponibles"
                             : "Seleccionar hora"
                         } />
                       </SelectTrigger>
-                      <SelectContent>
-                        {availableTimeSlots.length > 0 ? (
-                          availableTimeSlots.map((time) => (
-                            <SelectItem key={time} value={time}>
-                              <div className="flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                {time}
+                      <SelectContent className="bg-background z-50">
+                        {timeSlotsWithAvailability.length > 0 ? (
+                          timeSlotsWithAvailability.map((slot) => (
+                            <SelectItem 
+                              key={slot.time} 
+                              value={slot.time}
+                              disabled={!slot.available}
+                              className={!slot.available ? "opacity-50" : ""}
+                            >
+                              <div className="flex items-center gap-2 justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4" />
+                                  {slot.time}
+                                </div>
+                                {!slot.available && (
+                                  <span className="text-xs text-muted-foreground">sin disponibilidad</span>
+                                )}
                               </div>
                             </SelectItem>
                           ))
                         ) : (
                           <SelectItem value="no-slots" disabled>
-                            No hay disponibilidad para {bookingForm.partySize} personas
+                            No hay horarios disponibles
                           </SelectItem>
                         )}
                       </SelectContent>
                     </Select>
+                    {parseInt(bookingForm.partySize) > maxTableCapacity && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Para reservas de más de {maxTableCapacity} personas, contáctanos.
+                      </p>
+                    )}
                   </div>
 
                   <div>
