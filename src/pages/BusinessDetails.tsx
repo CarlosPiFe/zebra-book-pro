@@ -92,6 +92,16 @@ export default function BusinessDetails() {
       return;
     }
 
+    // Validar disponibilidad en tiempo real antes de enviar
+    const dateStr = format(bookingForm.bookingDate, "yyyy-MM-dd");
+    const isStillAvailable = hasAvailableTables(dateStr, bookingForm.startTime, parseInt(bookingForm.partySize));
+    
+    if (!isStillAvailable) {
+      toast.error("Lo sentimos, este horario ya no está disponible. Por favor selecciona otro.");
+      setBookingForm({ ...bookingForm, startTime: "" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -154,9 +164,22 @@ export default function BusinessDetails() {
     ? getAvailableTimeSlots(bookingForm.bookingDate, parseInt(bookingForm.partySize))
     : [];
 
+  // Check if a party size has any availability for the selected date
+  const partySizeHasAvailability = (partySize: number): boolean => {
+    if (!bookingForm.bookingDate) return true; // Can't check without date
+    const availableSlots = getAvailableTimeSlots(bookingForm.bookingDate, partySize);
+    return availableSlots.length > 0;
+  };
+
   // Handle party size change
   const handlePartySizeChange = (value: string) => {
+    const newPartySize = parseInt(value);
     setBookingForm({ ...bookingForm, partySize: value, startTime: "" });
+    
+    // Show warning if selected party size has no availability
+    if (bookingForm.bookingDate && !partySizeHasAvailability(newPartySize)) {
+      toast.warning(`No hay disponibilidad para ${newPartySize} ${newPartySize === 1 ? 'persona' : 'personas'} en esta fecha. Por favor selecciona otra fecha.`);
+    }
   };
 
   const openInGoogleMaps = () => {
@@ -446,19 +469,37 @@ export default function BusinessDetails() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: maxTableCapacity }, (_, i) => i + 1).map((num) => (
-                          <SelectItem key={num} value={String(num)}>
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4" />
-                              {num} {num === 1 ? 'persona' : 'personas'}
-                            </div>
-                          </SelectItem>
-                        ))}
+                        {Array.from({ length: maxTableCapacity }, (_, i) => i + 1).map((num) => {
+                          const hasAvailability = bookingForm.bookingDate ? partySizeHasAvailability(num) : true;
+                          return (
+                            <SelectItem 
+                              key={num} 
+                              value={String(num)}
+                              disabled={bookingForm.bookingDate && !hasAvailability}
+                              className={bookingForm.bookingDate && !hasAvailability ? "opacity-50" : ""}
+                            >
+                              <div className="flex items-center gap-2 justify-between w-full">
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-4 w-4" />
+                                  {num} {num === 1 ? 'persona' : 'personas'}
+                                </div>
+                                {bookingForm.bookingDate && !hasAvailability && (
+                                  <span className="text-xs text-muted-foreground ml-2">sin disponibilidad</span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     {parseInt(bookingForm.partySize) > maxTableCapacity && (
                       <p className="text-sm text-destructive mt-1">
                         Para reservas de más de {maxTableCapacity} personas, contáctanos.
+                      </p>
+                    )}
+                    {bookingForm.bookingDate && !partySizeHasAvailability(parseInt(bookingForm.partySize)) && (
+                      <p className="text-sm text-destructive mt-1">
+                        No hay disponibilidad para {bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? 'persona' : 'personas'} en esta fecha.
                       </p>
                     )}
                   </div>
@@ -542,11 +583,22 @@ export default function BusinessDetails() {
                   <Button 
                     type="submit" 
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg" 
-                    disabled={submitting || !bookingForm.startTime}
+                    disabled={
+                      submitting || 
+                      !bookingForm.startTime || 
+                      !bookingForm.bookingDate ||
+                      !partySizeHasAvailability(parseInt(bookingForm.partySize)) ||
+                      availabilityLoading
+                    }
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {submitting ? "Enviando..." : "Confirmar reserva"}
+                    {submitting ? "Enviando..." : availabilityLoading ? "Verificando..." : "Confirmar reserva"}
                   </Button>
+                  {bookingForm.bookingDate && availableTimeSlots.length === 0 && (
+                    <p className="text-sm text-center text-muted-foreground">
+                      No hay horarios disponibles para la fecha y número de personas seleccionadas.
+                    </p>
+                  )}
                 </form>
 
                 <div className="mt-6 pt-6 border-t border-border space-y-3">
