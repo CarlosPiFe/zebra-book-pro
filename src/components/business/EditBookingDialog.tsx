@@ -366,6 +366,29 @@ export function EditBookingDialog({
     }
   };
 
+  const handleCancel = async () => {
+    if (!confirm("¿Estás seguro de cancelar esta reserva? Se guardará pero no ocupará mesa ni horario.")) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled", table_id: null })
+        .eq("id", booking.id);
+
+      if (error) throw error;
+
+      toast.success("Reserva cancelada");
+      onOpenChange(false);
+      onBookingUpdated();
+    } catch (error) {
+      console.error("Error cancelling booking:", error);
+      toast.error("Error al cancelar la reserva");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -546,6 +569,17 @@ export function EditBookingDialog({
               >
                 Eliminar
               </Button>
+              {booking.status !== "cancelled" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCancel}
+                  disabled={loading}
+                  className="flex-1 sm:flex-none"
+                >
+                  Cancelar
+                </Button>
+              )}
               {booking.status === "reserved" && (
                 <Button
                   type="button"

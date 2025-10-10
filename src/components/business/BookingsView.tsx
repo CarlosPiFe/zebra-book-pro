@@ -102,17 +102,16 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "confirmed":
       case "reserved":
-        return "bg-accent text-accent-foreground";
+        return "bg-orange-500/20 text-orange-700 border border-orange-500";
       case "pending":
-        return "bg-yellow-500 text-white";
+        return "bg-yellow-500/20 text-yellow-700 border border-yellow-500";
       case "occupied":
         return "bg-green-500/20 text-green-700 border border-green-500";
       case "completed":
-        return "bg-blue-500/20 text-blue-700";
+        return "bg-blue-500/20 text-blue-700 border border-blue-500";
       case "cancelled":
-        return "bg-destructive text-destructive-foreground";
+        return "bg-gray-500/20 text-gray-700 border border-gray-500";
       default:
         return "bg-muted text-muted-foreground";
     }
@@ -120,11 +119,10 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "confirmed":
       case "reserved":
-        return "Confirmada";
+        return "Reservada";
       case "pending":
-        return "Pendiente";
+        return "Retraso";
       case "occupied":
         return "En curso";
       case "completed":
