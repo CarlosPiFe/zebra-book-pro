@@ -15,14 +15,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Plus } from "lucide-react";
+import { TimePicker } from "@/components/ui/time-picker";
+import { Plus, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect } from "react";
 import { addMinutes } from "date-fns";
 import { z } from "zod";
 import { format } from "date-fns";
-import { useBookingAvailability } from "@/hooks/useBookingAvailability";
-import { TimeSelector } from "./TimeSelector";
 
 const createBookingSchema = (isHospitality: boolean) => z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -64,12 +63,6 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [notes, setNotes] = useState("");
   const [selectedTableId, setSelectedTableId] = useState<string>("auto");
   const [tables, setTables] = useState<Array<{ id: string; table_number: number; max_capacity: number; isAvailable: boolean }>>([]);
-
-  // Use booking availability hook
-  const {
-    isDateAvailable,
-    getAvailableTimeSlots,
-  } = useBookingAvailability(businessId);
 
   // Load business slot duration and category when dialog opens
   useEffect(() => {
@@ -397,71 +390,49 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               <Label>Fecha de reserva *</Label>
               <DatePicker
                 date={bookingDate}
-                onDateChange={(date) => {
-                  setBookingDate(date);
-                  setStartTime(""); // Reset time when date changes
-                }}
+                onDateChange={setBookingDate}
                 placeholder="Seleccionar fecha"
-                disabled={(date) => !isDateAvailable(date)}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="start_time">Hora de inicio *</Label>
-                {bookingDate ? (
-                  <TimeSelector
-                    value={startTime}
-                    onValueChange={(time) => {
-                      setStartTime(time);
-                      setCustomEndTime(false); // Reset custom end time when start time changes
-                    }}
-                    availableSlots={getAvailableTimeSlots(bookingDate, parseInt(partySize))}
-                    placeholder="Seleccionar hora"
-                    allowManualInput={false}
-                  />
-                ) : (
-                  <TimeSelector
-                    value={startTime}
-                    onValueChange={setStartTime}
-                    availableSlots={[]}
-                    placeholder="Primero selecciona una fecha"
-                    disabled={true}
-                    allowManualInput={false}
-                  />
-                )}
+                <TimePicker
+                  time={startTime}
+                  onTimeChange={setStartTime}
+                  placeholder="14:00"
+                />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="end_time">Hora de fin</Label>
-                <TimeSelector
-                  value={endTime}
-                  onValueChange={(time) => {
+                <Label htmlFor="end_time" className="flex items-center gap-2">
+                  Hora de fin {!customEndTime && "(automática)"}
+                </Label>
+                <TimePicker
+                  time={endTime}
+                  onTimeChange={(time) => {
                     setEndTime(time);
                     setCustomEndTime(true);
                   }}
-                  availableSlots={startTime && endTime ? (() => {
-                    // Generate available end time slots starting from calculated end time
-                    const slots = [];
-                    const [hours, minutes] = endTime.split(":").map(Number);
-                    const baseDate = new Date();
-                    baseDate.setHours(hours, minutes, 0, 0);
-                    
-                    // Start from the calculated end time and add slots every 30 minutes (up to 3 hours extra)
-                    for (let i = 0; i <= 6; i++) {
-                      const slotDate = addMinutes(baseDate, 30 * i);
-                      slots.push(`${String(slotDate.getHours()).padStart(2, "0")}:${String(slotDate.getMinutes()).padStart(2, "0")}`);
-                    }
-                    return slots;
-                  })() : []}
-                  placeholder={endTime || "Seleccionar hora de inicio primero"}
-                  allowManualInput={false}
-                  disabled={!startTime}
+                  placeholder="Calculada automáticamente"
                 />
-                {startTime && endTime && (
-                  <p className="text-xs text-muted-foreground">
-                    *Duración de reserva: {slotDuration} minutos. Esta duración se puede cambiar desde la sección de configuración.
+                {!customEndTime && startTime && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Duración: {slotDuration} minutos (configurable en Ajustes)
                   </p>
+                )}
+                {customEndTime && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setCustomEndTime(false)}
+                    className="h-6 text-xs"
+                  >
+                    Usar duración automática
+                  </Button>
                 )}
               </div>
             </div>
@@ -506,7 +477,8 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                   </SelectContent>
                 </Select>
                 {tables.length === 0 && startTime && endTime && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Info className="h-3 w-3" />
                     Selecciona fecha y hora para ver mesas disponibles
                   </p>
                 )}
