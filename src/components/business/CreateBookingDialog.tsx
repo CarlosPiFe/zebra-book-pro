@@ -454,8 +454,9 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                     }
                     return slots;
                   })() : []}
-                  placeholder="Seleccionar hora de fin"
+                  placeholder={endTime || "Seleccionar hora de inicio primero"}
                   allowManualInput={false}
+                  disabled={!startTime}
                 />
                 {startTime && endTime && (
                   <p className="text-xs text-muted-foreground">
