@@ -48,24 +48,29 @@ export function TimeSelector({
     }
   };
 
+  // Filter out empty strings from availableSlots
+  const validSlots = availableSlots.filter(slot => slot && slot.trim() !== "");
+  // Use undefined instead of empty string for empty values
+  const selectValue = value && value.trim() !== "" ? value : undefined;
+
   return (
     <div className="flex gap-2 items-center">
       <div className="flex-1">
-        <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+        <Select value={selectValue} onValueChange={onValueChange} disabled={disabled}>
           <SelectTrigger>
             <SelectValue placeholder={placeholder} />
           </SelectTrigger>
           <SelectContent>
-            {availableSlots.length > 0 ? (
-              availableSlots.map((time) => (
+            {validSlots.length > 0 ? (
+              validSlots.map((time) => (
                 <SelectItem key={time} value={time}>
                   {time}
                 </SelectItem>
               ))
             ) : (
-              <SelectItem value="no-slots" disabled>
+              <div className="px-2 py-1.5 text-sm text-muted-foreground">
                 No hay horarios disponibles
-              </SelectItem>
+              </div>
             )}
           </SelectContent>
         </Select>
