@@ -539,6 +539,7 @@ export type Database = {
           name: string
           position: string | null
           token: string
+          user_id: string | null
         }
         Insert: {
           business_id: string
@@ -548,6 +549,7 @@ export type Database = {
           name: string
           position?: string | null
           token: string
+          user_id?: string | null
         }
         Update: {
           business_id?: string
@@ -557,6 +559,7 @@ export type Database = {
           name?: string
           position?: string | null
           token?: string
+          user_id?: string | null
         }
         Relationships: [
           {
