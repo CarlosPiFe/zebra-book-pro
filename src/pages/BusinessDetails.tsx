@@ -51,6 +51,7 @@ export default function BusinessDetails() {
     isDateAvailable,
     getAvailableTimeSlots,
     getNextAvailableSlot,
+    hasAvailableTables,
     loading: availabilityLoading,
     tables,
   } = useBookingAvailability(businessId);
@@ -89,6 +90,16 @@ export default function BusinessDetails() {
     
     if (!bookingForm.clientName || !bookingForm.clientPhone || !bookingForm.bookingDate || !bookingForm.startTime) {
       toast.error("Por favor completa todos los campos obligatorios");
+      return;
+    }
+
+    // Check availability before submitting
+    const dateString = format(bookingForm.bookingDate, "yyyy-MM-dd");
+    const hasAvailability = await hasAvailableTables(dateString, bookingForm.startTime, parseInt(bookingForm.partySize));
+    
+    if (!hasAvailability) {
+      setAvailabilityMessage("* No queda disponibilidad para esta hora");
+      toast.error("No hay disponibilidad para esta hora y número de comensales");
       return;
     }
 
@@ -163,16 +174,30 @@ export default function BusinessDetails() {
 
   // Check if selected time is available
   useEffect(() => {
-    if (bookingForm.bookingDate && bookingForm.startTime && availableTimeSlots.length > 0) {
-      if (!availableTimeSlots.includes(bookingForm.startTime)) {
-        const nextSlot = getNextAvailableSlot(bookingForm.bookingDate, parseInt(bookingForm.partySize));
-        if (nextSlot) {
-          setAvailabilityMessage(`No hay hueco en este horario. Próximo disponible: ${nextSlot}`);
+    const checkTimeAvailability = async () => {
+      if (bookingForm.bookingDate && bookingForm.startTime && availableTimeSlots.length > 0) {
+        if (!availableTimeSlots.includes(bookingForm.startTime)) {
+          const nextSlot = getNextAvailableSlot(bookingForm.bookingDate, parseInt(bookingForm.partySize));
+          if (nextSlot) {
+            setAvailabilityMessage(`No hay hueco en este horario. Próximo disponible: ${nextSlot}`);
+          } else {
+            setAvailabilityMessage(`No hay disponibilidad para ${bookingForm.partySize} personas en este día.`);
+          }
         } else {
-          setAvailabilityMessage(`No hay disponibilidad para ${bookingForm.partySize} personas en este día.`);
+          // Verify availability with hasAvailableTables
+          const dateString = format(bookingForm.bookingDate, "yyyy-MM-dd");
+          const hasAvailability = await hasAvailableTables(dateString, bookingForm.startTime, parseInt(bookingForm.partySize));
+          
+          if (!hasAvailability) {
+            setAvailabilityMessage("* No queda disponibilidad para esta hora");
+          } else {
+            setAvailabilityMessage("");
+          }
         }
       }
-    }
+    };
+    
+    checkTimeAvailability();
   }, [bookingForm.bookingDate, bookingForm.startTime, bookingForm.partySize, availableTimeSlots]);
 
   const openInGoogleMaps = () => {
@@ -542,7 +567,11 @@ export default function BusinessDetails() {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg" disabled={submitting}>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg" 
+                    disabled={submitting || availabilityMessage.includes("No queda disponibilidad")}
+                  >
                     <Calendar className="mr-2 h-4 w-4" />
                     {submitting ? "Enviando..." : "Confirmar reserva"}
                   </Button>

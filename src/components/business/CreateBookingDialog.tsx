@@ -16,11 +16,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
-import { Plus, Info } from "lucide-react";
+import { Plus, Info, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addMinutes } from "date-fns";
 import { z } from "zod";
 import { format } from "date-fns";
+import { useBookingAvailability } from "@/hooks/useBookingAvailability";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const createBookingSchema = (isHospitality: boolean) => z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -51,6 +53,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [slotDuration, setSlotDuration] = useState(60);
   const [businessCategory, setBusinessCategory] = useState("");
   const [openDays, setOpenDays] = useState<number[]>([]);
+  const [availabilityError, setAvailabilityError] = useState("");
   
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -63,6 +66,9 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [notes, setNotes] = useState("");
   const [selectedTableId, setSelectedTableId] = useState<string>("auto");
   const [tables, setTables] = useState<Array<{ id: string; table_number: number; max_capacity: number; isAvailable: boolean }>>([]);
+
+  // Use availability hook
+  const { hasAvailableTables } = useBookingAvailability(businessId);
 
   // Load business slot duration, category, and availability when dialog opens
   useEffect(() => {
@@ -120,6 +126,13 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     }
   }, [bookingDate, startTime, endTime]);
 
+  // Check availability when relevant fields change
+  useEffect(() => {
+    if (bookingDate && startTime && endTime && partySize && businessCategory) {
+      checkAvailability();
+    }
+  }, [bookingDate, startTime, endTime, partySize, businessCategory]);
+
   const loadAvailableTables = async () => {
     try {
       const dateString = format(bookingDate!, "yyyy-MM-dd");
@@ -160,6 +173,23 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     }
   };
 
+  const checkAvailability = async () => {
+    const isHospitality = businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar";
+    if (!isHospitality || !bookingDate || !startTime || !endTime) {
+      setAvailabilityError("");
+      return;
+    }
+
+    const dateString = format(bookingDate, "yyyy-MM-dd");
+    const hasAvailability = await hasAvailableTables(dateString, startTime, parseInt(partySize));
+    
+    if (!hasAvailability) {
+      setAvailabilityError("* No queda disponibilidad para esta hora");
+    } else {
+      setAvailabilityError("");
+    }
+  };
+
   const resetForm = () => {
     setClientName("");
     setClientEmail("");
@@ -172,6 +202,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     setNotes("");
     setSelectedTableId("auto");
     setTables([]);
+    setAvailabilityError("");
   };
 
   const findAvailableTable = async (
@@ -247,6 +278,17 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
       setLoading(true);
 
       const isHospitality = businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar";
+
+      // Check availability before creating booking
+      if (isHospitality) {
+        const dateString = format(bookingDate, "yyyy-MM-dd");
+        const hasAvailability = await hasAvailableTables(dateString, startTime, parseInt(partySize));
+        
+        if (!hasAvailability) {
+          toast.error("No hay disponibilidad para esta hora y número de comensales");
+          return;
+        }
+      }
 
       // Validate form data
       const bookingSchema = createBookingSchema(isHospitality);
@@ -513,6 +555,13 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 rows={3}
               />
             </div>
+
+            {availabilityError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="font-semibold">{availabilityError}</AlertDescription>
+              </Alert>
+            )}
           </div>
 
           <DialogFooter>
@@ -527,7 +576,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || !!availabilityError}>
               {loading ? "Creando..." : "Crear Reserva"}
             </Button>
           </DialogFooter>
