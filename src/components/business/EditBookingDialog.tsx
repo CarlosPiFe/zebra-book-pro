@@ -557,20 +557,9 @@ export function EditBookingDialog({
                 </Button>
               )}
             </div>
-            <div className="flex gap-2 w-full sm:w-auto ml-auto">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-                className="flex-1 sm:flex-none"
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={loading} className="flex-1 sm:flex-none">
-                {loading ? "Guardando..." : "Guardar Cambios"}
-              </Button>
-            </div>
+            <Button type="submit" disabled={loading} className="flex-1 sm:flex-none ml-auto">
+              {loading ? "Guardando..." : "Guardar Cambios"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
