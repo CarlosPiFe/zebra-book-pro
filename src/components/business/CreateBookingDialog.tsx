@@ -15,9 +15,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
-import { TimePicker } from "@/components/ui/time-picker";
 import { Plus, Info } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TimeSelector } from "./TimeSelector";
 import { useEffect } from "react";
 import { addMinutes } from "date-fns";
 import { z } from "zod";
@@ -102,6 +102,28 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
       setEndTime(calculatedEndTime);
     }
   }, [startTime, slotDuration, customEndTime]);
+
+  // Generate possible end time slots based on start time
+  const getEndTimeSlots = () => {
+    if (!startTime || !bookingDate) return [];
+    
+    const [startHours, startMinutes] = startTime.split(":").map(Number);
+    const startDate = new Date();
+    startDate.setHours(startHours, startMinutes, 0, 0);
+    
+    const slots: string[] = [];
+    // Generate slots from start time + slot duration to end of day
+    for (let i = 1; i <= 12; i++) {
+      const endDate = addMinutes(startDate, slotDuration * i);
+      const endTimeStr = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
+      slots.push(endTimeStr);
+      
+      // Stop if we reach 23:59
+      if (endDate.getHours() >= 23) break;
+    }
+    
+    return slots;
+  };
 
   // Load available tables when date/time changes
   useEffect(() => {
@@ -408,46 +430,33 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="start_time">Hora de inicio *</Label>
-                {bookingDate ? (
-                  <Select value={startTime} onValueChange={setStartTime}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar hora" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAvailableTimeSlots(bookingDate, parseInt(partySize)).length > 0 ? (
-                        getAvailableTimeSlots(bookingDate, parseInt(partySize)).map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-slots" disabled>
-                          No hay horarios disponibles
-                        </SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <Select disabled>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Primero selecciona una fecha" />
-                    </SelectTrigger>
-                  </Select>
-                )}
+                <TimeSelector
+                  label="Hora de inicio *"
+                  value={startTime}
+                  onChange={setStartTime}
+                  availableSlots={
+                    bookingDate
+                      ? getAvailableTimeSlots(bookingDate, parseInt(partySize))
+                      : []
+                  }
+                  placeholder="Seleccionar hora"
+                  disabled={!bookingDate}
+                  showManualInput={true}
+                />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="end_time" className="flex items-center gap-2">
-                  Hora de fin {!customEndTime && "(automática)"}
-                </Label>
-                <TimePicker
-                  time={endTime}
-                  onTimeChange={(time) => {
+                <TimeSelector
+                  label={`Hora de fin ${!customEndTime ? "(automática)" : ""}`}
+                  value={endTime}
+                  onChange={(time) => {
                     setEndTime(time);
                     setCustomEndTime(true);
                   }}
+                  availableSlots={getEndTimeSlots()}
                   placeholder="Calculada automáticamente"
+                  disabled={!startTime}
+                  showManualInput={true}
                 />
                 {!customEndTime && startTime && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
