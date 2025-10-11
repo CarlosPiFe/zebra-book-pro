@@ -408,6 +408,27 @@ export function EditBookingDialog({
     }
   };
 
+  const handleComplete = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "completed", table_id: null })
+        .eq("id", booking.id);
+
+      if (error) throw error;
+
+      toast.success("Reserva completada y mesa liberada");
+      onOpenChange(false);
+      onBookingUpdated();
+    } catch (error) {
+      console.error("Error completing booking:", error);
+      toast.error("Error al completar la reserva");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -580,23 +601,37 @@ export function EditBookingDialog({
           <DialogFooter className="gap-2 flex-col sm:flex-row sm:justify-between">
             {/* Left side: Status control buttons */}
             <div className="flex gap-2 w-full sm:w-auto">
-              <Button
-                type="button"
-                className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
-                onClick={() => handleStatusChange("occupied")}
-                disabled={loading}
-              >
-                Han llegado
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="flex-1 sm:flex-none border-gray-500 text-gray-700 hover:bg-gray-100"
-                onClick={() => setCancelDialogOpen(true)}
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
+              {(booking.status === "reserved" || booking.status === "pending") && (
+                <Button
+                  type="button"
+                  className="flex-1 sm:flex-none bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => handleStatusChange("occupied")}
+                  disabled={loading}
+                >
+                  Han llegado
+                </Button>
+              )}
+              {booking.status === "in_progress" && (
+                <Button
+                  type="button"
+                  className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={handleComplete}
+                  disabled={loading}
+                >
+                  Completada
+                </Button>
+              )}
+              {(booking.status === "reserved" || booking.status === "pending" || booking.status === "in_progress") && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 sm:flex-none border-gray-500 text-gray-700 hover:bg-gray-100"
+                  onClick={() => setCancelDialogOpen(true)}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+              )}
             </div>
             
             {/* Right side: Data action buttons */}
