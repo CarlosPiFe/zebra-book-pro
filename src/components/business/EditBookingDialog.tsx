@@ -413,7 +413,7 @@ export function EditBookingDialog({
       setLoading(true);
       const { error } = await supabase
         .from("bookings")
-        .update({ status: "completed", table_id: null })
+        .update({ status: "completed" })
         .eq("id", booking.id);
 
       if (error) throw error;
