@@ -84,13 +84,22 @@ export function BookingsView({ businessId }: BookingsViewProps) {
     try {
       const now = new Date();
       const currentDate = format(now, "yyyy-MM-dd");
-      const currentTime = format(now, "HH:mm");
+      const currentTime = format(now, "HH:mm:ss");
+
+      console.log("🔄 Checking bookings...", { currentDate, currentTime });
 
       // Load business configuration
       const businessConfig = await loadBusinessConfig();
-      if (!businessConfig) return;
+      if (!businessConfig) {
+        console.log("⚠️ No business config found");
+        return;
+      }
 
-      // Get all reserved bookings for today
+      console.log("⚙️ Business config:", businessConfig);
+
+      let updatedCount = 0;
+
+      // Get all reserved bookings for today that should be marked as delayed
       const { data: reservedBookings, error: reservedError } = await supabase
         .from("bookings")
         .select("id, start_time, booking_date")
@@ -100,54 +109,71 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
       if (reservedError) throw reservedError;
 
-      // Update bookings that are delayed
+      // Update bookings that are delayed (past start time but not checked in)
       for (const booking of reservedBookings || []) {
         if (booking.start_time < currentTime) {
+          console.log("⏰ Marking booking as delayed:", booking.id);
           await supabase
             .from("bookings")
             .update({ status: "pending" })
             .eq("id", booking.id);
+          updatedCount++;
         }
       }
 
-      // Get all in-progress bookings that should be completed
+      // Get all in-progress/occupied bookings that should be completed
       if (businessConfig.auto_complete_in_progress) {
         const { data: inProgressBookings, error: inProgressError } = await supabase
           .from("bookings")
-          .select("id, end_time, booking_date, status")
+          .select("id, end_time, booking_date, status, client_name")
           .eq("business_id", businessId)
           .eq("booking_date", currentDate)
-          .eq("status", "in_progress");
+          .in("status", ["in_progress", "occupied"]);
 
         if (!inProgressError && inProgressBookings) {
+          console.log(`📊 Found ${inProgressBookings.length} in-progress bookings`);
+          
           for (const booking of inProgressBookings) {
-            if (booking.end_time < currentTime) {
+            if (booking.end_time <= currentTime) {
+              console.log(`✅ Auto-completing in-progress booking for ${booking.client_name}:`, {
+                id: booking.id,
+                endTime: booking.end_time,
+                currentTime
+              });
+              
               await supabase
                 .from("bookings")
                 .update({ status: "completed" })
                 .eq("id", booking.id);
+              updatedCount++;
             }
           }
         }
+      } else {
+        console.log("⏸️ Auto-complete for in-progress bookings is disabled");
       }
 
       // Get all delayed bookings that should be completed or marked as no-show
       const { data: delayedBookings, error: delayedError } = await supabase
         .from("bookings")
-        .select("id, end_time, booking_date, status")
+        .select("id, end_time, booking_date, status, client_name")
         .eq("business_id", businessId)
         .eq("booking_date", currentDate)
         .eq("status", "pending");
 
       if (!delayedError && delayedBookings) {
+        console.log(`📊 Found ${delayedBookings.length} delayed bookings`);
+        
         for (const booking of delayedBookings) {
-          if (booking.end_time < currentTime) {
+          if (booking.end_time <= currentTime) {
             let newStatus = "pending"; // Keep as pending if no automation
             
             if (businessConfig.mark_delayed_as_no_show) {
               newStatus = "no_show";
+              console.log(`❌ Marking delayed booking as no-show for ${booking.client_name}:`, booking.id);
             } else if (businessConfig.auto_complete_delayed) {
               newStatus = "completed";
+              console.log(`✅ Auto-completing delayed booking for ${booking.client_name}:`, booking.id);
             }
             
             if (newStatus !== "pending") {
@@ -155,15 +181,24 @@ export function BookingsView({ businessId }: BookingsViewProps) {
                 .from("bookings")
                 .update({ status: newStatus })
                 .eq("id", booking.id);
+              updatedCount++;
+            } else {
+              console.log(`⏸️ Delayed booking kept as pending (no automation enabled) for ${booking.client_name}`);
             }
           }
         }
+      } else {
+        console.log("⏸️ Auto-actions for delayed bookings are disabled");
       }
 
-      // Reload bookings if any were updated
-      loadBookings();
+      if (updatedCount > 0) {
+        console.log(`✨ Updated ${updatedCount} bookings, reloading...`);
+        loadBookings();
+      } else {
+        console.log("✓ No bookings needed updating");
+      }
     } catch (error) {
-      console.error("Error checking delayed bookings:", error);
+      console.error("❌ Error checking delayed bookings:", error);
     }
   };
 
