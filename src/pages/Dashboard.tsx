@@ -312,6 +312,14 @@ const Dashboard = () => {
                   <div className="space-y-4">
                     {bookings.slice(0, 5).map((booking) => {
                       const getBookingStatus = () => {
+                        // No asistido
+                        if (booking.status === "no_show") {
+                          return {
+                            label: "No Asistido",
+                            className: "bg-destructive/20 text-destructive border border-destructive"
+                          };
+                        }
+
                         // Reserva completada
                         if (booking.status === "completed") {
                           return {
@@ -329,7 +337,7 @@ const Dashboard = () => {
                         }
 
                         // Cliente ha llegado y está comiendo
-                        if (booking.status === "occupied") {
+                        if (booking.status === "occupied" || booking.status === "in_progress") {
                           return {
                             label: "En curso",
                             className: "bg-green-500/20 text-green-700 border border-green-500"
@@ -360,8 +368,8 @@ const Dashboard = () => {
                         // Pendiente (sin mesa asignada o esperando confirmación)
                         if (booking.status === "pending") {
                           return {
-                            label: "Pendiente",
-                            className: "bg-muted text-muted-foreground"
+                            label: "Retraso",
+                            className: "bg-yellow-500/20 text-yellow-700 border border-yellow-500"
                           };
                         }
 
@@ -499,7 +507,9 @@ const Dashboard = () => {
                             ? "bg-blue-500/20 text-blue-700 border border-blue-500"
                             : booking.status === "cancelled"
                             ? "bg-gray-500/20 text-gray-700 border border-gray-500"
-                            : booking.status === "occupied"
+                            : booking.status === "no_show"
+                            ? "bg-destructive/20 text-destructive border border-destructive"
+                            : booking.status === "occupied" || booking.status === "in_progress"
                             ? "bg-green-500/20 text-green-700 border border-green-500"
                             : booking.status === "reserved"
                             ? "bg-orange-500/20 text-orange-700 border border-orange-500"
@@ -512,7 +522,9 @@ const Dashboard = () => {
                           ? "Completada"
                           : booking.status === "cancelled"
                           ? "Cancelada"
-                          : booking.status === "occupied"
+                          : booking.status === "no_show"
+                          ? "No Asistido"
+                          : booking.status === "occupied" || booking.status === "in_progress"
                           ? "En curso"
                           : booking.status === "reserved"
                           ? "Reservada"

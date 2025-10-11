@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Settings, Upload, X, ImagePlus, Clock } from "lucide-react";
+import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { BusinessHours } from "./BusinessHours";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,9 @@ interface Business {
   booking_slot_duration_minutes: number;
   website: string | null;
   social_media: any;
+  auto_complete_in_progress?: boolean;
+  auto_complete_delayed?: boolean;
+  mark_delayed_as_no_show?: boolean;
 }
 
 interface BusinessSettingsProps {
@@ -51,6 +55,9 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
       twitter: business.social_media?.twitter || "",
       linkedin: business.social_media?.linkedin || "",
     },
+    auto_complete_in_progress: business.auto_complete_in_progress ?? true,
+    auto_complete_delayed: business.auto_complete_delayed ?? true,
+    mark_delayed_as_no_show: business.mark_delayed_as_no_show ?? false,
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -188,6 +195,109 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
       </div>
 
       <BusinessHours businessId={business.id} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle2 className="h-5 w-5" />
+            Gestión Automática de Estados
+          </CardTitle>
+          <CardDescription>
+            Configura cómo se actualizan automáticamente los estados de las reservas cuando finaliza su tiempo
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+              <div className="space-y-1 flex-1">
+                <Label htmlFor="auto-complete-in-progress" className="text-base font-medium">
+                  Marcar reservas en curso como completadas
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Las reservas en estado "En curso" se marcarán automáticamente como "Completada" cuando pase su tiempo de finalización. 
+                  Si desactivas esta opción, deberás cambiar el estado manualmente.
+                </p>
+              </div>
+              <Switch
+                id="auto-complete-in-progress"
+                checked={formData.auto_complete_in_progress}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, auto_complete_in_progress: checked })
+                }
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+              <div className="space-y-1 flex-1">
+                <Label htmlFor="auto-complete-delayed" className="text-base font-medium">
+                  Marcar reservas en retraso como completadas
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Las reservas en estado "Retraso" se marcarán automáticamente como "Completada" cuando pase su tiempo de finalización.
+                  Si desactivas esta opción, el estado permanecerá en "Retraso" hasta que lo cambies manualmente.
+                </p>
+              </div>
+              <Switch
+                id="auto-complete-delayed"
+                checked={formData.auto_complete_delayed}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, auto_complete_delayed: checked })
+                }
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-4 rounded-lg border p-4 border-destructive/50 bg-destructive/5">
+              <div className="space-y-1 flex-1">
+                <Label htmlFor="mark-delayed-as-no-show" className="text-base font-medium">
+                  Marcar reservas en retraso como "No Asistido"
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  En lugar de marcar como "Completada", las reservas en estado "Retraso" se marcarán automáticamente como "No Asistido" (color rojo) cuando finalice su tiempo.
+                  Esta opción prevalece sobre la anterior si ambas están activadas.
+                </p>
+              </div>
+              <Switch
+                id="mark-delayed-as-no-show"
+                checked={formData.mark_delayed_as_no_show}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, mark_delayed_as_no_show: checked })
+                }
+              />
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const { error } = await supabase
+                  .from("businesses")
+                  .update({
+                    auto_complete_in_progress: formData.auto_complete_in_progress,
+                    auto_complete_delayed: formData.auto_complete_delayed,
+                    mark_delayed_as_no_show: formData.mark_delayed_as_no_show,
+                  })
+                  .eq("id", business.id);
+
+                if (error) throw error;
+
+                toast.success("Configuración de estados actualizada correctamente");
+                onUpdate();
+              } catch (error) {
+                console.error("Error updating automation settings:", error);
+                toast.error("Error al actualizar la configuración");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? "Guardando..." : "Guardar Configuración de Estados"}
+          </Button>
+        </CardContent>
+      </Card>
       
       <Card>
         <CardHeader>

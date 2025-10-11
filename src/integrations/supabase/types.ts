@@ -170,6 +170,8 @@ export type Database = {
         Row: {
           address: string | null
           api_token: string | null
+          auto_complete_delayed: boolean | null
+          auto_complete_in_progress: boolean | null
           booking_slot_duration_minutes: number
           category: string
           created_at: string
@@ -178,6 +180,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          mark_delayed_as_no_show: boolean | null
           name: string
           owner_id: string
           phone: string | null
@@ -188,6 +191,8 @@ export type Database = {
         Insert: {
           address?: string | null
           api_token?: string | null
+          auto_complete_delayed?: boolean | null
+          auto_complete_in_progress?: boolean | null
           booking_slot_duration_minutes?: number
           category: string
           created_at?: string
@@ -196,6 +201,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          mark_delayed_as_no_show?: boolean | null
           name: string
           owner_id: string
           phone?: string | null
@@ -206,6 +212,8 @@ export type Database = {
         Update: {
           address?: string | null
           api_token?: string | null
+          auto_complete_delayed?: boolean | null
+          auto_complete_in_progress?: boolean | null
           booking_slot_duration_minutes?: number
           category?: string
           created_at?: string
@@ -214,6 +222,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          mark_delayed_as_no_show?: boolean | null
           name?: string
           owner_id?: string
           phone?: string | null
