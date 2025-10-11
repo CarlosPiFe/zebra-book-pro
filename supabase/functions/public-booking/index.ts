@@ -1,10 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const PublicBookingSchema = z.object({
+  businessId: z.string().uuid({ message: "Invalid business ID format" }),
+  clientName: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
+  clientPhone: z.string().trim().min(10, "Phone number is too short").max(20, "Phone number is too long").regex(/^[\d\s+()-]+$/, "Invalid phone number format"),
+  clientEmail: z.string().trim().email("Invalid email format").max(255, "Email is too long").optional(),
+  bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (use YYYY-MM-DD)"),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format (use HH:MM)"),
+  partySize: z.number().int("Party size must be a whole number").min(1, "Party size must be at least 1").max(50, "Party size cannot exceed 50"),
+  notes: z.string().max(500, "Notes are too long").optional()
+});
 
 async function findAvailableTable(
   supabase: SupabaseClient,
@@ -89,6 +102,24 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Parse and validate request body
+    const rawBody = await req.json();
+    console.log("Public booking request received");
+
+    const validationResult = PublicBookingSchema.safeParse(rawBody);
+    if (!validationResult.success) {
+      console.error("Validation failed:", validationResult.error.issues);
+      const errorMessages = validationResult.error.issues.map(issue => issue.message).join(", ");
+      return new Response(
+        JSON.stringify({ 
+          error: "Invalid input data", 
+          details: errorMessages,
+          issues: validationResult.error.issues 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { 
       businessId, 
       clientName, 
@@ -98,27 +129,49 @@ serve(async (req) => {
       startTime, 
       partySize,
       notes 
-    } = await req.json();
+    } = validationResult.data;
 
-    // Validate required fields
-    if (!businessId || !clientName || !clientPhone || !bookingDate || !startTime || !partySize) {
+    // Validate date is not in the past
+    const bookingDateObj = new Date(bookingDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (bookingDateObj < today) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields" }),
+        JSON.stringify({ error: "Cannot create bookings for past dates" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Get business information to calculate end time
+    // Get business information and verify it exists and is active
     const { data: business, error: businessError } = await supabase
       .from("businesses")
-      .select("booking_slot_duration_minutes, phone")
+      .select("booking_slot_duration_minutes, phone, is_active")
       .eq("id", businessId)
+      .eq("is_active", true)
       .single();
 
     if (businessError || !business) {
+      console.error("Business not found or inactive:", businessError);
       return new Response(
-        JSON.stringify({ error: "Business not found" }),
+        JSON.stringify({ error: "Business not found or not accepting bookings" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Check rate limiting for this business
+    const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+      p_business_id: businessId,
+      p_endpoint: 'public-booking',
+      p_max_requests: 20,
+      p_window_minutes: 60
+    });
+
+    if (rateLimitError || !rateLimitOk) {
+      console.error('Rate limit exceeded for business:', businessId);
+      return new Response(
+        JSON.stringify({ error: 'Too many booking requests. Please try again later.' }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -168,6 +221,8 @@ serve(async (req) => {
       );
     }
 
+    console.log("Booking created successfully:", booking.id);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -180,7 +235,7 @@ serve(async (req) => {
     console.error("Error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: "An error occurred processing your booking", details: errorMessage }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

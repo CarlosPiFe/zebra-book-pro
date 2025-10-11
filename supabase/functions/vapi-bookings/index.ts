@@ -117,6 +117,108 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Verify business-specific API token for authorization
+    const businessApiToken = req.headers.get("x-business-token");
+    if (!businessApiToken) {
+      console.error('Missing business token');
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Missing business authorization token' 
+        }),
+        { 
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        }
+      );
+    }
+
+    // Validate business token and get business_id
+    const businessIdFromAction = 'business_id' in body ? body.business_id : null;
+    if (businessIdFromAction) {
+      const { data: business, error: businessError } = await supabase
+        .from("businesses")
+        .select("id, is_active")
+        .eq("id", businessIdFromAction)
+        .eq("api_token", businessApiToken)
+        .eq("is_active", true)
+        .single();
+
+      if (businessError || !business) {
+        console.error('Business token verification failed:', businessError);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Invalid business token or business not found' 
+          }),
+          { 
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+
+      // Check rate limits
+      const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+        p_business_id: businessIdFromAction,
+        p_endpoint: 'vapi-bookings',
+        p_max_requests: 100,
+        p_window_minutes: 60
+      });
+
+      if (rateLimitError || !rateLimitOk) {
+        console.error('Rate limit exceeded for business:', businessIdFromAction);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Rate limit exceeded. Please try again later.' 
+          }),
+          { 
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+    }
+
+    // For cancel/update actions, verify the booking belongs to the authenticated business
+    if (body.action === 'cancel' || body.action === 'update') {
+      const { data: booking, error: bookingError } = await supabase
+        .from("bookings")
+        .select("business_id, businesses!inner(api_token)")
+        .eq("id", body.booking_id)
+        .single();
+
+      if (bookingError || !booking) {
+        console.error('Booking not found:', bookingError);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Booking not found' 
+          }),
+          { 
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+
+      // Verify the business token matches the booking's business
+      if ((booking.businesses as any).api_token !== businessApiToken) {
+        console.error('Unauthorized access attempt to booking:', body.booking_id);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Unauthorized access to booking' 
+          }),
+          { 
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" }
+          }
+        );
+      }
+    }
+
     // Route to appropriate handler
     let result;
     switch (body.action) {

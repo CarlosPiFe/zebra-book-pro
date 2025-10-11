@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_rate_limits: {
+        Row: {
+          business_id: string
+          created_at: string
+          endpoint: string
+          id: string
+          request_count: number
+          window_start: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          request_count?: number
+          window_start?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          request_count?: number
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_rate_limits_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       availability_slots: {
         Row: {
           business_id: string
@@ -134,6 +169,7 @@ export type Database = {
       businesses: {
         Row: {
           address: string | null
+          api_token: string | null
           booking_slot_duration_minutes: number
           category: string
           created_at: string
@@ -151,6 +187,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          api_token?: string | null
           booking_slot_duration_minutes?: number
           category: string
           created_at?: string
@@ -168,6 +205,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          api_token?: string | null
           booking_slot_duration_minutes?: number
           category?: string
           created_at?: string
@@ -576,6 +614,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          p_business_id: string
+          p_endpoint: string
+          p_max_requests?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
       get_public_businesses: {
         Args: Record<PropertyKey, never>
         Returns: {
