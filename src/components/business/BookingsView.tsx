@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User } from "lucide-react";
+import { Calendar, Clock, User, ChevronDown } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
   const [searchName, setSearchName] = useState<string>("");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [pastBookingsOpen, setPastBookingsOpen] = useState(false);
 
   useEffect(() => {
     loadBookings();
@@ -363,6 +365,95 @@ export function BookingsView({ businessId }: BookingsViewProps) {
           return booking.client_name?.toLowerCase().includes(searchName.toLowerCase());
         });
 
+        // Obtener la hora actual
+        const now = new Date();
+        const currentTime = format(now, "HH:mm:ss");
+        const currentDate = format(now, "yyyy-MM-dd");
+        const selectedDateString = format(selectedDate, "yyyy-MM-dd");
+
+        // Separar reservas pasadas y futuras/actuales
+        const pastBookings: Booking[] = [];
+        const activeBookings: Booking[] = [];
+
+        filteredBookings.forEach((booking) => {
+          // Una reserva es "pasada" si su fecha es anterior a hoy
+          // O si su fecha es hoy y su hora de finalización ya pasó
+          const isPast = 
+            booking.booking_date < currentDate || 
+            (booking.booking_date === currentDate && booking.end_time < currentTime);
+          
+          if (isPast) {
+            pastBookings.push(booking);
+          } else {
+            activeBookings.push(booking);
+          }
+        });
+
+        // Ordenar las reservas pasadas por hora de inicio ascendente (ya están ordenadas)
+        // No es necesario reordenar porque vienen ordenadas por start_time
+
+        // Ordenar las reservas activas: primero por start_time, luego por end_time
+        activeBookings.sort((a, b) => {
+          if (a.start_time !== b.start_time) {
+            return a.start_time.localeCompare(b.start_time);
+          }
+          return a.end_time.localeCompare(b.end_time);
+        });
+
+        const renderBookingCard = (booking: Booking) => (
+          <Card 
+            key={booking.id} 
+            className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50"
+            onClick={() => {
+              setSelectedBooking(booking);
+              setEditDialogOpen(true);
+            }}
+          >
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1">
+                  <Badge className={getStatusColor(booking.status)}>
+                    {getStatusLabel(booking.status)}
+                  </Badge>
+                  
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="font-medium">
+                      {parse(booking.booking_date, "yyyy-MM-dd", new Date()).toLocaleDateString('es-ES', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>
+                      {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-sm">
+                    <User className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>{booking.party_size} personas</span>
+                  </div>
+
+                  {booking.tables && (
+                    <div className="font-medium text-sm text-accent">
+                      Mesa {booking.tables.table_number}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="text-sm font-medium text-foreground">
+                  {booking.client_name}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+
         return filteredBookings.length === 0 ? (
           <Card>
             <CardContent className="pt-6">
@@ -379,60 +470,43 @@ export function BookingsView({ businessId }: BookingsViewProps) {
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
-            {filteredBookings.map((booking) => (
-            <Card 
-              key={booking.id} 
-              className="hover:shadow-md transition-all cursor-pointer hover:border-primary/50"
-              onClick={() => {
-                setSelectedBooking(booking);
-                setEditDialogOpen(true);
-              }}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4 flex-1">
-                    <Badge className={getStatusColor(booking.status)}>
-                      {getStatusLabel(booking.status)}
-                    </Badge>
-                    
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="font-medium">
-                        {parse(booking.booking_date, "yyyy-MM-dd", new Date()).toLocaleDateString('es-ES', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                        })}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>
-                        {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span>{booking.party_size} personas</span>
-                    </div>
-
-                    {booking.tables && (
-                      <div className="font-medium text-sm text-accent">
-                        Mesa {booking.tables.table_number}
+          <div className="space-y-4">
+            {/* Bloque de reservas pasadas */}
+            {pastBookings.length > 0 && (
+              <Collapsible open={pastBookingsOpen} onOpenChange={setPastBookingsOpen}>
+                <Card className="border-muted">
+                  <CollapsibleTrigger className="w-full">
+                    <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-base">Reservas pasadas</CardTitle>
+                          <Badge variant="secondary" className="text-xs">
+                            {pastBookings.length}
+                          </Badge>
+                        </div>
+                        <ChevronDown 
+                          className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
+                            pastBookingsOpen ? "rotate-180" : ""
+                          }`}
+                        />
                       </div>
-                    )}
-                  </div>
-                  
-                  <div className="text-sm font-medium text-foreground">
-                    {booking.client_name}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            ))}
+                    </CardHeader>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <CardContent className="pt-0 space-y-3">
+                      {pastBookings.map(renderBookingCard)}
+                    </CardContent>
+                  </CollapsibleContent>
+                </Card>
+              </Collapsible>
+            )}
+
+            {/* Reservas activas y futuras */}
+            {activeBookings.length > 0 && (
+              <div className="space-y-3">
+                {activeBookings.map(renderBookingCard)}
+              </div>
+            )}
           </div>
         );
       })()}
