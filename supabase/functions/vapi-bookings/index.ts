@@ -583,6 +583,7 @@ async function findAvailableTable(
       .select("table_id")
       .eq("booking_date", date)
       .neq("status", "cancelled")
+      .neq("status", "completed")
       .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
 
     if (excludeBookingId) {

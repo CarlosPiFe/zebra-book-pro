@@ -46,6 +46,7 @@ async function findAvailableTable(
     .select("table_id, start_time, end_time")
     .eq("booking_date", bookingDate)
     .neq("status", "cancelled")
+    .neq("status", "completed")
     .not("table_id", "is", null);
 
   if (bookingsError) {

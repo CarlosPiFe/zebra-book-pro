@@ -152,6 +152,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         .select("table_id")
         .eq("booking_date", dateString)
         .neq("status", "cancelled")
+        .neq("status", "completed")
         .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
 
       if (bookingsError) throw bookingsError;
@@ -231,6 +232,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         .select("table_id")
         .eq("booking_date", date)
         .neq("status", "cancelled")
+        .neq("status", "completed")
         .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
 
       if (bookingsError) throw bookingsError;

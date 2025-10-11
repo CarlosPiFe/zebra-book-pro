@@ -68,7 +68,8 @@ export function useBookingAvailability(businessId: string | undefined) {
           .eq("business_id", businessId)
           .gte("booking_date", today)
           .lte("booking_date", future)
-          .neq("status", "cancelled");
+          .neq("status", "cancelled")
+          .neq("status", "completed");
 
         if (bookingsError) throw bookingsError;
         setBookings(bookingsData || []);

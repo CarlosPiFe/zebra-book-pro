@@ -150,6 +150,7 @@ export function EditBookingDialog({
         .select("table_id")
         .eq("booking_date", dateString)
         .neq("status", "cancelled")
+        .neq("status", "completed")
         .neq("id", booking.id)
         .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
 
@@ -210,6 +211,7 @@ export function EditBookingDialog({
         .select("table_id")
         .eq("booking_date", date)
         .neq("status", "cancelled")
+        .neq("status", "completed")
         .neq("id", excludeBookingId)
         .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
 

@@ -312,6 +312,22 @@ const Dashboard = () => {
                   <div className="space-y-4">
                     {bookings.slice(0, 5).map((booking) => {
                       const getBookingStatus = () => {
+                        // Reserva completada
+                        if (booking.status === "completed") {
+                          return {
+                            label: "Completada",
+                            className: "bg-blue-500/20 text-blue-700 border border-blue-500"
+                          };
+                        }
+
+                        // Reserva cancelada
+                        if (booking.status === "cancelled") {
+                          return {
+                            label: "Cancelada",
+                            className: "bg-gray-500/20 text-gray-700 border border-gray-500"
+                          };
+                        }
+
                         // Cliente ha llegado y está comiendo
                         if (booking.status === "occupied") {
                           return {
@@ -479,17 +495,29 @@ const Dashboard = () => {
                       </div>
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          booking.status === "confirmed"
-                            ? "bg-accent/10 text-accent"
+                          booking.status === "completed"
+                            ? "bg-blue-500/20 text-blue-700 border border-blue-500"
                             : booking.status === "cancelled"
-                            ? "bg-destructive/10 text-destructive"
+                            ? "bg-gray-500/20 text-gray-700 border border-gray-500"
+                            : booking.status === "occupied"
+                            ? "bg-green-500/20 text-green-700 border border-green-500"
+                            : booking.status === "reserved"
+                            ? "bg-orange-500/20 text-orange-700 border border-orange-500"
+                            : booking.status === "pending"
+                            ? "bg-yellow-500/20 text-yellow-700 border border-yellow-500"
                             : "bg-muted text-muted-foreground"
                         }`}
                       >
-                        {booking.status === "confirmed"
-                          ? "Confirmada"
+                        {booking.status === "completed"
+                          ? "Completada"
                           : booking.status === "cancelled"
                           ? "Cancelada"
+                          : booking.status === "occupied"
+                          ? "En curso"
+                          : booking.status === "reserved"
+                          ? "Reservada"
+                          : booking.status === "pending"
+                          ? "Retraso"
                           : "Pendiente"}
                       </span>
                     </div>
