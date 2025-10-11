@@ -611,7 +611,7 @@ export function EditBookingDialog({
                   Han llegado
                 </Button>
               )}
-              {booking.status === "in_progress" && (
+              {booking.status === "occupied" && (
                 <Button
                   type="button"
                   className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white"
@@ -621,7 +621,7 @@ export function EditBookingDialog({
                   Completada
                 </Button>
               )}
-              {(booking.status === "reserved" || booking.status === "pending" || booking.status === "in_progress") && (
+              {(booking.status === "reserved" || booking.status === "pending" || booking.status === "occupied") && (
                 <Button
                   type="button"
                   variant="outline"
