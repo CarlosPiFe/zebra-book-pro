@@ -177,15 +177,8 @@ export function EmployeeWeeklyCalendar({
       const topPosition = ((startDecimal - startHour) / totalHours) * 100;
       const height = ((endDecimal - startDecimal) / totalHours) * 100;
 
-      // Generate a color based on the schedule index for visual variety
-      const colors = [
-        "bg-blue-500/90 border-blue-600",
-        "bg-green-500/90 border-green-600",
-        "bg-purple-500/90 border-purple-600",
-        "bg-orange-500/90 border-orange-600",
-        "bg-pink-500/90 border-pink-600",
-      ];
-      const colorClass = colors[index % colors.length];
+      // Use consistent blue color for all shifts
+      const colorClass = "bg-blue-500/90 border-blue-600";
 
       return (
         <div
@@ -281,7 +274,7 @@ export function EmployeeWeeklyCalendar({
                   <div
                     className={cn(
                       "relative border-t-0",
-                      isDayOff && "bg-muted/30"
+                      isDayOff && "bg-muted/60"
                     )}
                     style={{ height: `${totalHours * 40}px` }}
                   >
@@ -293,7 +286,7 @@ export function EmployeeWeeklyCalendar({
                           key={hour}
                           className={cn(
                             "absolute w-full border-t border-border/30",
-                            isBusinessOpen && "bg-primary/5"
+                            isBusinessOpen && "bg-primary/10 border-l-2 border-r-2 border-primary/20"
                           )}
                           style={{
                             top: `${((hour - startHour) / totalHours) * 100}%`,
