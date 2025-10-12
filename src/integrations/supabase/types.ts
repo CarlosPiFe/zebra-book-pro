@@ -172,6 +172,7 @@ export type Database = {
           api_token: string | null
           auto_complete_delayed: boolean | null
           auto_complete_in_progress: boolean | null
+          auto_mark_in_progress: boolean | null
           booking_slot_duration_minutes: number
           category: string
           created_at: string
@@ -193,6 +194,7 @@ export type Database = {
           api_token?: string | null
           auto_complete_delayed?: boolean | null
           auto_complete_in_progress?: boolean | null
+          auto_mark_in_progress?: boolean | null
           booking_slot_duration_minutes?: number
           category: string
           created_at?: string
@@ -214,6 +216,7 @@ export type Database = {
           api_token?: string | null
           auto_complete_delayed?: boolean | null
           auto_complete_in_progress?: boolean | null
+          auto_mark_in_progress?: boolean | null
           booking_slot_duration_minutes?: number
           category?: string
           created_at?: string

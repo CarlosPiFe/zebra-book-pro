@@ -24,6 +24,7 @@ interface Business {
   booking_slot_duration_minutes: number;
   website: string | null;
   social_media: any;
+  auto_mark_in_progress?: boolean;
   auto_complete_in_progress?: boolean;
   auto_complete_delayed?: boolean;
   mark_delayed_as_no_show?: boolean;
@@ -55,6 +56,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
       twitter: business.social_media?.twitter || "",
       linkedin: business.social_media?.linkedin || "",
     },
+    auto_mark_in_progress: business.auto_mark_in_progress ?? true,
     auto_complete_in_progress: business.auto_complete_in_progress ?? true,
     auto_complete_delayed: business.auto_complete_delayed ?? true,
     mark_delayed_as_no_show: business.mark_delayed_as_no_show ?? false,
@@ -210,6 +212,25 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
               <div className="space-y-1 flex-1">
+                <Label htmlFor="auto-mark-in-progress" className="text-base font-medium">
+                  Marcar reservas pendientes como en curso
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Las reservas en estado pendiente se marcarán automáticamente como en curso cuando llegue su hora de inicio. 
+                  Si desactivas esta opción, deberás marcarlas manualmente.
+                </p>
+              </div>
+              <Switch
+                id="auto-mark-in-progress"
+                checked={formData.auto_mark_in_progress}
+                onCheckedChange={(checked) => 
+                  setFormData({ ...formData, auto_mark_in_progress: checked })
+                }
+              />
+            </div>
+
+            <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+              <div className="space-y-1 flex-1">
                 <Label htmlFor="auto-complete-in-progress" className="text-base font-medium">
                   Marcar reservas en curso como completadas
                 </Label>
@@ -274,6 +295,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                 const { error } = await supabase
                   .from("businesses")
                   .update({
+                    auto_mark_in_progress: formData.auto_mark_in_progress,
                     auto_complete_in_progress: formData.auto_complete_in_progress,
                     auto_complete_delayed: formData.auto_complete_delayed,
                     mark_delayed_as_no_show: formData.mark_delayed_as_no_show,

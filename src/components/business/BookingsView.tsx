@@ -69,7 +69,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
     try {
       const { data, error } = await supabase
         .from("businesses")
-        .select("auto_complete_in_progress, auto_complete_delayed, mark_delayed_as_no_show")
+        .select("auto_mark_in_progress, auto_complete_in_progress, auto_complete_delayed, mark_delayed_as_no_show")
         .eq("id", businessId)
         .single();
 
@@ -101,25 +101,36 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
       let updatedCount = 0;
 
-      // Get all reserved bookings for today that should be marked as delayed
+      // Get all reserved bookings for today that should be marked as delayed or in-progress
       const { data: reservedBookings, error: reservedError } = await supabase
         .from("bookings")
-        .select("id, start_time, booking_date")
+        .select("id, start_time, booking_date, client_name")
         .eq("business_id", businessId)
         .eq("booking_date", currentDate)
         .eq("status", "reserved");
 
       if (reservedError) throw reservedError;
 
-      // Update bookings that are delayed (past start time but not checked in)
+      // Update bookings based on configuration
       for (const booking of reservedBookings || []) {
-        if (booking.start_time < currentTime) {
-          console.log("⏰ Marking booking as delayed:", booking.id);
-          await supabase
-            .from("bookings")
-            .update({ status: "pending" })
-            .eq("id", booking.id);
-          updatedCount++;
+        if (booking.start_time <= currentTime) {
+          // If auto_mark_in_progress is enabled, mark as in_progress
+          if (businessConfig.auto_mark_in_progress) {
+            console.log(`✅ Auto-marking reserved booking as in-progress for ${booking.client_name}:`, booking.id);
+            await supabase
+              .from("bookings")
+              .update({ status: "in_progress" })
+              .eq("id", booking.id);
+            updatedCount++;
+          } else {
+            // Otherwise, mark as delayed (pending)
+            console.log("⏰ Marking booking as delayed:", booking.id);
+            await supabase
+              .from("bookings")
+              .update({ status: "pending" })
+              .eq("id", booking.id);
+            updatedCount++;
+          }
         }
       }
 
