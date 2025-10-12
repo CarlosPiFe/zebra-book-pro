@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, Clock, Settings, Users } from "lucide-react";
+import { Calendar, Building2, Clock, Settings, Users, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { EditBookingDialog } from "@/components/business/EditBookingDialog";
 
 interface Profile {
   id: string;
@@ -33,7 +36,11 @@ interface Booking {
   end_time: string;
   status: string;
   client_name: string;
+  client_email: string;
+  client_phone: string;
+  notes: string;
   party_size: number;
+  table_id: string;
   businesses: {
     name: string;
   };
@@ -48,7 +55,11 @@ const Dashboard = () => {
   const [userRole, setUserRole] = useState<"owner" | "client">("client");
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [pastBookings, setPastBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [pastBookingsOpen, setPastBookingsOpen] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -127,15 +138,29 @@ const Dashboard = () => {
           const currentDate = now.toISOString().split('T')[0];
           const currentTime = now.toTimeString().split(' ')[0].substring(0, 8);
           
-          const { data: bookingData } = await supabase
+          // Load upcoming bookings (próximas reservas) - max 50
+          const { data: upcomingBookings } = await supabase
             .from("bookings")
             .select("*, businesses(name), tables(table_number)")
             .in("business_id", businessIds)
             .or(`booking_date.gt.${currentDate},and(booking_date.eq.${currentDate},end_time.gte.${currentTime})`)
             .order("booking_date", { ascending: true })
-            .order("start_time", { ascending: true });
+            .order("start_time", { ascending: true })
+            .order("end_time", { ascending: true })
+            .limit(50);
           
-          setBookings(bookingData || []);
+          // Load past bookings (reservas pasadas) - max 25
+          const { data: pastBookingsData } = await supabase
+            .from("bookings")
+            .select("*, businesses(name), tables(table_number)")
+            .in("business_id", businessIds)
+            .or(`booking_date.lt.${currentDate},and(booking_date.eq.${currentDate},end_time.lt.${currentTime})`)
+            .order("booking_date", { ascending: false })
+            .order("start_time", { ascending: false })
+            .limit(25);
+          
+          setBookings(upcomingBookings || []);
+          setPastBookings(pastBookingsData || []);
         }
       } else {
         // Load bookings for client
@@ -286,145 +311,276 @@ const Dashboard = () => {
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">{bookings.length}</div>
-                    <p className="text-xs text-muted-foreground">Reservas recibidas</p>
+                    <div className="text-2xl font-bold">{bookings.length + pastBookings.length}</div>
+                    <p className="text-xs text-muted-foreground">Todas las reservas</p>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Próximas Reservas</CardTitle>
+                    <CardTitle className="text-sm font-medium">Reservas Pendientes</CardTitle>
                     <Clock className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">
-                      {bookings.filter((b) => new Date(b.booking_date) >= new Date()).length}
+                      {bookings.filter((b) => b.status === "reserved").length}
                     </div>
-                    <p className="text-xs text-muted-foreground">Reservas pendientes</p>
+                    <p className="text-xs text-muted-foreground">Aún no iniciadas</p>
                   </CardContent>
                 </Card>
               </div>
 
-              {/* Lista de reservas recientes */}
-              {bookings.length > 0 && (
-                <div>
-                  <h2 className="text-2xl font-bold mb-4">Reservas Recientes</h2>
-                  <div className="space-y-4">
-                    {bookings.slice(0, 5).map((booking) => {
-                      const getBookingStatus = () => {
-                        // No asistido
-                        if (booking.status === "no_show") {
-                          return {
-                            label: "No Asistido",
-                            className: "bg-destructive/20 text-destructive border border-destructive"
-                          };
-                        }
-
-                        // Reserva completada
-                        if (booking.status === "completed") {
-                          return {
-                            label: "Completada",
-                            className: "bg-blue-500/20 text-blue-700 border border-blue-500"
-                          };
-                        }
-
-                        // Reserva cancelada
-                        if (booking.status === "cancelled") {
-                          return {
-                            label: "Cancelada",
-                            className: "bg-gray-500/20 text-gray-700 border border-gray-500"
-                          };
-                        }
-
-                        // Cliente ha llegado y está comiendo
-                        if (booking.status === "occupied" || booking.status === "in_progress") {
-                          return {
-                            label: "En curso",
-                            className: "bg-green-500/20 text-green-700 border border-green-500"
-                          };
-                        }
-
-                        // Reserva futura
-                        if (booking.status === "reserved") {
-                          const now = new Date();
-                          const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
-                          const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000);
-
-                          // Cliente llega tarde (más de 5 minutos de retraso)
-                          if (now >= delayThreshold) {
-                            return {
-                              label: "Retraso",
-                              className: "bg-yellow-500/20 text-yellow-700 border border-yellow-500"
-                            };
-                          }
-
-                          // Reserva confirmada (naranja)
-                          return {
-                            label: "Pendiente",
-                            className: "bg-orange-500/20 text-orange-700 border border-orange-500"
-                          };
-                        }
-
-                        // Pendiente (sin mesa asignada o esperando confirmación)
-                        if (booking.status === "pending") {
-                          return {
-                            label: "Retraso",
-                            className: "bg-yellow-500/20 text-yellow-700 border border-yellow-500"
-                          };
-                        }
-
-                        // Estado por defecto
-                        return {
-                          label: booking.status,
-                          className: "bg-muted text-muted-foreground"
-                        };
-                      };
-
-                      const status = getBookingStatus();
-
-                      return (
-                        <Card key={booking.id}>
-                          <CardHeader>
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <CardTitle className="text-base">{booking.client_name}</CardTitle>
-                                <CardDescription>
-                                  {new Date(booking.booking_date).toLocaleDateString("es-ES", {
-                                    weekday: "long",
-                                    year: "numeric",
-                                    month: "long",
-                                    day: "numeric",
-                                  })}
-                                </CardDescription>
+              {/* Lista de reservas próximas y pasadas */}
+              {(bookings.length > 0 || pastBookings.length > 0) && (
+                <div className="space-y-6">
+                  {/* Desplegable de reservas pasadas */}
+                  {pastBookings.length > 0 && (
+                    <Collapsible open={pastBookingsOpen} onOpenChange={setPastBookingsOpen}>
+                      <Card className="border-muted">
+                        <CollapsibleTrigger className="w-full">
+                          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <CardTitle className="text-xl">Reservas pasadas</CardTitle>
+                                <Badge variant="secondary" className="text-xs">
+                                  {pastBookings.length}
+                                </Badge>
                               </div>
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.className}`}>
-                                {status.label}
-                              </span>
+                              <ChevronDown 
+                                className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
+                                  pastBookingsOpen ? "rotate-180" : ""
+                                }`}
+                              />
                             </div>
                           </CardHeader>
-                          <CardContent>
-                            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                              <div className="flex items-center">
-                                <Clock className="h-4 w-4 mr-2" />
-                                {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
-                              </div>
-                              <div className="flex items-center">
-                                <Users className="h-4 w-4 mr-2" />
-                                {booking.party_size} {booking.party_size === 1 ? "persona" : "personas"}
-                              </div>
-                              {booking.tables && (
-                                <div className="flex items-center">
-                                  <Building2 className="h-4 w-4 mr-2" />
-                                  Mesa {booking.tables.table_number}
-                                </div>
-                              )}
-                            </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <CardContent className="pt-0 space-y-4">
+                            {pastBookings.map((booking) => {
+                              const getBookingStatus = () => {
+                                if (booking.status === "no_show") {
+                                  return {
+                                    label: "No Asistido",
+                                    className: "bg-destructive/20 text-destructive border border-destructive"
+                                  };
+                                }
+                                if (booking.status === "completed") {
+                                  return {
+                                    label: "Completada",
+                                    className: "bg-blue-500/20 text-blue-700 border border-blue-500"
+                                  };
+                                }
+                                if (booking.status === "cancelled") {
+                                  return {
+                                    label: "Cancelada",
+                                    className: "bg-gray-500/20 text-gray-700 border border-gray-500"
+                                  };
+                                }
+                                if (booking.status === "occupied" || booking.status === "in_progress") {
+                                  return {
+                                    label: "En curso",
+                                    className: "bg-green-500/20 text-green-700 border border-green-500"
+                                  };
+                                }
+                                if (booking.status === "reserved") {
+                                  return {
+                                    label: "Pendiente",
+                                    className: "bg-orange-500/20 text-orange-700 border border-orange-500"
+                                  };
+                                }
+                                if (booking.status === "pending") {
+                                  return {
+                                    label: "Retraso",
+                                    className: "bg-yellow-500/20 text-yellow-700 border border-yellow-500"
+                                  };
+                                }
+                                return {
+                                  label: booking.status,
+                                  className: "bg-muted text-muted-foreground"
+                                };
+                              };
+
+                              const status = getBookingStatus();
+
+                              return (
+                                <Card 
+                                  key={booking.id}
+                                  className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+                                  onClick={() => {
+                                    setSelectedBooking(booking);
+                                    setEditDialogOpen(true);
+                                  }}
+                                >
+                                  <CardHeader>
+                                    <div className="flex justify-between items-start">
+                                      <div className="flex-1">
+                                        <CardTitle className="text-base">{booking.client_name}</CardTitle>
+                                        <CardDescription>
+                                          {new Date(booking.booking_date).toLocaleDateString("es-ES", {
+                                            weekday: "long",
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                          })}
+                                        </CardDescription>
+                                      </div>
+                                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.className}`}>
+                                        {status.label}
+                                      </span>
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                                      <div className="flex items-center">
+                                        <Clock className="h-4 w-4 mr-2" />
+                                        {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
+                                      </div>
+                                      <div className="flex items-center">
+                                        <Users className="h-4 w-4 mr-2" />
+                                        {booking.party_size} {booking.party_size === 1 ? "persona" : "personas"}
+                                      </div>
+                                      {booking.tables && (
+                                        <div className="flex items-center">
+                                          <Building2 className="h-4 w-4 mr-2" />
+                                          Mesa {booking.tables.table_number}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
                           </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                        </CollapsibleContent>
+                      </Card>
+                    </Collapsible>
+                  )}
+
+                  {/* Reservas próximas */}
+                  {bookings.length > 0 && (
+                    <div>
+                      <h2 className="text-2xl font-bold mb-4">Reservas Próximas</h2>
+                      <div className="space-y-4">
+                        {bookings.map((booking) => {
+                          const getBookingStatus = () => {
+                            if (booking.status === "no_show") {
+                              return {
+                                label: "No Asistido",
+                                className: "bg-destructive/20 text-destructive border border-destructive"
+                              };
+                            }
+                            if (booking.status === "completed") {
+                              return {
+                                label: "Completada",
+                                className: "bg-blue-500/20 text-blue-700 border border-blue-500"
+                              };
+                            }
+                            if (booking.status === "cancelled") {
+                              return {
+                                label: "Cancelada",
+                                className: "bg-gray-500/20 text-gray-700 border border-gray-500"
+                              };
+                            }
+                            if (booking.status === "occupied" || booking.status === "in_progress") {
+                              return {
+                                label: "En curso",
+                                className: "bg-green-500/20 text-green-700 border border-green-500"
+                              };
+                            }
+                            if (booking.status === "reserved") {
+                              const now = new Date();
+                              const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
+                              const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000);
+
+                              if (now >= delayThreshold) {
+                                return {
+                                  label: "Retraso",
+                                  className: "bg-yellow-500/20 text-yellow-700 border border-yellow-500"
+                                };
+                              }
+
+                              return {
+                                label: "Pendiente",
+                                className: "bg-orange-500/20 text-orange-700 border border-orange-500"
+                              };
+                            }
+                            if (booking.status === "pending") {
+                              return {
+                                label: "Retraso",
+                                className: "bg-yellow-500/20 text-yellow-700 border border-yellow-500"
+                              };
+                            }
+                            return {
+                              label: booking.status,
+                              className: "bg-muted text-muted-foreground"
+                            };
+                          };
+
+                          const status = getBookingStatus();
+
+                          return (
+                            <Card 
+                              key={booking.id}
+                              className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
+                              onClick={() => {
+                                setSelectedBooking(booking);
+                                setEditDialogOpen(true);
+                              }}
+                            >
+                              <CardHeader>
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <CardTitle className="text-base">{booking.client_name}</CardTitle>
+                                    <CardDescription>
+                                      {new Date(booking.booking_date).toLocaleDateString("es-ES", {
+                                        weekday: "long",
+                                        year: "numeric",
+                                        month: "long",
+                                        day: "numeric",
+                                      })}
+                                    </CardDescription>
+                                  </div>
+                                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.className}`}>
+                                    {status.label}
+                                  </span>
+                                </div>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                                  <div className="flex items-center">
+                                    <Clock className="h-4 w-4 mr-2" />
+                                    {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
+                                  </div>
+                                  <div className="flex items-center">
+                                    <Users className="h-4 w-4 mr-2" />
+                                    {booking.party_size} {booking.party_size === 1 ? "persona" : "personas"}
+                                  </div>
+                                  {booking.tables && (
+                                    <div className="flex items-center">
+                                      <Building2 className="h-4 w-4 mr-2" />
+                                      Mesa {booking.tables.table_number}
+                                    </div>
+                                  )}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              )}
+
+              {/* Modal de edición de reserva */}
+              {selectedBooking && mainBusiness && (
+                <EditBookingDialog
+                  booking={selectedBooking}
+                  businessId={mainBusiness.id}
+                  open={editDialogOpen}
+                  onOpenChange={setEditDialogOpen}
+                  onBookingUpdated={loadUserData}
+                />
               )}
             </div>
           )}
