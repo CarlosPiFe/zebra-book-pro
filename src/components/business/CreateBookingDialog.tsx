@@ -54,6 +54,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [businessCategory, setBusinessCategory] = useState("");
   const [openDays, setOpenDays] = useState<number[]>([]);
   const [availabilityError, setAvailabilityError] = useState("");
+  const [isClosedDay, setIsClosedDay] = useState(false);
   
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -132,6 +133,14 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
       checkAvailability();
     }
   }, [bookingDate, startTime, endTime, partySize, businessCategory]);
+
+  // Check if selected date is a closed day
+  useEffect(() => {
+    if (bookingDate && openDays.length > 0) {
+      const dayOfWeek = bookingDate.getDay();
+      setIsClosedDay(!openDays.includes(dayOfWeek));
+    }
+  }, [bookingDate, openDays]);
 
   const loadAvailableTables = async () => {
     try {
@@ -273,6 +282,12 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     
     if (!bookingDate) {
       toast.error("Selecciona una fecha");
+      return;
+    }
+
+    // Check if it's a closed day
+    if (isClosedDay) {
+      toast.error("No se pueden crear reservas en días cerrados");
       return;
     }
 
@@ -455,6 +470,14 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 placeholder="Seleccionar fecha"
                 disabled={(date) => !isDateAvailable(date)}
               />
+              {isClosedDay && bookingDate && (
+                <Alert variant="destructive" className="mt-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    El local está cerrado este día. No se pueden crear reservas en {['domingos', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados'][bookingDate.getDay()]}.
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -578,7 +601,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || !!availabilityError}>
+            <Button type="submit" disabled={loading || !!availabilityError || isClosedDay}>
               {loading ? "Creando..." : "Crear Reserva"}
             </Button>
           </DialogFooter>
