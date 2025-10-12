@@ -267,21 +267,21 @@ export function BookingsView({ businessId }: BookingsViewProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "reserved":
-        return "bg-orange-500/20 text-orange-700 border border-orange-500";
+        return "bg-orange-500/20 text-orange-700 border border-orange-500 hover:bg-orange-500/20 hover:text-orange-700 hover:border-orange-500";
       case "pending":
-        return "bg-yellow-500/20 text-yellow-700 border border-yellow-500";
+        return "bg-yellow-500/20 text-yellow-700 border border-yellow-500 hover:bg-yellow-500/20 hover:text-yellow-700 hover:border-yellow-500";
       case "occupied":
-        return "bg-green-500/20 text-green-700 border border-green-500";
+        return "bg-green-500/20 text-green-700 border border-green-500 hover:bg-green-500/20 hover:text-green-700 hover:border-green-500";
       case "in_progress":
-        return "bg-purple-500/20 text-purple-700 border border-purple-500";
+        return "bg-purple-500/20 text-purple-700 border border-purple-500 hover:bg-purple-500/20 hover:text-purple-700 hover:border-purple-500";
       case "completed":
-        return "bg-blue-500/20 text-blue-700 border border-blue-500";
+        return "bg-blue-500/20 text-blue-700 border border-blue-500 hover:bg-blue-500/20 hover:text-blue-700 hover:border-blue-500";
       case "cancelled":
-        return "bg-gray-500/20 text-gray-700 border border-gray-500";
+        return "bg-gray-500/20 text-gray-700 border border-gray-500 hover:bg-gray-500/20 hover:text-gray-700 hover:border-gray-500";
       case "no_show":
-        return "bg-destructive/20 text-destructive border border-destructive";
+        return "bg-destructive/20 text-destructive border border-destructive hover:bg-destructive/20 hover:text-destructive hover:border-destructive";
       default:
-        return "bg-muted text-muted-foreground";
+        return "bg-muted text-muted-foreground hover:bg-muted hover:text-muted-foreground";
     }
   };
 
@@ -424,7 +424,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1">
-                  <Badge className={cn(getStatusColor(booking.status), "transition-none hover:opacity-100")}>
+                  <Badge className={cn(getStatusColor(booking.status), "transition-none pointer-events-none")}>
                     {getStatusLabel(booking.status)}
                   </Badge>
                   
