@@ -90,15 +90,12 @@ export function EmployeeWeeklyCalendar({
     return decimal;
   };
 
-  // Calculate the earliest and latest hours from business hours
+  // Calculate the earliest and latest hours from business hours AND employee schedules
   const getBusinessHoursRange = () => {
-    if (businessHours.length === 0) {
-      return { earliest: 0, latest: 24 };
-    }
-
     let earliest = 24;
     let latest = 0;
 
+    // Check business hours
     businessHours.forEach((slot) => {
       const start = timeToDecimal(slot.start_time);
       let end = timeToDecimal(slot.end_time);
@@ -111,6 +108,27 @@ export function EmployeeWeeklyCalendar({
       if (start < earliest) earliest = start;
       if (end > latest) latest = end;
     });
+
+    // Check employee schedules for this week
+    schedules.forEach((schedule) => {
+      if (schedule.start_time && schedule.end_time && !schedule.is_day_off) {
+        const start = timeToDecimal(schedule.start_time);
+        let end = timeToDecimal(schedule.end_time);
+        
+        // If end time is before or equal to start time, it crosses midnight
+        if (end <= start) {
+          end = timeToDecimal(schedule.end_time, true);
+        }
+        
+        if (start < earliest) earliest = start;
+        if (end > latest) latest = end;
+      }
+    });
+
+    // If no events found, default to 0-24
+    if (earliest === 24 && latest === 0) {
+      return { earliest: 0, latest: 24 };
+    }
 
     // Round down earliest to nearest hour and round up latest to nearest hour
     return {
@@ -177,23 +195,13 @@ export function EmployeeWeeklyCalendar({
       const topPosition = ((startDecimal - startHour) / totalHours) * 100;
       const height = ((endDecimal - startDecimal) / totalHours) * 100;
 
-      // Generate a color based on the schedule index for visual variety
-      const colors = [
-        "bg-blue-500/90 border-blue-600",
-        "bg-green-500/90 border-green-600",
-        "bg-purple-500/90 border-purple-600",
-        "bg-orange-500/90 border-orange-600",
-        "bg-pink-500/90 border-pink-600",
-      ];
-      const colorClass = colors[index % colors.length];
-
       return (
         <div
           key={schedule.id || `${dayIndex}-${index}`}
           className={cn(
             "absolute left-0 right-0 mx-1 rounded-md p-2 text-white text-xs font-medium shadow-lg border-l-4",
             "flex flex-col justify-center items-center z-10",
-            colorClass
+            "bg-blue-500/90 border-blue-600"
           )}
           style={{
             top: `${topPosition}%`,
@@ -281,7 +289,7 @@ export function EmployeeWeeklyCalendar({
                   <div
                     className={cn(
                       "relative border-t-0",
-                      isDayOff && "bg-muted/30"
+                      isDayOff && "bg-muted/60"
                     )}
                     style={{ height: `${totalHours * 40}px` }}
                   >
