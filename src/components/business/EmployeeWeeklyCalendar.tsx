@@ -355,7 +355,7 @@ export function EmployeeWeeklyCalendar({
                       return (
                         <div
                           key={`business-block-${blockIndex}`}
-                          className="absolute left-0 right-0 mx-1 border-2 border-blue-700/40 bg-blue-500/5 rounded-md"
+                          className="absolute left-0 right-0 border-2 border-blue-700/40 bg-blue-500/5 rounded-md z-0"
                           style={{
                             top: `${topPosition}%`,
                             height: `${height}%`,
@@ -393,7 +393,7 @@ export function EmployeeWeeklyCalendar({
           {/* Legend */}
           <div className="mt-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-primary/5 border border-border rounded" />
+              <div className="w-4 h-4 border-2 border-blue-700/40 bg-blue-500/5 rounded-md" />
               <span>Horario del local</span>
             </div>
             <div className="flex items-center gap-2">
