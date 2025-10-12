@@ -114,12 +114,12 @@ export function BookingsView({ businessId }: BookingsViewProps) {
       // Update bookings based on configuration
       for (const booking of reservedBookings || []) {
         if (booking.start_time <= currentTime) {
-          // If auto_mark_in_progress is enabled, mark as in_progress
+          // If auto_mark_in_progress is enabled, mark as occupied (en curso)
           if (businessConfig.auto_mark_in_progress) {
-            console.log(`✅ Auto-marking reserved booking as in-progress for ${booking.client_name}:`, booking.id);
+            console.log(`✅ Auto-marking reserved booking as occupied (en curso) for ${booking.client_name}:`, booking.id);
             await supabase
               .from("bookings")
-              .update({ status: "in_progress" })
+              .update({ status: "occupied" })
               .eq("id", booking.id);
             updatedCount++;
           } else {
