@@ -177,28 +177,19 @@ export function EmployeeWeeklyCalendar({
       const topPosition = ((startDecimal - startHour) / totalHours) * 100;
       const height = ((endDecimal - startDecimal) / totalHours) * 100;
 
-      // Generate a color based on the schedule index for visual variety
-      const colors = [
-        "bg-blue-500/90 border-blue-600",
-        "bg-green-500/90 border-green-600",
-        "bg-purple-500/90 border-purple-600",
-        "bg-orange-500/90 border-orange-600",
-        "bg-pink-500/90 border-pink-600",
-      ];
-      const colorClass = colors[index % colors.length];
-
       return (
         <div
           key={schedule.id || `${dayIndex}-${index}`}
           className={cn(
-            "absolute left-0 right-0 mx-1 rounded-md p-2 text-white text-xs font-medium shadow-lg border-l-4",
-            "flex flex-col justify-center items-center z-10",
-            colorClass
+            "absolute left-0 right-0 mx-1 rounded-md p-2 text-xs font-medium shadow-lg",
+            "flex flex-col justify-center items-center z-10"
           )}
           style={{
             top: `${topPosition}%`,
             height: `${height}%`,
             minHeight: "24px",
+            backgroundColor: "#CC8045",
+            color: "#333333",
           }}
         >
           <span className="truncate w-full text-center font-semibold text-[11px]">
@@ -279,11 +270,11 @@ export function EmployeeWeeklyCalendar({
 
                   {/* Day content */}
                   <div
-                    className={cn(
-                      "relative border-t-0",
-                      isDayOff && "bg-muted/30"
-                    )}
-                    style={{ height: `${totalHours * 40}px` }}
+                    className="relative border-t-0"
+                    style={{ 
+                      height: `${totalHours * 40}px`,
+                      backgroundColor: isDayOff ? "#F5F5F5" : "transparent"
+                    }}
                   >
                     {/* Hour grid and background highlighting */}
                     {displayHours.map((hour) => {
@@ -291,13 +282,12 @@ export function EmployeeWeeklyCalendar({
                       return (
                         <div
                           key={hour}
-                          className={cn(
-                            "absolute w-full border-t border-border/30",
-                            isBusinessOpen && "bg-primary/5"
-                          )}
+                          className="absolute w-full border-t"
                           style={{
                             top: `${((hour - startHour) / totalHours) * 100}%`,
                             height: `${100 / totalHours}%`,
+                            backgroundColor: isBusinessOpen ? "#6C8694" : "#FFFFFF",
+                            borderColor: "#DDDDDD",
                           }}
                         />
                       );
@@ -305,8 +295,11 @@ export function EmployeeWeeklyCalendar({
 
                     {/* Day off message */}
                     {isDayOff && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground font-medium bg-background/80 px-3 py-1 rounded">
+                      <div className="absolute inset-0 flex items-center justify-center z-20">
+                        <span className="text-xs font-medium px-3 py-1 rounded" style={{ 
+                          backgroundColor: "rgba(255, 255, 255, 0.9)",
+                          color: "#333333"
+                        }}>
                           Local Cerrado
                         </span>
                       </div>
@@ -314,8 +307,8 @@ export function EmployeeWeeklyCalendar({
 
                     {/* No schedule message for open days */}
                     {!isDayOff && daySchedules.length === 0 && (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span className="text-xs text-muted-foreground font-medium">
+                      <div className="absolute inset-0 flex items-center justify-center z-20">
+                        <span className="text-xs font-medium" style={{ color: "#333333" }}>
                           Sin turno
                         </span>
                       </div>
@@ -332,11 +325,15 @@ export function EmployeeWeeklyCalendar({
           {/* Legend */}
           <div className="mt-4 flex items-center justify-center gap-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-primary/5 border border-border rounded" />
+              <div className="w-4 h-4 rounded border" style={{ backgroundColor: "#FFFFFF", borderColor: "#DDDDDD" }} />
+              <span>Horas sin actividad</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: "#6C8694" }} />
               <span>Horario del local</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-blue-500/90 border-l-4 border-blue-600 rounded" />
+              <div className="w-4 h-4 rounded" style={{ backgroundColor: "#CC8045" }} />
               <span>Turno del empleado</span>
             </div>
           </div>
