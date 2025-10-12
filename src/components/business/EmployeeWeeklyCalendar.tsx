@@ -172,6 +172,48 @@ export function EmployeeWeeklyCalendar({
     );
   };
 
+  // Get continuous business hour blocks for a day
+  const getBusinessHourBlocks = (dayOfWeek: number): { start: number; end: number }[] => {
+    const daySlots = getBusinessHoursForDay(dayOfWeek);
+    if (daySlots.length === 0) return [];
+
+    const blocks: { start: number; end: number }[] = [];
+    
+    daySlots.forEach((slot) => {
+      const start = timeToDecimal(slot.start_time);
+      let end = timeToDecimal(slot.end_time);
+      
+      // If end is before or equal to start, it crosses midnight
+      if (end <= start) {
+        end = timeToDecimal(slot.end_time, true);
+      }
+      
+      blocks.push({ start, end });
+    });
+
+    // Sort blocks by start time
+    blocks.sort((a, b) => a.start - b.start);
+
+    // Merge overlapping blocks
+    const merged: { start: number; end: number }[] = [];
+    blocks.forEach((block) => {
+      if (merged.length === 0) {
+        merged.push(block);
+      } else {
+        const last = merged[merged.length - 1];
+        if (block.start <= last.end) {
+          // Overlapping, merge
+          last.end = Math.max(last.end, block.end);
+        } else {
+          // Not overlapping, add new block
+          merged.push(block);
+        }
+      }
+    });
+
+    return merged;
+  };
+
   // Render time blocks for a day
   const renderDayBlocks = (date: Date, dayIndex: number) => {
     const daySchedules = getSchedulesForDate(date);
@@ -293,19 +335,30 @@ export function EmployeeWeeklyCalendar({
                     )}
                     style={{ height: `${totalHours * 40}px` }}
                   >
-                    {/* Hour grid and background highlighting */}
-                    {displayHours.map((hour) => {
-                      const isBusinessOpen = isWithinBusinessHours(dayOfWeek, hour);
+                    {/* Hour grid */}
+                    {displayHours.map((hour) => (
+                      <div
+                        key={hour}
+                        className="absolute w-full border-t border-border/30"
+                        style={{
+                          top: `${((hour - startHour) / totalHours) * 100}%`,
+                          height: `${100 / totalHours}%`,
+                        }}
+                      />
+                    ))}
+
+                    {/* Business hours blocks with borders */}
+                    {!isDayOff && getBusinessHourBlocks(dayOfWeek).map((block, blockIndex) => {
+                      const topPosition = ((block.start - startHour) / totalHours) * 100;
+                      const height = ((block.end - block.start) / totalHours) * 100;
+                      
                       return (
                         <div
-                          key={hour}
-                          className={cn(
-                            "absolute w-full border-t border-border/30",
-                            isBusinessOpen && "bg-primary/5"
-                          )}
+                          key={`business-block-${blockIndex}`}
+                          className="absolute left-0 right-0 mx-1 border-2 border-blue-700/40 bg-blue-500/5 rounded-md"
                           style={{
-                            top: `${((hour - startHour) / totalHours) * 100}%`,
-                            height: `${100 / totalHours}%`,
+                            top: `${topPosition}%`,
+                            height: `${height}%`,
                           }}
                         />
                       );
