@@ -23,10 +23,9 @@ const Index = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeSearchQuery, setActiveSearchQuery] = useState("");
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showSearchBar, setShowSearchBar] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     loadBusinesses();
@@ -48,31 +47,43 @@ const Index = () => {
     }
   };
 
-  const handleSearch = () => {
-    setActiveSearchQuery(searchQuery);
-    if (isMobile && searchQuery.trim()) {
-      setShowSearchBar(false);
+  const handleSearch = (e?: React.KeyboardEvent) => {
+    if (e && e.key !== 'Enter') return;
+    setShowSuggestions(false);
+    // Scroll to results section
+    const resultsSection = document.getElementById('businesses-section');
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  const handleShowSearchBar = () => {
-    setShowSearchBar(true);
+  const handleInputChange = (value: string) => {
+    setSearchQuery(value);
+    setShowSuggestions(value.trim().length > 0);
+  };
+
+  const handleSuggestionClick = (businessId: string) => {
+    setShowSuggestions(false);
     setSearchQuery("");
-    setActiveSearchQuery("");
+    navigate(`/business/${businessId}`);
   };
 
-  // En escritorio: filtrar en tiempo real
-  // En móvil: solo filtrar cuando activeSearchQuery cambie
-  const filteredBusinesses = businesses.filter(
-    (business) => {
-      const query = isMobile ? activeSearchQuery : searchQuery;
-      if (!query) return true;
-      
-      return business.name.toLowerCase().includes(query.toLowerCase()) ||
-        business.category.toLowerCase().includes(query.toLowerCase()) ||
-        business.description?.toLowerCase().includes(query.toLowerCase());
-    }
-  );
+  // Intelligent search function
+  const filteredBusinesses = businesses.filter((business) => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const name = business.name.toLowerCase();
+    const category = business.category.toLowerCase();
+    const description = (business.description || "").toLowerCase();
+    
+    return name.includes(query) || 
+           category.includes(query) || 
+           description.includes(query);
+  });
+
+  // Top 5 suggestions
+  const suggestions = searchQuery.trim() ? filteredBusinesses.slice(0, 5) : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -101,50 +112,51 @@ const Index = () => {
           </div>
 
           {/* Search Bar */}
-          {(!isMobile || showSearchBar) && (
-            <div className="max-w-2xl mx-auto">
-              <div className="relative flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Buscar restaurantes, peluquerías, gimnasios..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSearch();
-                      }
-                    }}
-                    className="pl-12 pr-4 py-6 text-lg bg-white/95 backdrop-blur-sm border-0 shadow-strong"
-                  />
-                </div>
-                {isMobile && (
-                  <Button
-                    onClick={handleSearch}
-                    size="lg"
-                    className="px-6 py-6 bg-accent hover:bg-accent/90 shadow-strong"
-                  >
-                    <Search className="h-5 w-5" />
-                  </Button>
+          <div className="max-w-2xl mx-auto">
+            <div className="relative flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                <Input
+                  type="text"
+                  placeholder="Buscar restaurantes, peluquerías, gimnasios..."
+                  value={searchQuery}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onKeyDown={handleSearch}
+                  onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  className="pl-12 pr-4 py-6 text-lg bg-white/95 backdrop-blur-sm border-0 shadow-strong"
+                />
+                
+                {/* Suggestions Dropdown */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-strong border border-border overflow-hidden z-50 animate-fade-in">
+                    {suggestions.map((business) => (
+                      <button
+                        key={business.id}
+                        onClick={() => handleSuggestionClick(business.id)}
+                        className="w-full px-4 py-3 text-left hover:bg-accent/10 transition-colors border-b border-border/50 last:border-0 flex items-start gap-3"
+                      >
+                        <Search className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-foreground truncate">
+                            {business.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {business.category}
+                            </Badge>
+                            {business.address && (
+                              <span className="truncate">{business.address}</span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
-          )}
-
-          {/* Botón para volver a mostrar el buscador en móvil */}
-          {isMobile && !showSearchBar && (
-            <div className="max-w-2xl mx-auto">
-              <Button
-                onClick={handleShowSearchBar}
-                variant="outline"
-                className="w-full py-6 bg-white/95 backdrop-blur-sm border-0 shadow-strong"
-              >
-                <Search className="h-5 w-5 mr-2" />
-                Nueva búsqueda
-              </Button>
-            </div>
-          )}
+          </div>
 
           {/* Quick Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto">
@@ -168,7 +180,7 @@ const Index = () => {
       </section>
 
       {/* Businesses Section */}
-      <section className="py-20 px-4">
+      <section id="businesses-section" className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
