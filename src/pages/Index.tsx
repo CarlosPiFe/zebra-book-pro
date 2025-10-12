@@ -27,7 +27,6 @@ const Index = () => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSearchBar, setShowSearchBar] = useState(true);
-  const isSearching = searchQuery.length > 0;
 
   useEffect(() => {
     loadBusinesses();
@@ -79,118 +78,97 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section - Hidden when searching */}
-      {!isSearching && (
-        <section
-          className="relative pt-32 pb-20 px-4 overflow-hidden animate-fade-in"
-          style={{
-            backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), url(${heroImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-        >
-          <div className="container mx-auto max-w-6xl relative z-10">
-            <div className="text-center text-white mb-12">
-              <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-                Reserva tu próxima
-                <span className="block text-gradient bg-clip-text text-transparent bg-gradient-to-r from-accent to-accent/70">
-                  experiencia
-                </span>
-              </h1>
-              <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
-                La plataforma de reservas más simple y elegante para cualquier negocio
-              </p>
-            </div>
-
-            {/* Search Bar */}
-            {(!isMobile || showSearchBar) && (
-              <div className="max-w-2xl mx-auto">
-                <div className="relative flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Buscar restaurantes, peluquerías, gimnasios..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          handleSearch();
-                        }
-                      }}
-                      className="pl-12 pr-4 py-6 text-lg bg-white/95 backdrop-blur-sm border-0 shadow-strong"
-                    />
-                  </div>
-                  {isMobile && (
-                    <Button
-                      onClick={handleSearch}
-                      size="lg"
-                      className="px-6 py-6 bg-accent hover:bg-accent/90 shadow-strong"
-                    >
-                      <Search className="h-5 w-5" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Botón para volver a mostrar el buscador en móvil */}
-            {isMobile && !showSearchBar && (
-              <div className="max-w-2xl mx-auto">
-                <Button
-                  onClick={handleShowSearchBar}
-                  variant="outline"
-                  className="w-full py-6 bg-white/95 backdrop-blur-sm border-0 shadow-strong"
-                >
-                  <Search className="h-5 w-5 mr-2" />
-                  Nueva búsqueda
-                </Button>
-              </div>
-            )}
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
-                <Calendar className="h-8 w-8 text-accent mx-auto mb-3" />
-                <h3 className="text-2xl font-bold text-white mb-1">Reserva fácil</h3>
-                <p className="text-white/80">En segundos</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
-                <Clock className="h-8 w-8 text-accent mx-auto mb-3" />
-                <h3 className="text-2xl font-bold text-white mb-1">Disponibilidad</h3>
-                <p className="text-white/80">En tiempo real</p>
-              </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
-                <Star className="h-8 w-8 text-accent mx-auto mb-3" />
-                <h3 className="text-2xl font-bold text-white mb-1">Negocios</h3>
-                <p className="text-white/80">Verificados</p>
-              </div>
-            </div>
+      {/* Hero Section */}
+      <section
+        className="relative pt-32 pb-20 px-4 overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), url(${heroImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="text-center text-white mb-12">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+              Reserva tu próxima
+              <span className="block text-gradient bg-clip-text text-transparent bg-gradient-to-r from-accent to-accent/70">
+                experiencia
+              </span>
+            </h1>
+            <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
+              La plataforma de reservas más simple y elegante para cualquier negocio
+            </p>
           </div>
-        </section>
-      )}
 
-      {/* Search Mode - Fixed search bar at top */}
-      {isSearching && (
-        <div className="sticky top-16 z-40 bg-background/95 backdrop-blur-sm border-b shadow-sm animate-fade-in">
-          <div className="container mx-auto max-w-4xl px-4 py-6">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Buscar restaurantes, peluquerías, gimnasios..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-4 py-6 text-lg shadow-sm"
-                autoFocus
-              />
+          {/* Search Bar */}
+          {(!isMobile || showSearchBar) && (
+            <div className="max-w-2xl mx-auto">
+              <div className="relative flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Buscar restaurantes, peluquerías, gimnasios..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSearch();
+                      }
+                    }}
+                    className="pl-12 pr-4 py-6 text-lg bg-white/95 backdrop-blur-sm border-0 shadow-strong"
+                  />
+                </div>
+                {isMobile && (
+                  <Button
+                    onClick={handleSearch}
+                    size="lg"
+                    className="px-6 py-6 bg-accent hover:bg-accent/90 shadow-strong"
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Botón para volver a mostrar el buscador en móvil */}
+          {isMobile && !showSearchBar && (
+            <div className="max-w-2xl mx-auto">
+              <Button
+                onClick={handleShowSearchBar}
+                variant="outline"
+                className="w-full py-6 bg-white/95 backdrop-blur-sm border-0 shadow-strong"
+              >
+                <Search className="h-5 w-5 mr-2" />
+                Nueva búsqueda
+              </Button>
+            </div>
+          )}
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+              <Calendar className="h-8 w-8 text-accent mx-auto mb-3" />
+              <h3 className="text-2xl font-bold text-white mb-1">Reserva fácil</h3>
+              <p className="text-white/80">En segundos</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+              <Clock className="h-8 w-8 text-accent mx-auto mb-3" />
+              <h3 className="text-2xl font-bold text-white mb-1">Disponibilidad</h3>
+              <p className="text-white/80">En tiempo real</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+              <Star className="h-8 w-8 text-accent mx-auto mb-3" />
+              <h3 className="text-2xl font-bold text-white mb-1">Negocios</h3>
+              <p className="text-white/80">Verificados</p>
             </div>
           </div>
         </div>
-      )}
+      </section>
 
       {/* Businesses Section */}
-      <section className={`py-20 px-4 ${isSearching ? 'pt-8' : ''} transition-all duration-300`}>
+      <section className="py-20 px-4">
         <div className="container mx-auto max-w-6xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
@@ -255,23 +233,11 @@ const Index = () => {
             </div>
           ) : (
             <div className="text-center py-12">
-              <div className="mb-4">
-                <Search className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
-              </div>
               <p className="text-muted-foreground text-lg">
                 {searchQuery
-                  ? "No se han encontrado negocios que coincidan con tu búsqueda"
+                  ? "No se encontraron negocios con esa búsqueda"
                   : "No hay negocios disponibles aún"}
               </p>
-              {searchQuery && (
-                <Button
-                  variant="outline"
-                  onClick={() => setSearchQuery("")}
-                  className="mt-4"
-                >
-                  Limpiar búsqueda
-                </Button>
-              )}
             </div>
           )}
 
@@ -289,9 +255,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* CTA Section - Hidden when searching */}
-      {!isSearching && (
-        <section className="py-20 px-4 bg-primary text-primary-foreground animate-fade-in">
+      {/* CTA Section */}
+      <section className="py-20 px-4 bg-primary text-primary-foreground">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             ¿Tienes un negocio?
@@ -318,7 +283,6 @@ const Index = () => {
           </div>
         </div>
       </section>
-      )}
     </div>
   );
 };
