@@ -360,7 +360,7 @@ const Dashboard = () => {
 
                           // Reserva confirmada (naranja)
                           return {
-                            label: "Reservado",
+                            label: "Pendiente",
                             className: "bg-orange-500/20 text-orange-700 border border-orange-500"
                           };
                         }
@@ -527,7 +527,7 @@ const Dashboard = () => {
                           : booking.status === "occupied" || booking.status === "in_progress"
                           ? "En curso"
                           : booking.status === "reserved"
-                          ? "Reservada"
+                          ? "Pendiente"
                           : booking.status === "pending"
                           ? "Retraso"
                           : "Pendiente"}

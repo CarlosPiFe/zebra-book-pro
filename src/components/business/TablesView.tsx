@@ -551,7 +551,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         return "bg-yellow-500/20 border-yellow-500"; // Amarillo - reserva retrasada
       }
       
-      return "bg-orange-500/20 border-orange-500"; // Naranja - reservada (futura)
+      return "bg-orange-500/20 border-orange-500"; // Naranja - pendiente (futura)
     }
     
     return "bg-muted";
@@ -581,7 +581,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         return "Retraso";
       }
       
-      return "Reservado";
+      return "Pendiente";
     }
     
     return null;
@@ -1028,7 +1028,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="reserved">Reservada</SelectItem>
+                      <SelectItem value="reserved">Pendiente</SelectItem>
                       <SelectItem value="occupied">Comiendo</SelectItem>
                       <SelectItem value="completed">Completada</SelectItem>
                       <SelectItem value="cancelled">Cancelada</SelectItem>

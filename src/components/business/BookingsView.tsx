@@ -287,7 +287,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "reserved":
-        return "Reservada";
+        return "Pendiente";
       case "pending":
         return "Retraso";
       case "occupied":

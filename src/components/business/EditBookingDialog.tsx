@@ -370,7 +370,7 @@ export function EditBookingDialog({
 
       const statusMessages: Record<string, string> = {
         occupied: "Cliente marcado como llegado",
-        reserved: "Reserva marcada como reservada",
+        reserved: "Reserva marcada como pendiente",
         pending: "Reserva marcada en retraso",
         completed: "Reserva marcada como completada",
       };
