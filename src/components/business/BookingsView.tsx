@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { CreateBookingDialog } from "./CreateBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
 import { format, parse } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Booking {
   id: string;
@@ -423,7 +424,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
             <CardContent className="p-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1">
-                  <Badge className={getStatusColor(booking.status)}>
+                  <Badge className={cn(getStatusColor(booking.status), "transition-none hover:opacity-100")}>
                     {getStatusLabel(booking.status)}
                   </Badge>
                   
