@@ -191,13 +191,15 @@ export const ScheduleCell = ({
               </div>
             );
           })}
-          <button
-            onClick={handleClearSchedule}
-            className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-            title="Eliminar horario"
-          >
-            <X className="w-3 h-3" />
-          </button>
+          {!disabled && (
+            <button
+              onClick={handleClearSchedule}
+              className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+              title="Eliminar horario"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
         </div>
       );
     }

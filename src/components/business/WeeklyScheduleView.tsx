@@ -370,16 +370,17 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
               {isEditMode ? "Ver horario" : "Editar horario"}
             </Button>
           )}
-          <Button
-            variant="destructive"
-            onClick={() => setDeleteWeekDialogOpen(true)}
-            className="gap-2"
-            size="sm"
-            disabled={scheduleViewMode === 'visual' && !isEditMode}
-          >
-            <Trash2 className="w-4 h-4" />
-            Eliminar Semana
-          </Button>
+          {(scheduleViewMode === 'editable' || isEditMode) && (
+            <Button
+              variant="destructive"
+              onClick={() => setDeleteWeekDialogOpen(true)}
+              className="gap-2"
+              size="sm"
+            >
+              <Trash2 className="w-4 h-4" />
+              Eliminar Semana
+            </Button>
+          )}
           <ExportSchedulesDialog 
             businessId={businessId} 
             disabled={scheduleViewMode === 'visual' && !isEditMode}
