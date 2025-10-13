@@ -16,6 +16,7 @@ interface AvailabilityTableDialogProps {
   onOpenChange: (open: boolean) => void;
   businessId: string;
   selectedDate: Date;
+  partySize?: number;
   onTimeSlotSelect: (startTime: string, endTime: string, tableId: string) => void;
 }
 
@@ -45,6 +46,7 @@ export function AvailabilityTableDialog({
   onOpenChange,
   businessId,
   selectedDate,
+  partySize,
   onTimeSlotSelect,
 }: AvailabilityTableDialogProps) {
   const [tables, setTables] = useState<Table[]>([]);
@@ -73,12 +75,18 @@ export function AvailabilityTableDialog({
 
       if (businessError) throw businessError;
 
-      // Cargar mesas del negocio
-      const { data: tablesData, error: tablesError } = await supabase
+      // Cargar mesas del negocio (filtrar por capacidad si se especifica partySize)
+      let tablesQuery = supabase
         .from("tables")
         .select("*")
         .eq("business_id", businessId)
         .order("table_number", { ascending: true });
+
+      if (partySize && partySize > 0) {
+        tablesQuery = tablesQuery.gte("max_capacity", partySize);
+      }
+
+      const { data: tablesData, error: tablesError } = await tablesQuery;
 
       if (tablesError) throw tablesError;
 
