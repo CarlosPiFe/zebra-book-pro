@@ -1,145 +1,302 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Search, Calendar, Clock, MapPin, Star } from "lucide-react";
+import { Navbar } from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
+import { useIsMobile } from "@/hooks/use-mobile";
+import heroImage from "@/assets/hero-bg.jpg";
 
-interface Table {
+interface Business {
   id: string;
-  max_capacity: number;
-  business_id: string;
+  name: string;
+  description: string;
+  category: string;
+  address: string;
+  image_url: string;
 }
 
-interface Booking {
-  id: string;
-  business_id: string;
-  booking_date: string;
-  start_time: string;
-  end_time: string;
-  party_size: number;
-  table_id: string | null;
-}
-
-export const useBookingAvailability = (businessId?: string) => {
-  const [tables, setTables] = useState<Table[]>([]);
-  const [bookings, setBookings] = useState<Booking[]>([]);
+const Index = () => {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    if (businessId) loadData();
-  }, [businessId]);
+    loadBusinesses();
+  }, []);
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadBusinesses = async () => {
     try {
-      const { data: tablesData } = await supabase.from("tables").select("*").eq("business_id", businessId);
+      // Use secure function that only returns public business information
+      // This protects email and phone from being exposed publicly
+      const { data, error } = await supabase
+        .rpc("get_public_businesses");
 
-      const { data: bookingsData } = await supabase.from("bookings").select("*").eq("business_id", businessId);
-
-      setTables(tablesData || []);
-      setBookings(bookingsData || []);
+      if (error) throw error;
+      setBusinesses(data || []);
     } catch (error) {
-      console.error("Error loading availability data:", error);
+      console.error("Error loading businesses:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const isDateAvailable = (date: Date) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return date >= today;
-  };
-
-  const getAllTimeSlots = (date: Date): string[] => {
-    const slots: string[] = [];
-    for (let hour = 10; hour <= 23; hour++) {
-      slots.push(`${hour.toString().padStart(2, "0")}:00`);
-      slots.push(`${hour.toString().padStart(2, "0")}:30`);
+  const handleSearch = (e?: React.KeyboardEvent) => {
+    if (e && e.key !== 'Enter') return;
+    setShowSuggestions(false);
+    // Scroll to results section
+    const resultsSection = document.getElementById('businesses-section');
+    if (resultsSection) {
+      resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-    return slots;
   };
 
-  const timesOverlap = (startA: string, endA: string, startB: string, endB: string): boolean => {
-    const [hA, mA] = startA.split(":").map(Number);
-    const [hB, mB] = startB.split(":").map(Number);
-    const [hAend, mAend] = endA.split(":").map(Number);
-    const [hBend, mBend] = endB.split(":").map(Number);
-
-    const start1 = hA * 60 + mA;
-    const end1 = hAend * 60 + mAend;
-    const start2 = hB * 60 + mB;
-    const end2 = hBend * 60 + mBend;
-
-    return start1 < end2 && start2 < end1;
+  const handleInputChange = (value: string) => {
+    setSearchQuery(value);
+    setShowSuggestions(value.trim().length > 0);
   };
 
-  const hasAvailableTables = (date: string, startTime: string, partySize: number): boolean => {
-    if (!tables.length) return false;
-
-    const duration = 60;
-    const [startHour, startMinute] = startTime.split(":").map(Number);
-    const endTime = format(new Date(0, 0, 0, startHour, startMinute + duration), "HH:mm");
-
-    const bookingsForDate = bookings.filter((b) => b.booking_date === date);
-    const availableTables = tables.filter((table) => {
-      const overlappingBookings = bookingsForDate.filter((booking) => {
-        if (booking.table_id !== table.id) return false;
-        return timesOverlap(startTime, endTime, booking.start_time, booking.end_time);
-      });
-      return overlappingBookings.length === 0;
-    });
-
-    const totalAvailableCapacity = availableTables.reduce((acc, t) => acc + t.max_capacity, 0);
-
-    const isAvailable = totalAvailableCapacity >= partySize;
-
-    return isAvailable;
+  const handleSuggestionClick = (businessId: string) => {
+    setShowSuggestions(false);
+    setSearchQuery("");
+    navigate(`/business/${businessId}`);
   };
 
-  // ✅ Aquí está el cambio que añadimos
-  const getTimeSlotsWithAvailability = (date: Date, partySize: number): Array<{ time: string; available: boolean }> => {
-    if (!date) return [];
+  // Intelligent search function
+  const filteredBusinesses = businesses.filter((business) => {
+    if (!searchQuery.trim()) return true;
+    
+    const query = searchQuery.toLowerCase();
+    const name = business.name.toLowerCase();
+    const category = business.category.toLowerCase();
+    const description = (business.description || "").toLowerCase();
+    
+    return name.includes(query) || 
+           category.includes(query) || 
+           description.includes(query);
+  });
 
-    const dateStr = date.toISOString().split("T")[0];
-    const allSlots = getAllTimeSlots(date);
+  // Top 5 suggestions
+  const suggestions = searchQuery.trim() ? filteredBusinesses.slice(0, 5) : [];
 
-    // 🧠 Nuevo bloque con log de depuración
-    const slotsWithAvailability = allSlots.map((timeSlot) => {
-      let available = false;
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
 
-      try {
-        const result = hasAvailableTables(dateStr, timeSlot, partySize);
-        available = Boolean(result);
-      } catch (err) {
-        console.error("❌ Error comprobando slot:", timeSlot, err);
-        available = false;
-      }
+      {/* Hero Section */}
+      <section
+        className="relative pt-32 pb-20 px-4 overflow-hidden"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.7)), url(${heroImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="container mx-auto max-w-6xl relative z-10">
+          <div className="text-center text-white mb-12">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+              Reserva tu próxima
+              <span className="block text-gradient bg-clip-text text-transparent bg-gradient-to-r from-accent to-accent/70">
+                experiencia
+              </span>
+            </h1>
+            <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto">
+              La plataforma de reservas más simple y elegante para cualquier negocio
+            </p>
+          </div>
 
-      console.log(`[getTimeSlotsWithAvailability] ${dateStr} ${timeSlot} -> ${available}`);
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto">
+            <div className="relative flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                <Input
+                  type="text"
+                  placeholder="Buscar restaurantes, peluquerías, gimnasios..."
+                  value={searchQuery}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onKeyDown={handleSearch}
+                  onFocus={() => searchQuery.trim() && setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  className="pl-12 pr-4 py-6 text-lg bg-white/95 backdrop-blur-sm border-0 shadow-strong"
+                />
+                
+                {/* Suggestions Dropdown */}
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-sm rounded-lg shadow-strong border border-border overflow-hidden z-50 animate-fade-in">
+                    {suggestions.map((business) => (
+                      <button
+                        key={business.id}
+                        onClick={() => handleSuggestionClick(business.id)}
+                        className="w-full px-4 py-3 text-left hover:bg-accent/10 transition-colors border-b border-border/50 last:border-0 flex items-start gap-3"
+                      >
+                        <Search className="h-4 w-4 text-muted-foreground mt-1 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-foreground truncate">
+                            {business.name}
+                          </div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {business.category}
+                            </Badge>
+                            {business.address && (
+                              <span className="truncate">{business.address}</span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
-      return { time: timeSlot, available };
-    });
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 max-w-4xl mx-auto">
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+              <Calendar className="h-8 w-8 text-accent mx-auto mb-3" />
+              <h3 className="text-2xl font-bold text-white mb-1">Reserva fácil</h3>
+              <p className="text-white/80">En segundos</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+              <Clock className="h-8 w-8 text-accent mx-auto mb-3" />
+              <h3 className="text-2xl font-bold text-white mb-1">Disponibilidad</h3>
+              <p className="text-white/80">En tiempo real</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center border border-white/20">
+              <Star className="h-8 w-8 text-accent mx-auto mb-3" />
+              <h3 className="text-2xl font-bold text-white mb-1">Negocios</h3>
+              <p className="text-white/80">Verificados</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-    return slotsWithAvailability;
-  };
+      {/* Businesses Section */}
+      <section id="businesses-section" className="py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Negocios destacados
+            </h2>
+            <p className="text-muted-foreground text-lg">
+              Descubre los mejores lugares para reservar
+            </p>
+          </div>
 
-  const getAvailableTimeSlots = (date: Date, partySize: number): string[] => {
-    const slots = getTimeSlotsWithAvailability(date, partySize);
-    return slots.filter((s) => s.available).map((s) => s.time);
-  };
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} className="animate-pulse">
+                  <div className="h-48 bg-muted rounded-t-lg" />
+                  <CardContent className="p-6">
+                    <div className="h-6 bg-muted rounded mb-2" />
+                    <div className="h-4 bg-muted rounded w-2/3" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : filteredBusinesses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredBusinesses.map((business) => (
+                <Card
+                  key={business.id}
+                  className="overflow-hidden hover:shadow-strong transition-all duration-300 cursor-pointer group"
+                  onClick={() => navigate(`/business/${business.id}`)}
+                >
+                  <div
+                    className="h-48 bg-gradient-to-br from-accent/20 to-accent/10 relative overflow-hidden"
+                    style={
+                      business.image_url
+                        ? {
+                            backgroundImage: `url(${business.image_url})`,
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
+                          }
+                        : {}
+                    }
+                  >
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors" />
+                  </div>
+                  <CardHeader>
+                    <div className="flex items-start justify-between mb-2">
+                      <CardTitle className="text-xl">{business.name}</CardTitle>
+                      <Badge variant="secondary">{business.category}</Badge>
+                    </div>
+                    <CardDescription className="line-clamp-2">
+                      {business.description || "Sin descripción"}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4 mr-2" />
+                      {business.address || "Sin dirección"}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg">
+                {searchQuery
+                  ? "No se encontraron negocios con esa búsqueda"
+                  : "No hay negocios disponibles aún"}
+              </p>
+            </div>
+          )}
 
-  const getNextAvailableSlot = (date: Date, partySize: number): string | null => {
-    const availableSlots = getAvailableTimeSlots(date, partySize);
-    return availableSlots.length > 0 ? availableSlots[0] : null;
-  };
+          {!loading && businesses.length === 0 && (
+            <div className="text-center mt-8">
+              <Button
+                size="lg"
+                onClick={() => navigate("/auth?mode=signup")}
+                className="bg-accent hover:bg-accent/90"
+              >
+                ¡Registra tu negocio gratis!
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
 
-  return {
-    isDateAvailable,
-    getTimeSlotsWithAvailability,
-    getAvailableTimeSlots,
-    getNextAvailableSlot,
-    hasAvailableTables,
-    tables,
-    bookings,
-    loading,
-  };
+      {/* CTA Section */}
+      <section className="py-20 px-4 bg-primary text-primary-foreground">
+        <div className="container mx-auto max-w-4xl text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            ¿Tienes un negocio?
+          </h2>
+          <p className="text-xl mb-8 opacity-90">
+            Únete a ZebraTime y gestiona todas tus reservas desde un solo lugar
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button
+              size="lg"
+              variant="secondary"
+              onClick={() => navigate("/auth?mode=signup")}
+              className="text-lg px-8"
+            >
+              Comenzar gratis
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="text-lg px-8 bg-transparent border-white text-white hover:bg-white/10"
+            >
+              Ver demo
+            </Button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 };
+
+export default Index;

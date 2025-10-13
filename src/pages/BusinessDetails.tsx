@@ -33,7 +33,7 @@ export default function BusinessDetails() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
+  
   // Booking form state
   const [bookingForm, setBookingForm] = useState({
     clientName: "",
@@ -60,7 +60,9 @@ export default function BusinessDetails() {
   } = useBookingAvailability(businessId);
 
   // Calculate maximum capacity based on largest table
-  const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map((table) => table.max_capacity)) : 20; // Default fallback if no tables
+  const maxTableCapacity = tables.length > 0 
+    ? Math.max(...tables.map(table => table.max_capacity))
+    : 20; // Default fallback if no tables
 
   useEffect(() => {
     loadBusiness();
@@ -88,7 +90,7 @@ export default function BusinessDetails() {
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     if (!bookingForm.clientName || !bookingForm.clientPhone || !bookingForm.bookingDate || !bookingForm.startTime) {
       toast.error("Por favor completa todos los campos obligatorios");
       return;
@@ -97,7 +99,7 @@ export default function BusinessDetails() {
     // Validar disponibilidad en tiempo real antes de enviar
     const dateStr = format(bookingForm.bookingDate, "yyyy-MM-dd");
     const isStillAvailable = hasAvailableTables(dateStr, bookingForm.startTime, parseInt(bookingForm.partySize));
-
+    
     if (!isStillAvailable) {
       toast.error("Lo sentimos, este horario ya no está disponible. Por favor selecciona otro.");
       setBookingForm({ ...bookingForm, startTime: "" });
@@ -106,7 +108,7 @@ export default function BusinessDetails() {
 
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("public-booking", {
+      const { data, error } = await supabase.functions.invoke('public-booking', {
         body: {
           businessId,
           clientName: bookingForm.clientName,
@@ -141,7 +143,7 @@ export default function BusinessDetails() {
     } catch (error) {
       console.error("Error creating booking:", error);
       const errorMessage = error instanceof Error ? error.message : "Error al enviar la reserva";
-
+      
       if (errorMessage.includes("not found") || errorMessage.includes("not accepting")) {
         toast.error("Este negocio no está aceptando reservas en este momento");
       } else if (errorMessage.includes("Too many")) {
@@ -166,7 +168,7 @@ export default function BusinessDetails() {
   const timeSlotsWithAvailability = bookingForm.bookingDate
     ? getTimeSlotsWithAvailability(bookingForm.bookingDate, parseInt(bookingForm.partySize))
     : [];
-
+  
   // Get available time slots for selected date
   const availableTimeSlots = bookingForm.bookingDate
     ? getAvailableTimeSlots(bookingForm.bookingDate, parseInt(bookingForm.partySize))
@@ -184,12 +186,10 @@ export default function BusinessDetails() {
     const newPartySize = parseInt(value);
     setBookingForm({ ...bookingForm, partySize: value, startTime: "" });
     setHoursLoaded(false); // Reset cuando cambia el número de personas
-
+    
     // Show warning if selected party size has no availability
     if (bookingForm.bookingDate && !partySizeHasAvailability(newPartySize)) {
-      toast.warning(
-        `No hay disponibilidad para ${newPartySize} ${newPartySize === 1 ? "persona" : "personas"} en esta fecha. Por favor selecciona otra fecha.`,
-      );
+      toast.warning(`No hay disponibilidad para ${newPartySize} ${newPartySize === 1 ? 'persona' : 'personas'} en esta fecha. Por favor selecciona otra fecha.`);
     }
   };
 
@@ -199,31 +199,31 @@ export default function BusinessDetails() {
       toast.error("Por favor selecciona una fecha primero");
       return;
     }
-
+    
     // Ejecutar la comprobación de disponibilidad
     const slots = getTimeSlotsWithAvailability(bookingForm.bookingDate, parseInt(bookingForm.partySize));
-
+    
     if (slots.length === 0) {
       toast.error("No hay horarios disponibles para la fecha y número de personas seleccionadas");
     } else {
-      const availableCount = slots.filter((s) => s.available).length;
+      const availableCount = slots.filter(s => s.available).length;
       if (availableCount === 0) {
         toast.warning("Todos los horarios están completos para esta fecha");
       } else {
-        toast.success(`${availableCount} ${availableCount === 1 ? "horario disponible" : "horarios disponibles"}`);
+        toast.success(`${availableCount} ${availableCount === 1 ? 'horario disponible' : 'horarios disponibles'}`);
       }
     }
-
+    
     setHoursLoaded(true);
   };
 
   const openInGoogleMaps = () => {
     if (business?.address) {
       const encodedAddress = encodeURIComponent(business.address);
-      const link = document.createElement("a");
+      const link = document.createElement('a');
       link.href = `https://www.google.com/maps?q=${encodedAddress}`;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
       link.click();
     }
   };
@@ -275,10 +275,16 @@ export default function BusinessDetails() {
         <div className="mb-8">
           {business.image_url ? (
             <div className="relative h-96 w-full rounded-xl overflow-hidden mb-6">
-              <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
+              <img
+                src={business.image_url}
+                alt={business.name}
+                className="w-full h-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-8">
-                <h1 className="text-4xl font-bold text-foreground mb-2">{business.name}</h1>
+                <h1 className="text-4xl font-bold text-foreground mb-2">
+                  {business.name}
+                </h1>
                 <p className="text-lg text-muted-foreground">{business.category}</p>
               </div>
             </div>
@@ -298,7 +304,9 @@ export default function BusinessDetails() {
               <Card>
                 <CardContent className="pt-6">
                   <h2 className="text-2xl font-semibold mb-4">Acerca de nosotros</h2>
-                  <p className="text-muted-foreground leading-relaxed">{business.description}</p>
+                  <p className="text-muted-foreground leading-relaxed">
+                    {business.description}
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -319,7 +327,11 @@ export default function BusinessDetails() {
                         allowFullScreen
                       />
                     </div>
-                    <Button variant="outline" className="w-full" onClick={openInGoogleMaps}>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={openInGoogleMaps}
+                    >
                       <MapPin className="mr-2 h-4 w-4" />
                       Abrir en Google Maps
                     </Button>
@@ -450,10 +462,12 @@ export default function BusinessDetails() {
             <Card className="sticky top-4">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-semibold mb-4">Haz tu reserva</h3>
-
+                
                 {business.booking_additional_message && (
                   <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
-                    <p className="text-sm leading-relaxed text-foreground">{business.booking_additional_message}</p>
+                    <p className="text-sm leading-relaxed text-foreground">
+                      {business.booking_additional_message}
+                    </p>
                   </div>
                 )}
 
@@ -491,7 +505,10 @@ export default function BusinessDetails() {
 
                   <div>
                     <Label>Número de personas *</Label>
-                    <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange}>
+                    <Select
+                      value={bookingForm.partySize}
+                      onValueChange={handlePartySizeChange}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -499,8 +516,8 @@ export default function BusinessDetails() {
                         {Array.from({ length: maxTableCapacity }, (_, i) => i + 1).map((num) => {
                           const hasAvailability = bookingForm.bookingDate ? partySizeHasAvailability(num) : true;
                           return (
-                            <SelectItem
-                              key={num}
+                            <SelectItem 
+                              key={num} 
                               value={String(num)}
                               disabled={bookingForm.bookingDate && !hasAvailability}
                               className={bookingForm.bookingDate && !hasAvailability ? "opacity-50" : ""}
@@ -508,7 +525,7 @@ export default function BusinessDetails() {
                               <div className="flex items-center gap-2 justify-between w-full">
                                 <div className="flex items-center gap-2">
                                   <Users className="h-4 w-4" />
-                                  {num} {num === 1 ? "persona" : "personas"}
+                                  {num} {num === 1 ? 'persona' : 'personas'}
                                 </div>
                                 {bookingForm.bookingDate && !hasAvailability && (
                                   <span className="text-xs text-muted-foreground ml-2">sin disponibilidad</span>
@@ -526,8 +543,7 @@ export default function BusinessDetails() {
                     )}
                     {bookingForm.bookingDate && !partySizeHasAvailability(parseInt(bookingForm.partySize)) && (
                       <p className="text-sm text-destructive mt-1">
-                        No hay disponibilidad para {bookingForm.partySize}{" "}
-                        {parseInt(bookingForm.partySize) === 1 ? "persona" : "personas"} en esta fecha.
+                        No hay disponibilidad para {bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? 'persona' : 'personas'} en esta fecha.
                       </p>
                     )}
                   </div>
@@ -544,92 +560,68 @@ export default function BusinessDetails() {
 
                   <div>
                     <Label>Hora de entrada *</Label>
-
-                    {(() => {
-                      // Helper para manejar distintos formatos de disponibilidad
-                      const toBool = (v: any) => {
-                        if (typeof v === "boolean") return v;
-                        if (typeof v === "number") return v > 0;
-                        if (typeof v === "string") {
-                          const s = v.trim().toLowerCase();
-                          if (!isNaN(Number(s))) return Number(s) > 0;
-                          return ["true", "yes", "y", "si", "sí", "available", "disponible"].includes(s);
-                        }
-                        return false;
-                      };
-
-                      const rawSlots = timeSlotsWithAvailability ?? [];
-                      const visibleSlots = rawSlots.filter((s) =>
-                        toBool(s?.available ?? s?.isAvailable ?? s?.remaining ?? s?.free ?? s?.capacity),
-                      );
-
-                      // Limpiar startTime si ya no existe en los visibles
-                      if (bookingForm.startTime && !visibleSlots.some((s) => s.time === bookingForm.startTime)) {
-                        queueMicrotask(() => {
-                          setBookingForm((prev) => ({ ...prev, startTime: "" }));
-                        });
-                      }
-
-                      return (
-                        <>
-                          {!hoursLoaded ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="w-full"
-                              onClick={handleLoadHours}
-                              disabled={!bookingForm.bookingDate || availabilityLoading}
-                            >
-                              <Clock className="mr-2 h-4 w-4" />
-                              {availabilityLoading ? "Cargando..." : "Mostrar horas disponibles"}
-                            </Button>
+                    
+                    {!hoursLoaded ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleLoadHours}
+                        disabled={!bookingForm.bookingDate || availabilityLoading}
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        {availabilityLoading ? "Cargando..." : "Mostrar horas disponibles"}
+                      </Button>
+                    ) : (
+                      <Select
+                        value={bookingForm.startTime}
+                        onValueChange={(value) => {
+                          const slot = timeSlotsWithAvailability.find(s => s.time === value);
+                          if (slot && slot.available) {
+                            setBookingForm({ ...bookingForm, startTime: value });
+                          }
+                        }}
+                        disabled={!bookingForm.bookingDate || timeSlotsWithAvailability.length === 0}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={
+                            !bookingForm.bookingDate 
+                              ? "Primero selecciona una fecha"
+                              : timeSlotsWithAvailability.length === 0
+                              ? "No hay horarios disponibles"
+                              : "Seleccionar hora"
+                          } />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-[100]">
+                          {timeSlotsWithAvailability.filter(slot => slot.available).length > 0 ? (
+                            timeSlotsWithAvailability
+                              .filter(slot => slot.available)
+                              .map((slot) => (
+                                <SelectItem 
+                                  key={slot.time} 
+                                  value={slot.time}
+                                  className="cursor-pointer"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span>{slot.time}</span>
+                                  </div>
+                                </SelectItem>
+                              ))
                           ) : (
-                            <Select
-                              value={bookingForm.startTime}
-                              onValueChange={(value) => {
-                                const slot = visibleSlots.find((s) => s.time === value);
-                                if (slot) setBookingForm({ ...bookingForm, startTime: value });
-                              }}
-                              disabled={!bookingForm.bookingDate || visibleSlots.length === 0}
-                            >
-                              <SelectTrigger>
-                                <SelectValue
-                                  placeholder={
-                                    !bookingForm.bookingDate
-                                      ? "Primero selecciona una fecha"
-                                      : visibleSlots.length === 0
-                                        ? "No hay horarios disponibles"
-                                        : "Seleccionar hora"
-                                  }
-                                />
-                              </SelectTrigger>
-                              <SelectContent className="bg-popover z-[100]">
-                                {visibleSlots.length > 0 ? (
-                                  visibleSlots.map((slot) => (
-                                    <SelectItem key={slot.time} value={slot.time} className="cursor-pointer">
-                                      <div className="flex items-center gap-2">
-                                        <Clock className="h-4 w-4" />
-                                        <span>{slot.time}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="no-slots" disabled>
-                                    No hay horarios disponibles
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
+                            <SelectItem value="no-slots" disabled>
+                              No hay horarios disponibles
+                            </SelectItem>
                           )}
-
-                          {parseInt(bookingForm.partySize) > maxTableCapacity && (
-                            <p className="text-sm text-muted-foreground mt-1">
-                              Para reservas de más de {maxTableCapacity} personas, contáctanos.
-                            </p>
-                          )}
-                        </>
-                      );
-                    })()}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    
+                    {parseInt(bookingForm.partySize) > maxTableCapacity && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Para reservas de más de {maxTableCapacity} personas, contáctanos.
+                      </p>
+                    )}
                   </div>
 
                   <div>
@@ -643,12 +635,12 @@ export default function BusinessDetails() {
                     />
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg"
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg" 
                     disabled={
-                      submitting ||
-                      !bookingForm.startTime ||
+                      submitting || 
+                      !bookingForm.startTime || 
                       !bookingForm.bookingDate ||
                       !partySizeHasAvailability(parseInt(bookingForm.partySize)) ||
                       availabilityLoading
@@ -665,7 +657,9 @@ export default function BusinessDetails() {
                 </form>
 
                 <div className="mt-6 pt-6 border-t border-border space-y-3">
-                  <p className="text-sm text-muted-foreground text-center mb-3">O contacta directamente</p>
+                  <p className="text-sm text-muted-foreground text-center mb-3">
+                    O contacta directamente
+                  </p>
                   {business.phone && (
                     <Button variant="outline" className="w-full" asChild>
                       <a href={`tel:${business.phone}`}>
