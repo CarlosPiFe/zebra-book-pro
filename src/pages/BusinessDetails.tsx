@@ -219,51 +219,66 @@ export default function BusinessDetails() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Banner del negocio */}
-      {business.image_url && (
-        <div className="relative w-full h-64 md:h-80 overflow-hidden">
-          <img 
-            src={business.image_url} 
-            alt={business.name}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 p-8">
-            <div className="container mx-auto">
-              <h1 className="text-4xl md:text-5xl font-bold text-foreground">{business.name}</h1>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="border-b border-border">
+      {/* Botón Volver - FUERA del banner */}
+      <div className="border-b border-border bg-background">
         <div className="container mx-auto px-4 py-4">
           <Link to="/">
-            <Button variant="ghost" size="sm">
+            <Button variant="outline" size="sm" className="hover-scale">
               <ArrowLeft className="mr-2 h-4 w-4" /> Volver
             </Button>
           </Link>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Información */}
+      {/* Banner del negocio - Ocupa todo el ancho con esquinas redondeadas */}
+      <div className="container mx-auto px-4 py-6">
+        <Card className="overflow-hidden shadow-lg animate-fade-in">
+          <div className="relative w-full h-64 md:h-80">
+            {business.image_url ? (
+              <img 
+                src={business.image_url} 
+                alt={business.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+              <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-2">{business.name}</h1>
+              <p className="text-lg md:text-xl text-muted-foreground font-medium">{business.category}</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Contenido principal - 3 columnas */}
+      <div className="container mx-auto px-4 pb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* Columnas 1 y 2: Acerca de nosotros, Ubicación, Contacto */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Acerca de nosotros */}
             {business.description && (
-              <Card>
+              <Card className="shadow-md hover-scale transition-all">
                 <CardContent className="pt-6">
-                  <h2 className="text-2xl font-semibold mb-4">Acerca de nosotros</h2>
+                  <h2 className="text-2xl font-semibold mb-4 flex items-center">
+                    <Users className="mr-2 h-6 w-6 text-primary" />
+                    Acerca de nosotros
+                  </h2>
                   <p className="text-muted-foreground leading-relaxed">{business.description}</p>
                 </CardContent>
               </Card>
             )}
 
+            {/* Ubicación */}
             {business.address && (
-              <Card>
+              <Card className="shadow-md hover-scale transition-all">
                 <CardContent className="pt-6">
-                  <h2 className="text-2xl font-semibold mb-4">Ubicación</h2>
-                  <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
+                  <h2 className="text-2xl font-semibold mb-4 flex items-center">
+                    <MapPin className="mr-2 h-6 w-6 text-primary" />
+                    Ubicación
+                  </h2>
+                  <div className="aspect-video w-full rounded-lg overflow-hidden border border-border mb-4">
                     <iframe
                       width="100%"
                       height="100%"
@@ -273,35 +288,38 @@ export default function BusinessDetails() {
                       allowFullScreen
                     />
                   </div>
-                  <Button variant="outline" className="w-full mt-4" onClick={openInGoogleMaps}>
+                  <Button variant="outline" className="w-full hover-scale" onClick={openInGoogleMaps}>
                     <MapPin className="mr-2 h-4 w-4" /> Abrir en Google Maps
                   </Button>
                 </CardContent>
               </Card>
             )}
 
-            {/* Sección de Contacto */}
+            {/* Contacto */}
             {(business.phone || business.email) && (
-              <Card>
+              <Card className="shadow-md hover-scale transition-all">
                 <CardContent className="pt-6">
-                  <h2 className="text-2xl font-semibold mb-4">Contacto</h2>
+                  <h2 className="text-2xl font-semibold mb-4 flex items-center">
+                    <Phone className="mr-2 h-6 w-6 text-primary" />
+                    Contacto
+                  </h2>
                   <div className="space-y-3">
                     {business.phone && (
                       <a 
                         href={`tel:${business.phone}`}
-                        className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                        className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale"
                       >
-                        <Phone className="mr-3 h-5 w-5" />
-                        <span>{business.phone}</span>
+                        <Phone className="mr-3 h-5 w-5 text-primary" />
+                        <span className="font-medium">{business.phone}</span>
                       </a>
                     )}
                     {business.email && (
                       <a 
                         href={`mailto:${business.email}`}
-                        className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                        className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale"
                       >
-                        <Mail className="mr-3 h-5 w-5" />
-                        <span>{business.email}</span>
+                        <Mail className="mr-3 h-5 w-5 text-primary" />
+                        <span className="font-medium">{business.email}</span>
                       </a>
                     )}
                   </div>
@@ -310,15 +328,19 @@ export default function BusinessDetails() {
             )}
           </div>
 
-          {/* Formulario */}
+          {/* Columna 3: Haz tu reserva */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-4">
+            <Card className="sticky top-4 shadow-lg">
               <CardContent className="pt-6">
-                <h3 className="text-xl font-semibold mb-4">Haz tu reserva</h3>
+                <h3 className="text-2xl font-semibold mb-4 flex items-center">
+                  <Calendar className="mr-2 h-6 w-6 text-primary" />
+                  Haz tu reserva
+                </h3>
                 
+                {/* Mensaje adicional del negocio */}
                 {business.booking_additional_message && (
-                  <div className="mb-4 p-3 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">{business.booking_additional_message}</p>
+                  <div className="mb-4 p-4 bg-primary/10 border-l-4 border-primary rounded-md animate-fade-in">
+                    <p className="text-sm text-foreground font-medium">{business.booking_additional_message}</p>
                   </div>
                 )}
 
@@ -426,7 +448,7 @@ export default function BusinessDetails() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary hover:bg-primary/90 text-white font-semibold"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover-scale"
                     disabled={submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
@@ -434,25 +456,28 @@ export default function BusinessDetails() {
                   </Button>
                 </form>
 
-                {/* Botones de contacto */}
+                {/* Botones de contacto - Alineados horizontalmente con separación */}
                 {(business.phone || business.email) && (
-                  <div className="mt-4 pt-4 border-t border-border space-y-2">
-                    {business.phone && (
-                      <a href={`tel:${business.phone}`}>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Phone className="mr-2 h-4 w-4" />
-                          Llámanos
-                        </Button>
-                      </a>
-                    )}
-                    {business.email && (
-                      <a href={`mailto:${business.email}`}>
-                        <Button variant="outline" size="sm" className="w-full">
-                          <Mail className="mr-2 h-4 w-4" />
-                          Escríbenos
-                        </Button>
-                      </a>
-                    )}
+                  <div className="mt-6 pt-4 border-t border-border">
+                    <p className="text-sm text-muted-foreground mb-3 text-center">¿Prefieres contactarnos directamente?</p>
+                    <div className="flex gap-3">
+                      {business.phone && (
+                        <a href={`tel:${business.phone}`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full hover-scale">
+                            <Phone className="mr-2 h-4 w-4" />
+                            Llámanos
+                          </Button>
+                        </a>
+                      )}
+                      {business.email && (
+                        <a href={`mailto:${business.email}`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full hover-scale">
+                            <Mail className="mr-2 h-4 w-4" />
+                            Escríbenos
+                          </Button>
+                        </a>
+                      )}
+                    </div>
                   </div>
                 )}
               </CardContent>
