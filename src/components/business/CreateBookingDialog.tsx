@@ -16,13 +16,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
-import { Plus, Info, AlertCircle } from "lucide-react";
+import { Plus, Info, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addMinutes } from "date-fns";
 import { z } from "zod";
 import { format } from "date-fns";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AvailabilityTableDialog } from "./AvailabilityTableDialog";
 
 const createBookingSchema = (isHospitality: boolean) => z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -55,6 +56,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [openDays, setOpenDays] = useState<number[]>([]);
   const [availabilityError, setAvailabilityError] = useState("");
   const [isClosedDay, setIsClosedDay] = useState(false);
+  const [availabilityDialogOpen, setAvailabilityDialogOpen] = useState(false);
   
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -213,6 +215,13 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     setSelectedTableId("auto");
     setTables([]);
     setAvailabilityError("");
+  };
+
+  const handleTimeSlotSelect = (start: string, end: string, tableId: string) => {
+    setStartTime(start);
+    setEndTime(end);
+    setSelectedTableId(tableId);
+    setCustomEndTime(true);
   };
 
   const findAvailableTable = async (
@@ -480,45 +489,60 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="start_time">Hora de inicio *</Label>
-                <TimePicker
-                  time={startTime}
-                  onTimeChange={setStartTime}
-                  placeholder="14:00"
-                />
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAvailabilityDialogOpen(true)}
+                  disabled={!bookingDate || isClosedDay}
+                  className="w-full"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  Consultar Disponibilidad
+                </Button>
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="end_time" className="flex items-center gap-2">
-                  Hora de fin {!customEndTime && "(automática)"}
-                </Label>
-                <TimePicker
-                  time={endTime}
-                  onTimeChange={(time) => {
-                    setEndTime(time);
-                    setCustomEndTime(true);
-                  }}
-                  placeholder="Calculada automáticamente"
-                />
-                {!customEndTime && startTime && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Info className="h-3 w-3" />
-                    Duración: {slotDuration} minutos (configurable en Ajustes)
-                  </p>
-                )}
-                {customEndTime && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCustomEndTime(false)}
-                    className="h-6 text-xs"
-                  >
-                    Usar duración automática
-                  </Button>
-                )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_time">Hora de inicio *</Label>
+                  <TimePicker
+                    time={startTime}
+                    onTimeChange={setStartTime}
+                    placeholder="14:00"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="end_time" className="flex items-center gap-2">
+                    Hora de fin {!customEndTime && "(automática)"}
+                  </Label>
+                  <TimePicker
+                    time={endTime}
+                    onTimeChange={(time) => {
+                      setEndTime(time);
+                      setCustomEndTime(true);
+                    }}
+                    placeholder="Calculada automáticamente"
+                  />
+                  {!customEndTime && startTime && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Info className="h-3 w-3" />
+                      Duración: {slotDuration} minutos (configurable en Ajustes)
+                    </p>
+                  )}
+                  {customEndTime && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCustomEndTime(false)}
+                      className="h-6 text-xs"
+                    >
+                      Usar duración automática
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -607,6 +631,16 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {bookingDate && (
+        <AvailabilityTableDialog
+          open={availabilityDialogOpen}
+          onOpenChange={setAvailabilityDialogOpen}
+          businessId={businessId}
+          selectedDate={bookingDate}
+          onTimeSlotSelect={handleTimeSlotSelect}
+        />
+      )}
     </Dialog>
   );
 }
