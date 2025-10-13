@@ -259,13 +259,26 @@ export function useBookingAvailability(businessId: string | undefined) {
       if (e2Hour < 6) e2Minutes += 24 * 60;
 
       // Check for overlap: ranges overlap if they don't end before the other starts
-      return !(e1Minutes <= s2Minutes || s1Minutes >= e2Minutes);
+      const overlaps = !(e1Minutes <= s2Minutes || s1Minutes >= e2Minutes);
+
+      // Debug log for time overlap calculation
+      if (start1 === "21:30" || start2 === "21:30") {
+        console.log(`[Time Overlap Debug] ${start1}-${end1} vs ${start2}-${end2}`);
+        console.log(`[Time Overlap Debug] Minutes: ${s1Minutes}-${e1Minutes} vs ${s2Minutes}-${e2Minutes}`);
+        console.log(`[Time Overlap Debug] Overlaps: ${overlaps}`);
+      }
+
+      return overlaps;
     };
 
     // Get all bookings for this date and time slot
     const overlappingBookings = bookings.filter((booking) => {
       if (booking.booking_date !== date) return false;
-      return timesOverlap(booking.start_time, booking.end_time, startTime, endTime);
+      const overlaps = timesOverlap(booking.start_time, booking.end_time, startTime, endTime);
+      console.log(
+        `[Time Overlap Check] ${booking.start_time}-${booking.end_time} vs ${startTime}-${endTime}: ${overlaps ? "OVERLAPS" : "NO OVERLAP"}`,
+      );
+      return overlaps;
     });
 
     console.log(`[Availability Check] Date: ${date}, Time: ${startTime}-${endTime}, Party: ${partySize}`);
@@ -274,6 +287,10 @@ export function useBookingAvailability(businessId: string | undefined) {
       suitableTables.map((t) => `T${t.table_number}(${t.max_capacity})`),
     );
     console.log(`[Availability Check] Overlapping bookings: ${overlappingBookings.length}`, overlappingBookings);
+    console.log(
+      `[Availability Check] All bookings for date:`,
+      bookings.filter((b) => b.booking_date === date),
+    );
 
     // Count how many suitable tables are occupied
     const occupiedTableIds = new Set(
@@ -321,6 +338,16 @@ export function useBookingAvailability(businessId: string | undefined) {
     // We need at least one suitable table available AND enough capacity for existing auto bookings
     const isAvailable = hasSuitableTable && hasEnoughCapacityForAuto;
     console.log(`[Availability Check] Result: ${isAvailable ? "AVAILABLE" : "NOT AVAILABLE"}`);
+
+    // Extra debug for 21:30 specifically
+    if (startTime === "21:30") {
+      console.log(`[21:30 DEBUG] Party size: ${partySize}`);
+      console.log(`[21:30 DEBUG] Suitable tables:`, suitableTables);
+      console.log(`[21:30 DEBUG] Available tables:`, availableTables);
+      console.log(`[21:30 DEBUG] Has suitable table: ${hasSuitableTable}`);
+      console.log(`[21:30 DEBUG] Has enough capacity for auto: ${hasEnoughCapacityForAuto}`);
+      console.log(`[21:30 DEBUG] Final result: ${isAvailable}`);
+    }
 
     return isAvailable;
   };
