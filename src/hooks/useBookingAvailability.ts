@@ -38,21 +38,57 @@ export function useBookingAvailability(businessId: string | undefined) {
     const loadData = async () => {
       try {
         // Load availability slots
+        console.log("⏰⏰⏰ CARGANDO HORARIOS DE DISPONIBILIDAD ⏰⏰⏰");
+
         const { data: slotsData, error: slotsError } = await supabase
           .from("availability_slots")
           .select("*")
           .eq("business_id", businessId);
 
-        if (slotsError) throw slotsError;
+        if (slotsError) {
+          console.error("❌ ERROR cargando horarios:", slotsError);
+          throw slotsError;
+        }
+
+        console.log("⏰ TOTAL DE HORARIOS ENCONTRADOS:", slotsData?.length || 0);
+        console.log("📋 TODOS LOS HORARIOS:");
+        slotsData?.forEach((slot, index) => {
+          console.log(`⏰ Horario ${index + 1}:`, {
+            id: slot.id,
+            dia_semana: slot.day_of_week,
+            hora_inicio: slot.start_time,
+            hora_fin: slot.end_time,
+            duracion_slot: slot.slot_duration_minutes,
+            TODO_EL_OBJETO: slot,
+          });
+        });
+
         setAvailabilitySlots(slotsData || []);
 
         // Load tables
+        console.log("🪑🪑🪑 CARGANDO MESAS 🪑🪑🪑");
+
         const { data: tablesData, error: tablesError } = await supabase
           .from("tables")
           .select("*")
           .eq("business_id", businessId);
 
-        if (tablesError) throw tablesError;
+        if (tablesError) {
+          console.error("❌ ERROR cargando mesas:", tablesError);
+          throw tablesError;
+        }
+
+        console.log("🪑 TOTAL DE MESAS ENCONTRADAS:", tablesData?.length || 0);
+        console.log("📋 TODAS LAS MESAS:");
+        tablesData?.forEach((table, index) => {
+          console.log(`🪑 Mesa ${index + 1}:`, {
+            id: table.id,
+            numero: table.table_number,
+            capacidad_maxima: table.max_capacity,
+            TODO_EL_OBJETO: table,
+          });
+        });
+
         setTables(tablesData || []);
 
         // Load bookings (for the next 30 days)
@@ -60,6 +96,11 @@ export function useBookingAvailability(businessId: string | undefined) {
         const futureDate = new Date();
         futureDate.setDate(futureDate.getDate() + 30);
         const future = futureDate.toISOString().split("T")[0];
+
+        console.log("🔥🔥🔥 CARGANDO RESERVAS 🔥🔥🔥");
+        console.log("📅 Fecha desde:", today);
+        console.log("📅 Fecha hasta:", future);
+        console.log("🏢 Business ID:", businessId);
 
         const { data: bookingsData, error: bookingsError } = await supabase
           .from("bookings")
@@ -70,7 +111,28 @@ export function useBookingAvailability(businessId: string | undefined) {
           .neq("status", "cancelled")
           .neq("status", "completed");
 
-        if (bookingsError) throw bookingsError;
+        if (bookingsError) {
+          console.error("❌ ERROR cargando reservas:", bookingsError);
+          throw bookingsError;
+        }
+
+        console.log("📊 TOTAL DE RESERVAS ENCONTRADAS:", bookingsData?.length || 0);
+        console.log("📋 TODAS LAS RESERVAS:");
+        bookingsData?.forEach((booking, index) => {
+          console.log(`📝 Reserva ${index + 1}:`, {
+            id: booking.id,
+            fecha: booking.booking_date,
+            hora_inicio: booking.start_time,
+            hora_fin: booking.end_time,
+            personas: booking.party_size,
+            mesa_id: booking.table_id,
+            estado: booking.status,
+            cliente: booking.client_name,
+            telefono: booking.client_phone,
+            TODO_EL_OBJETO: booking,
+          });
+        });
+
         setBookings(bookingsData || []);
 
         // Load business slot duration
@@ -84,8 +146,18 @@ export function useBookingAvailability(businessId: string | undefined) {
         if (businessData) {
           setSlotDuration(businessData.booking_slot_duration_minutes || 60);
         }
+
+        console.log("🎉🎉🎉 CARGA COMPLETA DE DATOS 🎉🎉🎉");
+        console.log("📊 RESUMEN FINAL:");
+        console.log("⏰ Horarios de disponibilidad:", availabilitySlots.length);
+        console.log("🪑 Mesas:", tables.length);
+        console.log("📝 Reservas:", bookings.length);
+        console.log("⏱️ Duración de slot:", businessData?.booking_slot_duration_minutes || 60, "minutos");
+        console.log("🏢 Business ID:", businessId);
+        console.log("📅 Fecha actual:", today);
+        console.log("📅 Fecha límite:", future);
       } catch (error) {
-        console.error("Error loading availability data:", error);
+        console.error("❌ ERROR cargando datos de disponibilidad:", error);
         console.error("Error al cargar disponibilidad");
       } finally {
         setLoading(false);
