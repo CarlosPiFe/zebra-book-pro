@@ -219,6 +219,23 @@ export default function BusinessDetails() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Banner del negocio */}
+      {business.image_url && (
+        <div className="relative w-full h-64 md:h-80 overflow-hidden">
+          <img 
+            src={business.image_url} 
+            alt={business.name}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8">
+            <div className="container mx-auto">
+              <h1 className="text-4xl md:text-5xl font-bold text-foreground">{business.name}</h1>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <Link to="/">
@@ -262,6 +279,35 @@ export default function BusinessDetails() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Sección de Contacto */}
+            {(business.phone || business.email) && (
+              <Card>
+                <CardContent className="pt-6">
+                  <h2 className="text-2xl font-semibold mb-4">Contacto</h2>
+                  <div className="space-y-3">
+                    {business.phone && (
+                      <a 
+                        href={`tel:${business.phone}`}
+                        className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Phone className="mr-3 h-5 w-5" />
+                        <span>{business.phone}</span>
+                      </a>
+                    )}
+                    {business.email && (
+                      <a 
+                        href={`mailto:${business.email}`}
+                        className="flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Mail className="mr-3 h-5 w-5" />
+                        <span>{business.email}</span>
+                      </a>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
 
           {/* Formulario */}
@@ -269,6 +315,12 @@ export default function BusinessDetails() {
             <Card className="sticky top-4">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-semibold mb-4">Haz tu reserva</h3>
+                
+                {business.booking_additional_message && (
+                  <div className="mb-4 p-3 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">{business.booking_additional_message}</p>
+                  </div>
+                )}
 
                 <form onSubmit={handleBookingSubmit} className="space-y-4">
                   <div>
@@ -285,6 +337,16 @@ export default function BusinessDetails() {
                       type="tel"
                       value={bookingForm.clientPhone}
                       onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      type="email"
+                      value={bookingForm.clientEmail}
+                      onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
+                      placeholder="tu@email.com"
                     />
                   </div>
 
@@ -371,6 +433,28 @@ export default function BusinessDetails() {
                     {submitting ? "Enviando..." : "Confirmar reserva"}
                   </Button>
                 </form>
+
+                {/* Botones de contacto */}
+                {(business.phone || business.email) && (
+                  <div className="mt-4 pt-4 border-t border-border space-y-2">
+                    {business.phone && (
+                      <a href={`tel:${business.phone}`}>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Phone className="mr-2 h-4 w-4" />
+                          Llámanos
+                        </Button>
+                      </a>
+                    )}
+                    {business.email && (
+                      <a href={`mailto:${business.email}`}>
+                        <Button variant="outline" size="sm" className="w-full">
+                          <Mail className="mr-2 h-4 w-4" />
+                          Escríbenos
+                        </Button>
+                      </a>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
