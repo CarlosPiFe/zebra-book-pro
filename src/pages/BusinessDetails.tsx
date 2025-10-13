@@ -545,65 +545,91 @@ export default function BusinessDetails() {
                   <div>
                     <Label>Hora de entrada *</Label>
 
-                    {!hoursLoaded ? (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleLoadHours}
-                        disabled={!bookingForm.bookingDate || availabilityLoading}
-                      >
-                        <Clock className="mr-2 h-4 w-4" />
-                        {availabilityLoading ? "Cargando..." : "Mostrar horas disponibles"}
-                      </Button>
-                    ) : (
-                      <Select
-                        value={bookingForm.startTime}
-                        onValueChange={(value) => {
-                          const slot = timeSlotsWithAvailability.find((s) => s.time === value);
-                          if (slot && slot.available) {
-                            setBookingForm({ ...bookingForm, startTime: value });
-                          }
-                        }}
-                        disabled={!bookingForm.bookingDate || timeSlotsWithAvailability.length === 0}
-                      >
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={
-                              !bookingForm.bookingDate
-                                ? "Primero selecciona una fecha"
-                                : timeSlotsWithAvailability.length === 0
-                                  ? "No hay horarios disponibles"
-                                  : "Seleccionar hora"
-                            }
-                          />
-                        </SelectTrigger>
-                        <SelectContent className="bg-popover z-[100]">
-                          {timeSlotsWithAvailability.filter((slot) => slot.available).length > 0 ? (
-                            timeSlotsWithAvailability
-                              .filter((slot) => slot.available)
-                              .map((slot) => (
-                                <SelectItem key={slot.time} value={slot.time} className="cursor-pointer">
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4" />
-                                    <span>{slot.time}</span>
-                                  </div>
-                                </SelectItem>
-                              ))
-                          ) : (
-                            <SelectItem value="no-slots" disabled>
-                              No hay horarios disponibles
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    )}
+                    {(() => {
+                      // Helper para manejar distintos formatos de disponibilidad
+                      const toBool = (v: any) => {
+                        if (typeof v === "boolean") return v;
+                        if (typeof v === "number") return v > 0;
+                        if (typeof v === "string") {
+                          const s = v.trim().toLowerCase();
+                          if (!isNaN(Number(s))) return Number(s) > 0;
+                          return ["true", "yes", "y", "si", "sí", "available", "disponible"].includes(s);
+                        }
+                        return false;
+                      };
 
-                    {parseInt(bookingForm.partySize) > maxTableCapacity && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Para reservas de más de {maxTableCapacity} personas, contáctanos.
-                      </p>
-                    )}
+                      const rawSlots = timeSlotsWithAvailability ?? [];
+                      const visibleSlots = rawSlots.filter((s) =>
+                        toBool(s?.available ?? s?.isAvailable ?? s?.remaining ?? s?.free ?? s?.capacity),
+                      );
+
+                      // Limpiar startTime si ya no existe en los visibles
+                      if (bookingForm.startTime && !visibleSlots.some((s) => s.time === bookingForm.startTime)) {
+                        queueMicrotask(() => {
+                          setBookingForm((prev) => ({ ...prev, startTime: "" }));
+                        });
+                      }
+
+                      return (
+                        <>
+                          {!hoursLoaded ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              onClick={handleLoadHours}
+                              disabled={!bookingForm.bookingDate || availabilityLoading}
+                            >
+                              <Clock className="mr-2 h-4 w-4" />
+                              {availabilityLoading ? "Cargando..." : "Mostrar horas disponibles"}
+                            </Button>
+                          ) : (
+                            <Select
+                              value={bookingForm.startTime}
+                              onValueChange={(value) => {
+                                const slot = visibleSlots.find((s) => s.time === value);
+                                if (slot) setBookingForm({ ...bookingForm, startTime: value });
+                              }}
+                              disabled={!bookingForm.bookingDate || visibleSlots.length === 0}
+                            >
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={
+                                    !bookingForm.bookingDate
+                                      ? "Primero selecciona una fecha"
+                                      : visibleSlots.length === 0
+                                        ? "No hay horarios disponibles"
+                                        : "Seleccionar hora"
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent className="bg-popover z-[100]">
+                                {visibleSlots.length > 0 ? (
+                                  visibleSlots.map((slot) => (
+                                    <SelectItem key={slot.time} value={slot.time} className="cursor-pointer">
+                                      <div className="flex items-center gap-2">
+                                        <Clock className="h-4 w-4" />
+                                        <span>{slot.time}</span>
+                                      </div>
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="no-slots" disabled>
+                                    No hay horarios disponibles
+                                  </SelectItem>
+                                )}
+                              </SelectContent>
+                            </Select>
+                          )}
+
+                          {parseInt(bookingForm.partySize) > maxTableCapacity && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Para reservas de más de {maxTableCapacity} personas, contáctanos.
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   <div>
