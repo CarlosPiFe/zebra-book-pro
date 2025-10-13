@@ -178,7 +178,7 @@ export function BusinessHours({ businessId }: BusinessHoursProps) {
                   <div className="flex items-center gap-4">
                     <span className="font-medium">{getDaysLabel(entry.days)}</span>
                     <span className="text-sm text-muted-foreground">
-                      {entry.start_time} - {entry.end_time}
+                      {entry.start_time.substring(0, 5)} - {entry.end_time.substring(0, 5)}
                     </span>
                   </div>
                   <Button
