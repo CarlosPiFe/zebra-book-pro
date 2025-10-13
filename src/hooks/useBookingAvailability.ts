@@ -163,6 +163,67 @@ export function useBookingAvailability(businessId: string | undefined) {
         console.log("🏢 Business ID:", businessId);
         console.log("📅 Fecha actual:", today);
         console.log("📅 Fecha límite:", future);
+
+        // 🔍 CONSULTA DIRECTA A LA BASE DE DATOS PARA VERIFICAR
+        console.log("🔍🔍🔍 CONSULTA DIRECTA A LA BASE DE DATOS 🔍🔍🔍");
+
+        // Consultar TODAS las reservas sin filtros
+        const { data: allBookings, error: allBookingsError } = await supabase
+          .from("bookings")
+          .select("*")
+          .eq("business_id", businessId);
+
+        if (allBookingsError) {
+          console.error("❌ Error consultando todas las reservas:", allBookingsError);
+        } else {
+          console.log("📊 TOTAL DE RESERVAS EN LA BASE DE DATOS:", allBookings?.length || 0);
+          if (allBookings && allBookings.length > 0) {
+            console.log("📋 TODAS LAS RESERVAS EN LA BD:");
+            allBookings.forEach((booking, index) => {
+              console.log(`📝 Reserva BD ${index + 1}:`, {
+                id: booking.id,
+                fecha: booking.booking_date,
+                hora_inicio: booking.start_time,
+                hora_fin: booking.end_time,
+                personas: booking.party_size,
+                mesa_id: booking.table_id,
+                estado: booking.status,
+                cliente: booking.client_name,
+                TODO_EL_OBJETO: booking,
+              });
+            });
+          }
+        }
+
+        // Consultar específicamente reservas para el 14 de octubre
+        const { data: bookingsOct14, error: bookingsOct14Error } = await supabase
+          .from("bookings")
+          .select("*")
+          .eq("business_id", businessId)
+          .eq("booking_date", "2025-10-14");
+
+        if (bookingsOct14Error) {
+          console.error("❌ Error consultando reservas del 14:", bookingsOct14Error);
+        } else {
+          console.log("📅 RESERVAS ESPECÍFICAS PARA 2025-10-14:", bookingsOct14?.length || 0);
+          if (bookingsOct14 && bookingsOct14.length > 0) {
+            console.log("📋 RESERVAS DEL 14 DE OCTUBRE:");
+            bookingsOct14.forEach((booking, index) => {
+              console.log(`📝 Reserva 14/10 ${index + 1}:`, {
+                id: booking.id,
+                fecha: booking.booking_date,
+                hora_inicio: booking.start_time,
+                hora_fin: booking.end_time,
+                personas: booking.party_size,
+                mesa_id: booking.table_id,
+                estado: booking.status,
+                cliente: booking.client_name,
+              });
+            });
+          } else {
+            console.log("❌ NO HAY RESERVAS PARA EL 14 DE OCTUBRE");
+          }
+        }
       } catch (error) {
         console.error("❌ ERROR cargando datos de disponibilidad:", error);
         console.error("Error al cargar disponibilidad");
