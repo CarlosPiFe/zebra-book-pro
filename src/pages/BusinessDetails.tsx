@@ -33,6 +33,8 @@ export default function BusinessDetails() {
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [loadingHours, setLoadingHours] = useState(false);
+  const [hoursLoaded, setHoursLoaded] = useState(false);
 
   // Booking form state
   const [bookingForm, setBookingForm] = useState({
@@ -41,57 +43,111 @@ export default function BusinessDetails() {
     clientPhone: "",
     partySize: "2",
     bookingDate: undefined as Date | undefined,
-    startTime: "",
+    startTime: undefined as string | undefined,
     notes: "",
   });
 
-  // Estado para controlar si se han cargado las horas
-  const [hoursLoaded, setHoursLoaded] = useState(false);
-
-  // Use availability hook
+  // Hook de disponibilidad
   const {
     isDateAvailable,
     getTimeSlotsWithAvailability,
     getAvailableTimeSlots,
-    getNextAvailableSlot,
     hasAvailableTables,
     loading: availabilityLoading,
     tables,
   } = useBookingAvailability(businessId);
 
-  // Calculate maximum capacity based on largest table
-  const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map((table) => table.max_capacity)) : 20; // Default fallback if no tables
+  // Capacidad máxima según mesas
+  const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map((t) => t.max_capacity)) : 20;
 
+  // 🔹 Cargar negocio desde Supabase
   useEffect(() => {
+    if (!businessId) return;
+
+    const loadBusiness = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("businesses")
+          .select("*")
+          .eq("id", businessId)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (error) throw error;
+        setBusiness(data);
+      } catch (error) {
+        console.error("Error cargando negocio:", error);
+        toast.error("No se pudo cargar la información del negocio");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadBusiness();
   }, [businessId]);
 
-  const loadBusiness = async () => {
+  // 🔹 Cargar horas disponibles manual o automáticamente
+  const handleLoadHours = async () => {
+    if (!bookingForm.bookingDate) {
+      toast.error("Por favor selecciona una fecha primero");
+      return;
+    }
+
+    setLoadingHours(true);
     try {
-      const { data, error } = await supabase
-        .from("businesses")
-        .select("*")
-        .eq("id", businessId)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      setBusiness(data);
-    } catch (error) {
-      console.error("Error loading business:", error);
-      toast.error("No se pudo cargar la información del negocio");
+      const slots = getTimeSlotsWithAvailability(bookingForm.bookingDate, parseInt(bookingForm.partySize));
+      if (slots.length === 0) {
+        toast.error("No hay horarios disponibles para la fecha y número de personas seleccionadas");
+      } else {
+        const availableCount = slots.filter((s) => s.available).length;
+        if (availableCount === 0) {
+          toast.warning("Todos los horarios están completos para esta fecha");
+        } else {
+          toast.success(`${availableCount} ${availableCount === 1 ? "horario disponible" : "horarios disponibles"}`);
+        }
+      }
+      setHoursLoaded(true);
     } finally {
-      setLoading(false);
+      setLoadingHours(false);
     }
   };
-  // 🔄 Recalcular automáticamente las horas disponibles al cambiar fecha o personas
+
+  // 🔄 Recalcular horas automáticamente al cambiar fecha o número de personas
   useEffect(() => {
     if (bookingForm.bookingDate && !availabilityLoading) {
       handleLoadHours();
     }
   }, [bookingForm.bookingDate, bookingForm.partySize]);
 
+  // 📅 Cambiar fecha
+  const handleDateChange = (date: Date | undefined) => {
+    setBookingForm({ ...bookingForm, bookingDate: date, startTime: undefined });
+    setHoursLoaded(false);
+  };
+
+  // 👥 Cambiar número de personas
+  const partySizeHasAvailability = (partySize: number): boolean => {
+    if (!bookingForm.bookingDate) return true;
+    const availableSlots = getAvailableTimeSlots(bookingForm.bookingDate, partySize);
+    return availableSlots.length > 0;
+  };
+
+  const handlePartySizeChange = (value: string) => {
+    const newPartySize = parseInt(value);
+    setBookingForm({ ...bookingForm, partySize: value, startTime: undefined });
+    setHoursLoaded(false);
+
+    if (bookingForm.bookingDate && !partySizeHasAvailability(newPartySize)) {
+      toast.warning(
+        `No hay disponibilidad para ${newPartySize} ${
+          newPartySize === 1 ? "persona" : "personas"
+        } en esta fecha. Por favor selecciona otra fecha.`,
+      );
+    }
+  };
+
+  // 💾 Enviar reserva
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -100,7 +156,6 @@ export default function BusinessDetails() {
       return;
     }
 
-    // Validar disponibilidad en tiempo real antes de enviar
     const dateStr = format(bookingForm.bookingDate, "yyyy-MM-dd");
     const isStillAvailable = hasAvailableTables(dateStr, bookingForm.startTime, parseInt(bookingForm.partySize));
 
@@ -118,41 +173,37 @@ export default function BusinessDetails() {
           clientName: bookingForm.clientName,
           clientEmail: bookingForm.clientEmail || undefined,
           clientPhone: bookingForm.clientPhone,
-          bookingDate: format(bookingForm.bookingDate, "yyyy-MM-dd"),
+          bookingDate: dateStr,
           startTime: bookingForm.startTime,
           partySize: parseInt(bookingForm.partySize),
           notes: bookingForm.notes || undefined,
         },
       });
 
-      if (error) {
-        console.error("Booking error:", error);
-        throw new Error(error.message || "Error al crear la reserva");
-      }
-
-      if (!data || !data.success) {
-        throw new Error(data?.error || "Error al crear la reserva");
-      }
+      if (error) throw new Error(error.message || "Error al crear la reserva");
+      if (!data || !data.success) throw new Error(data?.error || "Error al crear la reserva");
 
       toast.success("¡Reserva confirmada correctamente! Nos pondremos en contacto contigo pronto.");
+
       setBookingForm({
         clientName: "",
         clientEmail: "",
         clientPhone: "",
         partySize: "2",
         bookingDate: undefined,
-        startTime: "",
+        startTime: undefined,
         notes: "",
       });
+      setHoursLoaded(false);
     } catch (error) {
-      console.error("Error creating booking:", error);
-      const errorMessage = error instanceof Error ? error.message : "Error al enviar la reserva";
+      console.error("Error creando reserva:", error);
+      const msg = error instanceof Error ? error.message : "Error al enviar la reserva";
 
-      if (errorMessage.includes("not found") || errorMessage.includes("not accepting")) {
+      if (msg.includes("not found") || msg.includes("not accepting")) {
         toast.error("Este negocio no está aceptando reservas en este momento");
-      } else if (errorMessage.includes("Too many")) {
+      } else if (msg.includes("Too many")) {
         toast.error("Demasiadas solicitudes. Por favor, intenta más tarde");
-      } else if (errorMessage.includes("past dates")) {
+      } else if (msg.includes("past dates")) {
         toast.error("No se pueden hacer reservas para fechas pasadas");
       } else {
         toast.error("Lo sentimos, no hay disponibilidad en esa fecha u hora. Por favor, selecciona otra opción.");
@@ -162,78 +213,24 @@ export default function BusinessDetails() {
     }
   };
 
-  // Handle date change
-  const handleDateChange = (date: Date | undefined) => {
-    setBookingForm({ ...bookingForm, bookingDate: date, startTime: "" });
-    setHoursLoaded(false); // Reset cuando cambia la fecha
+  // 🗺️ Abrir Google Maps
+  const openInGoogleMaps = () => {
+    if (business?.address) {
+      const encodedAddress = encodeURIComponent(business.address);
+      window.open(`https://www.google.com/maps?q=${encodedAddress}`, "_blank", "noopener,noreferrer");
+    }
   };
 
-  // Get all time slots with availability info for selected date
+  // 💡 Horas con disponibilidad
   const timeSlotsWithAvailability = bookingForm.bookingDate
     ? getTimeSlotsWithAvailability(bookingForm.bookingDate, parseInt(bookingForm.partySize))
     : [];
 
-  // Get available time slots for selected date
   const availableTimeSlots = bookingForm.bookingDate
     ? getAvailableTimeSlots(bookingForm.bookingDate, parseInt(bookingForm.partySize))
     : [];
 
-  // Check if a party size has any availability for the selected date
-  const partySizeHasAvailability = (partySize: number): boolean => {
-    if (!bookingForm.bookingDate) return true; // Can't check without date
-    const availableSlots = getAvailableTimeSlots(bookingForm.bookingDate, partySize);
-    return availableSlots.length > 0;
-  };
-
-  // Handle party size change
-  const handlePartySizeChange = (value: string) => {
-    const newPartySize = parseInt(value);
-    setBookingForm({ ...bookingForm, partySize: value, startTime: "" });
-    setHoursLoaded(false); // Reset cuando cambia el número de personas
-
-    // Show warning if selected party size has no availability
-    if (bookingForm.bookingDate && !partySizeHasAvailability(newPartySize)) {
-      toast.warning(
-        `No hay disponibilidad para ${newPartySize} ${newPartySize === 1 ? "persona" : "personas"} en esta fecha. Por favor selecciona otra fecha.`,
-      );
-    }
-  };
-
-  // Función para cargar las horas disponibles
-  const handleLoadHours = () => {
-    if (!bookingForm.bookingDate) {
-      toast.error("Por favor selecciona una fecha primero");
-      return;
-    }
-
-    // Ejecutar la comprobación de disponibilidad
-    const slots = getTimeSlotsWithAvailability(bookingForm.bookingDate, parseInt(bookingForm.partySize));
-
-    if (slots.length === 0) {
-      toast.error("No hay horarios disponibles para la fecha y número de personas seleccionadas");
-    } else {
-      const availableCount = slots.filter((s) => s.available).length;
-      if (availableCount === 0) {
-        toast.warning("Todos los horarios están completos para esta fecha");
-      } else {
-        toast.success(`${availableCount} ${availableCount === 1 ? "horario disponible" : "horarios disponibles"}`);
-      }
-    }
-
-    setHoursLoaded(true);
-  };
-
-  const openInGoogleMaps = () => {
-    if (business?.address) {
-      const encodedAddress = encodeURIComponent(business.address);
-      const link = document.createElement("a");
-      link.href = `https://www.google.com/maps?q=${encodedAddress}`;
-      link.target = "_blank";
-      link.rel = "noopener noreferrer";
-      link.click();
-    }
-  };
-
+  // 🧱 Render UI
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -253,8 +250,7 @@ export default function BusinessDetails() {
           <h1 className="text-2xl font-bold mb-4">Negocio no encontrado</h1>
           <Link to="/">
             <Button>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver al inicio
+              <ArrowLeft className="mr-2 h-4 w-4" /> Volver al inicio
             </Button>
           </Link>
         </div>
@@ -262,6 +258,7 @@ export default function BusinessDetails() {
     );
   }
 
+  // 🧩 UI principal (formulario incluido)
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -269,37 +266,29 @@ export default function BusinessDetails() {
         <div className="container mx-auto px-4 py-4">
           <Link to="/">
             <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver
+              <ArrowLeft className="mr-2 h-4 w-4" /> Volver
             </Button>
           </Link>
         </div>
       </div>
 
+      {/* Contenido */}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Hero Image and Title */}
-        <div className="mb-8">
-          {business.image_url ? (
-            <div className="relative h-96 w-full rounded-xl overflow-hidden mb-6">
-              <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-8">
-                <h1 className="text-4xl font-bold text-foreground mb-2">{business.name}</h1>
-                <p className="text-lg text-muted-foreground">{business.category}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="mb-6">
-              <h1 className="text-4xl font-bold mb-2">{business.name}</h1>
+        {/* Imagen principal */}
+        {business.image_url && (
+          <div className="relative h-96 w-full rounded-xl overflow-hidden mb-6">
+            <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-8">
+              <h1 className="text-4xl font-bold text-foreground mb-2">{business.name}</h1>
               <p className="text-lg text-muted-foreground">{business.category}</p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Columna izquierda: Secciones de información - Columnas 1 y 2 */}
+          {/* Información y contacto */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Acerca de nosotros */}
             {business.description && (
               <Card>
                 <CardContent className="pt-6">
@@ -309,159 +298,60 @@ export default function BusinessDetails() {
               </Card>
             )}
 
-            {/* Ubicación (Mapa) */}
             {business.address && (
               <Card>
                 <CardContent className="pt-6">
                   <h2 className="text-2xl font-semibold mb-4">Ubicación</h2>
-                  <div className="space-y-4">
-                    <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
-                      <iframe
-                        width="100%"
-                        height="100%"
-                        frameBorder="0"
-                        style={{ border: 0 }}
-                        src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD3G8p1Ca5ZxGiQfdDcKRZZwQI0TL40oVk&q=${encodeURIComponent(business.address)}`}
-                        allowFullScreen
-                      />
-                    </div>
-                    <Button variant="outline" className="w-full" onClick={openInGoogleMaps}>
-                      <MapPin className="mr-2 h-4 w-4" />
-                      Abrir en Google Maps
-                    </Button>
+                  <div className="aspect-video w-full rounded-lg overflow-hidden border border-border">
+                    <iframe
+                      width="100%"
+                      height="100%"
+                      frameBorder="0"
+                      style={{ border: 0 }}
+                      src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD3G8p1Ca5ZxGiQfdDcKRZZwQI0TL40oVk&q=${encodeURIComponent(business.address)}`}
+                      allowFullScreen
+                    />
                   </div>
+                  <Button variant="outline" className="w-full mt-4" onClick={openInGoogleMaps}>
+                    <MapPin className="mr-2 h-4 w-4" /> Abrir en Google Maps
+                  </Button>
                 </CardContent>
               </Card>
             )}
 
-            {/* Información de contacto */}
+            {/* Contacto */}
             <Card>
               <CardContent className="pt-6">
                 <h2 className="text-2xl font-semibold mb-4">Información de contacto</h2>
-                <div className="space-y-4">
+                <div className="space-y-3 text-muted-foreground">
                   {business.phone && (
-                    <div className="flex items-start gap-3">
-                      <Phone className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium">Teléfono</p>
-                        <a
-                          href={`tel:${business.phone}`}
-                          className="text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          {business.phone}
-                        </a>
-                      </div>
-                    </div>
+                    <p>
+                      📞 <a href={`tel:${business.phone}`}>{business.phone}</a>
+                    </p>
                   )}
-
                   {business.email && (
-                    <div className="flex items-start gap-3">
-                      <Mail className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium">Correo electrónico</p>
-                        <a
-                          href={`mailto:${business.email}`}
-                          className="text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          {business.email}
-                        </a>
-                      </div>
-                    </div>
+                    <p>
+                      ✉️ <a href={`mailto:${business.email}`}>{business.email}</a>
+                    </p>
                   )}
-
-                  {business.address && (
-                    <div className="flex items-start gap-3">
-                      <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium">Dirección</p>
-                        <p className="text-muted-foreground">{business.address}</p>
-                      </div>
-                    </div>
-                  )}
-
                   {business.website && (
-                    <div className="flex items-start gap-3">
-                      <Globe className="h-5 w-5 text-primary mt-0.5" />
-                      <div>
-                        <p className="font-medium">Sitio web</p>
-                        <a
-                          href={business.website}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-primary transition-colors"
-                        >
-                          {business.website}
-                        </a>
-                      </div>
-                    </div>
+                    <p>
+                      🌐{" "}
+                      <a href={business.website} target="_blank" rel="noopener noreferrer">
+                        {business.website}
+                      </a>
+                    </p>
                   )}
                 </div>
               </CardContent>
             </Card>
-
-            {/* Social Media */}
-            {business.social_media && Object.keys(business.social_media).length > 0 && (
-              <Card>
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-semibold mb-4">Redes sociales</h2>
-                  <div className="flex flex-wrap gap-3">
-                    {business.social_media.facebook && (
-                      <a
-                        href={business.social_media.facebook}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
-                      >
-                        <span className="font-medium">Facebook</span>
-                      </a>
-                    )}
-                    {business.social_media.instagram && (
-                      <a
-                        href={business.social_media.instagram}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
-                      >
-                        <span className="font-medium">Instagram</span>
-                      </a>
-                    )}
-                    {business.social_media.twitter && (
-                      <a
-                        href={business.social_media.twitter}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
-                      >
-                        <span className="font-medium">Twitter</span>
-                      </a>
-                    )}
-                    {business.social_media.linkedin && (
-                      <a
-                        href={business.social_media.linkedin}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/70 transition-colors"
-                      >
-                        <span className="font-medium">LinkedIn</span>
-                      </a>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
-          {/* Columna derecha: Formulario de reserva - Columna 3, sticky */}
+          {/* Formulario de reserva */}
           <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-semibold mb-4">Haz tu reserva</h3>
-
-                {business.booking_additional_message && (
-                  <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
-                    <p className="text-sm leading-relaxed text-foreground">{business.booking_additional_message}</p>
-                  </div>
-                )}
 
                 <form onSubmit={handleBookingSubmit} className="space-y-4">
                   <div>
@@ -486,16 +376,6 @@ export default function BusinessDetails() {
                   </div>
 
                   <div>
-                    <Label htmlFor="clientEmail">Email</Label>
-                    <Input
-                      id="clientEmail"
-                      type="email"
-                      value={bookingForm.clientEmail}
-                      onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
-                    />
-                  </div>
-
-                  <div>
                     <Label>Número de personas *</Label>
                     <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange}>
                       <SelectTrigger>
@@ -503,39 +383,23 @@ export default function BusinessDetails() {
                       </SelectTrigger>
                       <SelectContent>
                         {Array.from({ length: maxTableCapacity }, (_, i) => i + 1).map((num) => {
-                          const hasAvailability = bookingForm.bookingDate ? partySizeHasAvailability(num) : true;
+                          const available = bookingForm.bookingDate ? partySizeHasAvailability(num) : true;
                           return (
                             <SelectItem
                               key={num}
                               value={String(num)}
-                              disabled={bookingForm.bookingDate && !hasAvailability}
-                              className={bookingForm.bookingDate && !hasAvailability ? "opacity-50" : ""}
+                              disabled={bookingForm.bookingDate && !available}
+                              className={bookingForm.bookingDate && !available ? "opacity-50" : ""}
                             >
-                              <div className="flex items-center gap-2 justify-between w-full">
-                                <div className="flex items-center gap-2">
-                                  <Users className="h-4 w-4" />
-                                  {num} {num === 1 ? "persona" : "personas"}
-                                </div>
-                                {bookingForm.bookingDate && !hasAvailability && (
-                                  <span className="text-xs text-muted-foreground ml-2">sin disponibilidad</span>
-                                )}
-                              </div>
+                              {num} {num === 1 ? "persona" : "personas"}
+                              {bookingForm.bookingDate && !available && (
+                                <span className="text-xs text-muted-foreground ml-2">sin disponibilidad</span>
+                              )}
                             </SelectItem>
                           );
                         })}
                       </SelectContent>
                     </Select>
-                    {parseInt(bookingForm.partySize) > maxTableCapacity && (
-                      <p className="text-sm text-destructive mt-1">
-                        Para reservas de más de {maxTableCapacity} personas, contáctanos.
-                      </p>
-                    )}
-                    {bookingForm.bookingDate && !partySizeHasAvailability(parseInt(bookingForm.partySize)) && (
-                      <p className="text-sm text-destructive mt-1">
-                        No hay disponibilidad para {bookingForm.partySize}{" "}
-                        {parseInt(bookingForm.partySize) === 1 ? "persona" : "personas"} en esta fecha.
-                      </p>
-                    )}
                   </div>
 
                   <div>
@@ -549,29 +413,26 @@ export default function BusinessDetails() {
                   </div>
 
                   <div>
-                    <Label>Hora de entrada *</Label>
-
+                    <Label>Hora *</Label>
                     {!hoursLoaded ? (
                       <Button
                         type="button"
                         variant="outline"
                         className="w-full"
                         onClick={handleLoadHours}
-                        disabled={!bookingForm.bookingDate || availabilityLoading}
+                        disabled={!bookingForm.bookingDate || availabilityLoading || loadingHours}
                       >
                         <Clock className="mr-2 h-4 w-4" />
-                        {availabilityLoading ? "Cargando..." : "Mostrar horas disponibles"}
+                        {loadingHours ? "Cargando..." : "Mostrar horas disponibles"}
                       </Button>
                     ) : (
                       <Select
-                        // Aseguramos que el valor sea undefined cuando no haya hora seleccionada
                         value={bookingForm.startTime ?? undefined}
                         onValueChange={(value) => {
                           const slot = timeSlotsWithAvailability.find((s) => s.time === value);
                           if (slot && slot.available) {
                             setBookingForm({ ...bookingForm, startTime: value });
                           } else {
-                            // Si el slot no está disponible o se deselecciona, limpiar el campo
                             setBookingForm({ ...bookingForm, startTime: undefined });
                           }
                         }}
@@ -589,14 +450,13 @@ export default function BusinessDetails() {
                           />
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-[100]">
-                          {timeSlotsWithAvailability.filter((slot) => slot.available).length > 0 ? (
+                          {timeSlotsWithAvailability.filter((s) => s.available).length > 0 ? (
                             timeSlotsWithAvailability
-                              .filter((slot) => slot.available)
-                              .map((slot) => (
-                                <SelectItem key={slot.time} value={slot.time} className="cursor-pointer">
+                              .filter((s) => s.available)
+                              .map((s) => (
+                                <SelectItem key={s.time} value={s.time}>
                                   <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4" />
-                                    <span>{slot.time}</span>
+                                    <Clock className="h-4 w-4" /> <span>{s.time}</span>
                                   </div>
                                 </SelectItem>
                               ))
@@ -607,12 +467,6 @@ export default function BusinessDetails() {
                           )}
                         </SelectContent>
                       </Select>
-                    )}
-
-                    {parseInt(bookingForm.partySize) > maxTableCapacity && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Para reservas de más de {maxTableCapacity} personas, contáctanos.
-                      </p>
                     )}
                   </div>
 
@@ -641,40 +495,7 @@ export default function BusinessDetails() {
                     <Calendar className="mr-2 h-4 w-4" />
                     {submitting ? "Enviando..." : availabilityLoading ? "Verificando..." : "Confirmar reserva"}
                   </Button>
-                  {bookingForm.bookingDate && availableTimeSlots.length === 0 && (
-                    <p className="text-sm text-center text-muted-foreground">
-                      No hay horarios disponibles para la fecha y número de personas seleccionadas.
-                    </p>
-                  )}
                 </form>
-
-                <div className="mt-6 pt-6 border-t border-border space-y-3">
-                  <p className="text-sm text-muted-foreground text-center mb-3">O contacta directamente</p>
-                  {business.phone && (
-                    <Button variant="outline" className="w-full" asChild>
-                      <a href={`tel:${business.phone}`}>
-                        <Phone className="mr-2 h-4 w-4" />
-                        Llamar ahora
-                      </a>
-                    </Button>
-                  )}
-                  {business.website && (
-                    <Button variant="outline" className="w-full" asChild>
-                      <a href={business.website} target="_blank" rel="noopener noreferrer">
-                        <Globe className="mr-2 h-4 w-4" />
-                        Visitar sitio web
-                      </a>
-                    </Button>
-                  )}
-                  {business.email && (
-                    <Button variant="outline" className="w-full" asChild>
-                      <a href={`mailto:${business.email}`}>
-                        <Mail className="mr-2 h-4 w-4" />
-                        Enviar email
-                      </a>
-                    </Button>
-                  )}
-                </div>
               </CardContent>
             </Card>
           </div>
