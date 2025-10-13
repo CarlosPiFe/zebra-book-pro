@@ -160,27 +160,35 @@ export function AvailabilityTableDialog({
   };
 
   const isTableOccupied = (tableId: string, slotTime: string, slotEndTime: string): Booking | null => {
-    // Normalizar horas para comparación (manejar cruce de medianoche)
-    const normalizeTime = (time: string): number => {
-      const [hours, minutes] = time.split(":").map(Number);
-      let totalMinutes = hours * 60 + minutes;
+    return bookings.find((booking) => {
+      if (booking.table_id !== tableId) return false;
       
-      // Si la hora es de madrugada (00:00-05:59), añadir 24 horas para tratarla como continuación del día anterior
-      if (hours >= 0 && hours < 6) {
-        totalMinutes += 24 * 60;
+      // Convertir horas a minutos para comparación más fácil
+      const parseTime = (time: string): number => {
+        const [hours, minutes] = time.split(":").map(Number);
+        return hours * 60 + minutes;
+      };
+      
+      const slotStart = parseTime(slotTime);
+      const slotEnd = parseTime(slotEndTime);
+      const bookingStart = parseTime(booking.start_time);
+      const bookingEnd = parseTime(booking.end_time);
+      
+      // Manejar caso de cruce de medianoche en slot
+      let adjustedSlotEnd = slotEnd;
+      if (slotEnd < slotStart) {
+        adjustedSlotEnd += 24 * 60; // Añadir 24 horas
       }
       
-      return totalMinutes;
-    };
-
-    const slotStart = normalizeTime(slotTime);
-    const slotEnd = normalizeTime(slotEndTime);
-
-    return bookings.find((booking) => {
-      const bookingStart = normalizeTime(booking.start_time);
-      const bookingEnd = normalizeTime(booking.end_time);
+      // Manejar caso de cruce de medianoche en booking
+      let adjustedBookingEnd = bookingEnd;
+      if (bookingEnd < bookingStart) {
+        adjustedBookingEnd += 24 * 60; // Añadir 24 horas
+      }
       
-      return booking.table_id === tableId && bookingStart < slotEnd && bookingEnd > slotStart;
+      // Verificar solapamiento: hay conflicto si el inicio de uno es antes del fin del otro
+      // y el inicio del otro es antes del fin del primero
+      return bookingStart < adjustedSlotEnd && slotStart < adjustedBookingEnd;
     }) || null;
   };
 
