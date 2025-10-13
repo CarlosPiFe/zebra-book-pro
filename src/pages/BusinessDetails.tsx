@@ -557,7 +557,7 @@ export default function BusinessDetails() {
                               key={slot.time} 
                               value={slot.time}
                               disabled={!slot.available}
-                              className={!slot.available ? "opacity-50" : ""}
+                              className={!slot.available ? "opacity-50 text-muted-foreground" : ""}
                             >
                               <div className="flex items-center gap-2 justify-between w-full">
                                 <div className="flex items-center gap-2">
@@ -565,7 +565,7 @@ export default function BusinessDetails() {
                                   {slot.time}
                                 </div>
                                 {!slot.available && (
-                                  <span className="text-xs text-muted-foreground">sin disponibilidad</span>
+                                  <span className="text-xs text-muted-foreground ml-2">Completo</span>
                                 )}
                               </div>
                             </SelectItem>
