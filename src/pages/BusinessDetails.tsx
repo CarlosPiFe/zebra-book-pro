@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
+import { getTimeSlotId } from "@/lib/timeSlots";
 
 interface Business {
   id: string;
@@ -190,14 +191,14 @@ export default function BusinessDetails() {
         }
       }
 
-      // 5. Obtener time_slot_id
-      const { data: timeSlotData, error: timeSlotError } = await supabase
-        .from("time_slots")
-        .select("id")
-        .eq("slot_time", bookingForm.startTime + ":00")
-        .single();
-
-      if (timeSlotError) throw timeSlotError;
+      // 5. Obtener time_slot_id usando la misma función que el panel interno
+      const timeSlotId = await getTimeSlotId(bookingForm.startTime);
+      
+      if (!timeSlotId) {
+        toast.error("Error al procesar la reserva. Por favor, intenta de nuevo.");
+        console.error("No se pudo obtener time_slot_id para:", bookingForm.startTime);
+        return;
+      }
 
       // 6. Insertar reserva (misma estructura que CreateBookingDialog)
       const { error: bookingError } = await supabase.from("bookings").insert({
@@ -212,10 +213,13 @@ export default function BusinessDetails() {
         notes: bookingForm.notes || null,
         table_id: tableId,
         status: status,
-        time_slot_id: timeSlotData.id,
+        time_slot_id: timeSlotId,
       });
 
-      if (bookingError) throw bookingError;
+      if (bookingError) {
+        console.error("Error al insertar reserva:", bookingError);
+        throw bookingError;
+      }
 
       // 7. Mensaje de éxito
       if (status === "reserved") {
@@ -236,9 +240,19 @@ export default function BusinessDetails() {
       });
 
       await refreshAvailability();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creando reserva:", error);
-      toast.error("No se pudo crear la reserva. Por favor, intenta de nuevo.");
+      
+      // Mensajes de error más específicos
+      if (error?.code === '23502') {
+        toast.error("Error en los datos de la reserva. Por favor, verifica todos los campos.");
+      } else if (error?.code === '23503') {
+        toast.error("El negocio no está disponible en este momento.");
+      } else if (error?.message?.includes("RLS")) {
+        toast.error("No tienes permisos para crear esta reserva.");
+      } else {
+        toast.error("No se pudo crear la reserva. Por favor, intenta de nuevo.");
+      }
     } finally {
       setSubmitting(false);
     }
