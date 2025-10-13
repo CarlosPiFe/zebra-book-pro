@@ -57,7 +57,6 @@ export default function BusinessDetails() {
     tables,
   } = useBookingAvailability(businessId);
 
-  // Capacidad máxima según mesas
   const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map((t) => t.max_capacity)) : 20;
 
   // 🔹 Cargar negocio desde Supabase
@@ -87,16 +86,31 @@ export default function BusinessDetails() {
     loadBusiness();
   }, [businessId]);
 
-  // 🔹 Cargar horas disponibles manual o automáticamente
+  // 🔹 Función para cargar y verificar horas disponibles
   const handleLoadHours = async () => {
-    if (!bookingForm.bookingDate) {
+    const { bookingDate, partySize, clientName, clientPhone } = bookingForm;
+
+    // Validaciones básicas
+    if (!bookingDate) {
       toast.error("Por favor selecciona una fecha primero");
       return;
     }
 
+    if (!partySize || parseInt(partySize) <= 0) {
+      toast.error("Selecciona el número de personas");
+      return;
+    }
+
+    if (!clientName || !clientPhone) {
+      toast.warning("Rellena tu nombre y teléfono antes de buscar horarios");
+      return;
+    }
+
     setLoadingHours(true);
+
     try {
-      const slots = getTimeSlotsWithAvailability(bookingForm.bookingDate, parseInt(bookingForm.partySize));
+      const slots = getTimeSlotsWithAvailability(bookingDate, parseInt(partySize));
+
       if (slots.length === 0) {
         toast.error("No hay horarios disponibles para la fecha y número de personas seleccionadas");
       } else {
@@ -107,13 +121,17 @@ export default function BusinessDetails() {
           toast.success(`${availableCount} ${availableCount === 1 ? "horario disponible" : "horarios disponibles"}`);
         }
       }
+
       setHoursLoaded(true);
+    } catch (error) {
+      console.error("Error cargando horarios:", error);
+      toast.error("No se pudo comprobar la disponibilidad");
     } finally {
       setLoadingHours(false);
     }
   };
 
-  // 🔄 Recalcular horas automáticamente al cambiar fecha o número de personas
+  // 🔄 Recalcular horas automáticamente si cambian fecha o número de personas
   useEffect(() => {
     if (bookingForm.bookingDate && !availabilityLoading) {
       handleLoadHours();
@@ -162,6 +180,7 @@ export default function BusinessDetails() {
     if (!isStillAvailable) {
       toast.error("Lo sentimos, este horario ya no está disponible. Por favor selecciona otro.");
       setBookingForm({ ...bookingForm, startTime: undefined });
+      await handleLoadHours(); // 🔄 Refrescar disponibilidad
       return;
     }
 
@@ -213,15 +232,14 @@ export default function BusinessDetails() {
     }
   };
 
-  // 🗺️ Abrir Google Maps
   const openInGoogleMaps = () => {
     if (business?.address) {
-      const encodedAddress = encodeURIComponent(business.address);
-      window.open(`https://www.google.com/maps?q=${encodedAddress}`, "_blank", "noopener,noreferrer");
+      const encoded = encodeURIComponent(business.address);
+      window.open(`https://www.google.com/maps?q=${encoded}`, "_blank", "noopener,noreferrer");
     }
   };
 
-  // 💡 Horas con disponibilidad
+  // 🔍 Horas y disponibilidad
   const timeSlotsWithAvailability = bookingForm.bookingDate
     ? getTimeSlotsWithAvailability(bookingForm.bookingDate, parseInt(bookingForm.partySize))
     : [];
@@ -230,23 +248,19 @@ export default function BusinessDetails() {
     ? getAvailableTimeSlots(bookingForm.bookingDate, parseInt(bookingForm.partySize))
     : [];
 
-  // 🧱 Render UI
+  // 🧱 Renderizado principal
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <Skeleton className="h-8 w-32 mb-8" />
-          <Skeleton className="h-96 w-full mb-8" />
-          <Skeleton className="h-64 w-full" />
-        </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Skeleton className="h-8 w-32" />
       </div>
     );
   }
 
   if (!business) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center text-center">
+        <div>
           <h1 className="text-2xl font-bold mb-4">Negocio no encontrado</h1>
           <Link to="/">
             <Button>
@@ -258,10 +272,8 @@ export default function BusinessDetails() {
     );
   }
 
-  // 🧩 UI principal (formulario incluido)
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <div className="border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <Link to="/">
@@ -272,22 +284,9 @@ export default function BusinessDetails() {
         </div>
       </div>
 
-      {/* Contenido */}
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        {/* Imagen principal */}
-        {business.image_url && (
-          <div className="relative h-96 w-full rounded-xl overflow-hidden mb-6">
-            <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-8">
-              <h1 className="text-4xl font-bold text-foreground mb-2">{business.name}</h1>
-              <p className="text-lg text-muted-foreground">{business.category}</p>
-            </div>
-          </div>
-        )}
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          {/* Información y contacto */}
+          {/* Información */}
           <div className="lg:col-span-2 space-y-6">
             {business.description && (
               <Card>
@@ -318,36 +317,9 @@ export default function BusinessDetails() {
                 </CardContent>
               </Card>
             )}
-
-            {/* Contacto */}
-            <Card>
-              <CardContent className="pt-6">
-                <h2 className="text-2xl font-semibold mb-4">Información de contacto</h2>
-                <div className="space-y-3 text-muted-foreground">
-                  {business.phone && (
-                    <p>
-                      📞 <a href={`tel:${business.phone}`}>{business.phone}</a>
-                    </p>
-                  )}
-                  {business.email && (
-                    <p>
-                      ✉️ <a href={`mailto:${business.email}`}>{business.email}</a>
-                    </p>
-                  )}
-                  {business.website && (
-                    <p>
-                      🌐{" "}
-                      <a href={business.website} target="_blank" rel="noopener noreferrer">
-                        {business.website}
-                      </a>
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
-          {/* Formulario de reserva */}
+          {/* Formulario */}
           <div className="lg:col-span-1">
             <Card className="sticky top-4">
               <CardContent className="pt-6">
@@ -355,23 +327,19 @@ export default function BusinessDetails() {
 
                 <form onSubmit={handleBookingSubmit} className="space-y-4">
                   <div>
-                    <Label htmlFor="clientName">Nombre *</Label>
+                    <Label>Nombre *</Label>
                     <Input
-                      id="clientName"
                       value={bookingForm.clientName}
                       onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
-                      required
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="clientPhone">Teléfono *</Label>
+                    <Label>Teléfono *</Label>
                     <Input
-                      id="clientPhone"
                       type="tel"
                       value={bookingForm.clientPhone}
                       onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
-                      required
                     />
                   </div>
 
@@ -382,22 +350,11 @@ export default function BusinessDetails() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: maxTableCapacity }, (_, i) => i + 1).map((num) => {
-                          const available = bookingForm.bookingDate ? partySizeHasAvailability(num) : true;
-                          return (
-                            <SelectItem
-                              key={num}
-                              value={String(num)}
-                              disabled={bookingForm.bookingDate && !available}
-                              className={bookingForm.bookingDate && !available ? "opacity-50" : ""}
-                            >
-                              {num} {num === 1 ? "persona" : "personas"}
-                              {bookingForm.bookingDate && !available && (
-                                <span className="text-xs text-muted-foreground ml-2">sin disponibilidad</span>
-                              )}
-                            </SelectItem>
-                          );
-                        })}
+                        {Array.from({ length: maxTableCapacity }, (_, i) => i + 1).map((n) => (
+                          <SelectItem key={n} value={String(n)}>
+                            {n} {n === 1 ? "persona" : "personas"}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -408,7 +365,7 @@ export default function BusinessDetails() {
                       date={bookingForm.bookingDate}
                       onDateChange={handleDateChange}
                       placeholder="Seleccionar fecha"
-                      disabled={(date) => !isDateAvailable(date)}
+                      disabled={(d) => !isDateAvailable(d)}
                     />
                   </div>
 
@@ -420,7 +377,7 @@ export default function BusinessDetails() {
                         variant="outline"
                         className="w-full"
                         onClick={handleLoadHours}
-                        disabled={!bookingForm.bookingDate || availabilityLoading || loadingHours}
+                        disabled={!bookingForm.bookingDate || loadingHours || availabilityLoading}
                       >
                         <Clock className="mr-2 h-4 w-4" />
                         {loadingHours ? "Cargando..." : "Mostrar horas disponibles"}
@@ -428,40 +385,22 @@ export default function BusinessDetails() {
                     ) : (
                       <Select
                         value={bookingForm.startTime ?? undefined}
-                        onValueChange={(value) => {
-                          const slot = timeSlotsWithAvailability.find((s) => s.time === value);
-                          if (slot && slot.available) {
-                            setBookingForm({ ...bookingForm, startTime: value });
-                          } else {
-                            setBookingForm({ ...bookingForm, startTime: undefined });
-                          }
-                        }}
-                        disabled={!bookingForm.bookingDate || timeSlotsWithAvailability.length === 0}
+                        onValueChange={(v) => setBookingForm({ ...bookingForm, startTime: v })}
                       >
                         <SelectTrigger>
-                          <SelectValue
-                            placeholder={
-                              !bookingForm.bookingDate
-                                ? "Primero selecciona una fecha"
-                                : timeSlotsWithAvailability.length === 0
-                                  ? "No hay horarios disponibles"
-                                  : "Seleccionar hora"
-                            }
-                          />
+                          <SelectValue placeholder="Seleccionar hora" />
                         </SelectTrigger>
-                        <SelectContent className="bg-popover z-[100]">
+                        <SelectContent>
                           {timeSlotsWithAvailability.filter((s) => s.available).length > 0 ? (
                             timeSlotsWithAvailability
                               .filter((s) => s.available)
                               .map((s) => (
                                 <SelectItem key={s.time} value={s.time}>
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="h-4 w-4" /> <span>{s.time}</span>
-                                  </div>
+                                  {s.time}
                                 </SelectItem>
                               ))
                           ) : (
-                            <SelectItem value="no-slots" disabled>
+                            <SelectItem disabled value="no-slots">
                               No hay horarios disponibles
                             </SelectItem>
                           )}
@@ -471,29 +410,20 @@ export default function BusinessDetails() {
                   </div>
 
                   <div>
-                    <Label htmlFor="notes">Notas adicionales</Label>
+                    <Label>Notas adicionales</Label>
                     <Textarea
-                      id="notes"
                       value={bookingForm.notes}
                       onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
-                      placeholder="Ej: Necesito silla alta para bebé"
-                      rows={3}
                     />
                   </div>
 
                   <Button
                     type="submit"
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg"
-                    disabled={
-                      submitting ||
-                      !bookingForm.startTime ||
-                      !bookingForm.bookingDate ||
-                      !partySizeHasAvailability(parseInt(bookingForm.partySize)) ||
-                      availabilityLoading
-                    }
+                    className="w-full bg-primary hover:bg-primary/90 text-white font-semibold"
+                    disabled={submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
-                    {submitting ? "Enviando..." : availabilityLoading ? "Verificando..." : "Confirmar reserva"}
+                    {submitting ? "Enviando..." : "Confirmar reserva"}
                   </Button>
                 </form>
               </CardContent>
