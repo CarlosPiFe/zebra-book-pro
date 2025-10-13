@@ -104,13 +104,20 @@ export function AvailabilityTableDialog({
           const [endHour, endMin] = slot.end_time.split(":").map(Number);
 
           let currentTime = startHour * 60 + startMin;
-          const endTime = endHour * 60 + endMin;
+          let endTime = endHour * 60 + endMin;
+
+          // Detectar cruce de medianoche: si la hora de fin es menor que la de inicio,
+          // significa que el horario se extiende al día siguiente
+          if (endTime <= currentTime) {
+            // Añadir 24 horas (1440 minutos) a la hora de fin para tratarla como del día siguiente
+            endTime += 24 * 60;
+          }
 
           while (currentTime < endTime) {
-            const hours = Math.floor(currentTime / 60);
+            const hours = Math.floor(currentTime / 60) % 24; // Aplicar módulo 24 para manejar horas >= 24
             const minutes = currentTime % 60;
             const nextTime = currentTime + slotDuration;
-            const nextHours = Math.floor(nextTime / 60);
+            const nextHours = Math.floor(nextTime / 60) % 24;
             const nextMinutes = nextTime % 60;
 
             slots.push({
@@ -136,12 +143,28 @@ export function AvailabilityTableDialog({
   };
 
   const isTableOccupied = (tableId: string, slotTime: string, slotEndTime: string): Booking | null => {
-    return bookings.find(
-      (booking) =>
-        booking.table_id === tableId &&
-        booking.start_time < slotEndTime &&
-        booking.end_time > slotTime
-    ) || null;
+    // Normalizar horas para comparación (manejar cruce de medianoche)
+    const normalizeTime = (time: string): number => {
+      const [hours, minutes] = time.split(":").map(Number);
+      let totalMinutes = hours * 60 + minutes;
+      
+      // Si la hora es de madrugada (00:00-05:59), añadir 24 horas para tratarla como continuación del día anterior
+      if (hours >= 0 && hours < 6) {
+        totalMinutes += 24 * 60;
+      }
+      
+      return totalMinutes;
+    };
+
+    const slotStart = normalizeTime(slotTime);
+    const slotEnd = normalizeTime(slotEndTime);
+
+    return bookings.find((booking) => {
+      const bookingStart = normalizeTime(booking.start_time);
+      const bookingEnd = normalizeTime(booking.end_time);
+      
+      return booking.table_id === tableId && bookingStart < slotEnd && bookingEnd > slotStart;
+    }) || null;
   };
 
   const handleCellClick = (tableId: string, startTime: string, endTime: string) => {
