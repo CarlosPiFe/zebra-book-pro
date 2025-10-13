@@ -53,6 +53,7 @@ export default function BusinessDetails() {
     getTimeSlotsWithAvailability,
     getAvailableTimeSlots,
     hasAvailableTables,
+    refreshAvailability,
     loading: availabilityLoading,
     tables,
   } = useBookingAvailability(businessId);
@@ -134,9 +135,14 @@ export default function BusinessDetails() {
   // 🔄 Recalcular horas automáticamente si cambian fecha o número de personas
   useEffect(() => {
     if (bookingForm.bookingDate && !availabilityLoading) {
-      handleLoadHours();
+      // Pequeño delay para asegurar que los datos estén actualizados
+      const timer = setTimeout(() => {
+        handleLoadHours();
+      }, 100);
+
+      return () => clearTimeout(timer);
     }
-  }, [bookingForm.bookingDate, bookingForm.partySize]);
+  }, [bookingForm.bookingDate, bookingForm.partySize, availabilityLoading]);
 
   // 📅 Cambiar fecha
   const handleDateChange = (date: Date | undefined) => {
@@ -175,11 +181,19 @@ export default function BusinessDetails() {
     }
 
     const dateStr = format(bookingForm.bookingDate, "yyyy-MM-dd");
+
+    // 🔄 Forzar actualización de disponibilidad antes de validar
+    await refreshAvailability();
+
+    // Esperar un momento para que se actualicen los datos
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
     const isStillAvailable = hasAvailableTables(dateStr, bookingForm.startTime, parseInt(bookingForm.partySize));
 
     if (!isStillAvailable) {
       toast.error("Lo sentimos, este horario ya no está disponible. Por favor selecciona otro.");
       setBookingForm({ ...bookingForm, startTime: undefined });
+      setHoursLoaded(false);
       await handleLoadHours(); // 🔄 Refrescar disponibilidad
       return;
     }
@@ -396,12 +410,18 @@ export default function BusinessDetails() {
                               .filter((s) => s.available)
                               .map((s) => (
                                 <SelectItem key={s.time} value={s.time}>
-                                  {s.time}
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{s.time}</span>
+                                    <span className="text-xs text-green-600 ml-2">✓ Disponible</span>
+                                  </div>
                                 </SelectItem>
                               ))
                           ) : (
                             <SelectItem disabled value="no-slots">
-                              No hay horarios disponibles
+                              <div className="flex items-center justify-between w-full">
+                                <span>No hay horarios disponibles</span>
+                                <span className="text-xs text-red-600 ml-2">✗ Completo</span>
+                              </div>
                             </SelectItem>
                           )}
                         </SelectContent>
