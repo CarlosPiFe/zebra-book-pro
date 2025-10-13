@@ -11,7 +11,7 @@ const corsHeaders = {
 const PublicBookingSchema = z.object({
   businessId: z.string().uuid({ message: "Invalid business ID format" }),
   clientName: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
-  clientPhone: z.string().trim().min(10, "Phone number is too short").max(20, "Phone number is too long").regex(/^[\d\s+()-]+$/, "Invalid phone number format"),
+  clientPhone: z.string().trim().min(1, "Phone number is required"),
   clientEmail: z.string().trim().email("Invalid email format").max(255, "Email is too long").optional(),
   bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (use YYYY-MM-DD)"),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format (use HH:MM)"),
