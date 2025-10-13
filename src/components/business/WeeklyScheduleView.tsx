@@ -47,6 +47,7 @@ interface Schedule {
 
 interface WeeklyScheduleViewProps {
   businessId: string;
+  scheduleViewMode?: string;
 }
 
 interface CopiedSchedule {
@@ -54,12 +55,13 @@ interface CopiedSchedule {
   selectedCells: Array<{ employeeId: string; date: string }>; // Array of selected cells
 }
 
-export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
+export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }: WeeklyScheduleViewProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [vacations, setVacations] = useState<Vacation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(scheduleViewMode === 'editable');
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
     const weekStartParam = searchParams.get("weekStart");
     if (weekStartParam) {
@@ -357,16 +359,31 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
         </div>
 
         <div className="flex justify-end gap-2">
+          {scheduleViewMode === 'visual' && (
+            <Button
+              variant={isEditMode ? "outline" : "default"}
+              onClick={() => setIsEditMode(!isEditMode)}
+              className="gap-2"
+              size="sm"
+            >
+              <Calendar className="w-4 h-4" />
+              {isEditMode ? "Ver horario" : "Editar horario"}
+            </Button>
+          )}
           <Button
             variant="destructive"
             onClick={() => setDeleteWeekDialogOpen(true)}
             className="gap-2"
             size="sm"
+            disabled={scheduleViewMode === 'visual' && !isEditMode}
           >
             <Trash2 className="w-4 h-4" />
             Eliminar Semana
           </Button>
-          <ExportSchedulesDialog businessId={businessId} />
+          <ExportSchedulesDialog 
+            businessId={businessId} 
+            disabled={scheduleViewMode === 'visual' && !isEditMode}
+          />
         </div>
       </div>
       
@@ -516,6 +533,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
                           }}
                           isInSelectionMode={isInPasteMode && !onVacation}
                           isSelected={isSelected || false}
+                          disabled={scheduleViewMode === 'visual' && !isEditMode}
                         />
                       </td>
                     );

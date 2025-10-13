@@ -26,6 +26,7 @@ interface Business {
   website: string | null;
   social_media: any;
   booking_additional_message?: string | null;
+  schedule_view_mode?: string;
 }
 
 const ManageBusiness = () => {
@@ -98,7 +99,7 @@ const ManageBusiness = () => {
       case "employees":
         return <EmployeesView businessId={business.id} />;
       case "schedules":
-        return <WeeklyScheduleView businessId={business.id} />;
+        return <WeeklyScheduleView businessId={business.id} scheduleViewMode={business.schedule_view_mode || 'editable'} />;
       case "settings":
         return <BusinessSettings business={business} onUpdate={loadBusiness} />;
       default:

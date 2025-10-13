@@ -186,6 +186,7 @@ export type Database = {
           name: string
           owner_id: string
           phone: string | null
+          schedule_view_mode: string
           social_media: Json | null
           updated_at: string
           website: string | null
@@ -209,6 +210,7 @@ export type Database = {
           name: string
           owner_id: string
           phone?: string | null
+          schedule_view_mode?: string
           social_media?: Json | null
           updated_at?: string
           website?: string | null
@@ -232,6 +234,7 @@ export type Database = {
           name?: string
           owner_id?: string
           phone?: string | null
+          schedule_view_mode?: string
           social_media?: Json | null
           updated_at?: string
           website?: string | null

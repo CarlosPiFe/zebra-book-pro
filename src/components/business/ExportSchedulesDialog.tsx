@@ -12,6 +12,7 @@ import { toast } from "sonner";
 
 interface ExportSchedulesDialogProps {
   businessId: string;
+  disabled?: boolean;
 }
 
 interface Schedule {
@@ -29,7 +30,7 @@ interface Employee {
   name: string;
 }
 
-export function ExportSchedulesDialog({ businessId }: ExportSchedulesDialogProps) {
+export function ExportSchedulesDialog({ businessId, disabled = false }: ExportSchedulesDialogProps) {
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
@@ -186,7 +187,7 @@ export function ExportSchedulesDialog({ businessId }: ExportSchedulesDialogProps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="gap-2" size="sm">
+        <Button variant="outline" className="gap-2" size="sm" disabled={disabled}>
           <Download className="h-4 w-4" />
           Exportar horarios (XML)
         </Button>

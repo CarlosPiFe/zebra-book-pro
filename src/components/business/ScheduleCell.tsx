@@ -37,6 +37,7 @@ interface ScheduleCellProps {
   onSelect?: () => void;
   isInSelectionMode?: boolean;
   isSelected?: boolean;
+  disabled?: boolean;
 }
 
 export const ScheduleCell = ({
@@ -50,6 +51,7 @@ export const ScheduleCell = ({
   onSelect,
   isInSelectionMode = false,
   isSelected = false,
+  disabled = false,
 }: ScheduleCellProps) => {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -211,11 +213,14 @@ export const ScheduleCell = ({
     <>
       <div
         className={cn(
-          "cursor-pointer transition-all",
+          "transition-all",
+          !disabled && "cursor-pointer",
+          disabled && "opacity-60 cursor-not-allowed",
           isSelected && "bg-primary/20 rounded ring-2 ring-primary",
           isInSelectionMode && !isSelected && "hover:bg-primary/10 hover:ring-1 hover:ring-primary/50 rounded"
         )}
         onClick={(e) => {
+          if (disabled) return;
           if (isInSelectionMode && !onVacation && onSelect) {
             e.stopPropagation();
             onSelect();
@@ -228,7 +233,7 @@ export const ScheduleCell = ({
         {getCellContent()}
       </div>
 
-      <Dialog open={isOpen && !onVacation && !isInSelectionMode} onOpenChange={setIsOpen}>
+      <Dialog open={isOpen && !onVacation && !isInSelectionMode && !disabled} onOpenChange={setIsOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">

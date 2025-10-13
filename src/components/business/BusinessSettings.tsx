@@ -29,6 +29,7 @@ interface Business {
   auto_complete_delayed?: boolean;
   mark_delayed_as_no_show?: boolean;
   booking_additional_message?: string | null;
+  schedule_view_mode?: string;
 }
 
 interface BusinessSettingsProps {
@@ -62,6 +63,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     auto_complete_delayed: business.auto_complete_delayed ?? true,
     mark_delayed_as_no_show: business.mark_delayed_as_no_show ?? false,
     booking_additional_message: business.booking_additional_message || "",
+    schedule_view_mode: business.schedule_view_mode || "editable",
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -323,6 +325,69 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
         </CardContent>
       </Card>
       
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            Visualización de Horarios
+          </CardTitle>
+          <CardDescription>
+            Configura cómo se muestra el calendario de horarios de empleados
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <Label htmlFor="schedule_view_mode">Tipo de visualización de horarios</Label>
+            <Select
+              value={formData.schedule_view_mode}
+              onValueChange={(value) => setFormData({ ...formData, schedule_view_mode: value })}
+            >
+              <SelectTrigger id="schedule_view_mode">
+                <SelectValue placeholder="Selecciona modo de visualización" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="editable">Editable (por defecto)</SelectItem>
+                <SelectItem value="visual">Solo visual (bloqueado hasta editar)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              {formData.schedule_view_mode === 'editable' 
+                ? 'El calendario de horarios se mostrará siempre editable, permitiendo modificar los turnos directamente.'
+                : 'El calendario se mostrará bloqueado. Para editarlo, deberás pulsar el botón "Editar horario".'}
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const { error } = await supabase
+                  .from("businesses")
+                  .update({
+                    schedule_view_mode: formData.schedule_view_mode,
+                  })
+                  .eq("id", business.id);
+
+                if (error) throw error;
+
+                toast.success("Configuración de visualización de horarios actualizada correctamente");
+                onUpdate();
+              } catch (error) {
+                console.error("Error updating schedule view mode:", error);
+                toast.error("Error al actualizar la configuración");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? "Guardando..." : "Guardar Configuración de Visualización"}
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
