@@ -593,25 +593,21 @@ export default function BusinessDetails() {
                           } />
                         </SelectTrigger>
                         <SelectContent className="bg-popover z-[100]">
-                          {timeSlotsWithAvailability.length > 0 ? (
-                            timeSlotsWithAvailability.map((slot) => (
-                              <SelectItem 
-                                key={slot.time} 
-                                value={slot.time}
-                                disabled={!slot.available}
-                                className={!slot.available ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
-                              >
-                                <div className="flex items-center justify-between w-full gap-4">
+                          {timeSlotsWithAvailability.filter(slot => slot.available).length > 0 ? (
+                            timeSlotsWithAvailability
+                              .filter(slot => slot.available)
+                              .map((slot) => (
+                                <SelectItem 
+                                  key={slot.time} 
+                                  value={slot.time}
+                                  className="cursor-pointer"
+                                >
                                   <div className="flex items-center gap-2">
                                     <Clock className="h-4 w-4" />
-                                    <span className={!slot.available ? "text-muted-foreground" : ""}>{slot.time}</span>
+                                    <span>{slot.time}</span>
                                   </div>
-                                  {!slot.available && (
-                                    <span className="text-xs text-muted-foreground font-medium">Completo</span>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))
+                                </SelectItem>
+                              ))
                           ) : (
                             <SelectItem value="no-slots" disabled>
                               No hay horarios disponibles
