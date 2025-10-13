@@ -420,18 +420,12 @@ export default function BusinessDetails() {
                         {availableTimeSlots.length > 0 ? (
                           availableTimeSlots.map((time) => (
                             <SelectItem key={time} value={time}>
-                              <div className="flex items-center justify-between w-full">
-                                <span>{time}</span>
-                                <span className="text-xs text-green-600 ml-2">✓ Disponible</span>
-                              </div>
+                              {time}
                             </SelectItem>
                           ))
                         ) : bookingForm.bookingDate ? (
                           <SelectItem disabled value="no-slots">
-                            <div className="flex items-center justify-between w-full">
-                              <span>No hay horarios disponibles</span>
-                              <span className="text-xs text-red-600 ml-2">✗ Completo</span>
-                            </div>
+                            No hay horarios disponibles
                           </SelectItem>
                         ) : null}
                       </SelectContent>
