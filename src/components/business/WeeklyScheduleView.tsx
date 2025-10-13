@@ -325,42 +325,48 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-30 pointer-events-none" />
       )}
       
-      <div className="flex items-center justify-between relative z-10">
-        <div>
-          <h2 className="text-3xl font-bold">Horarios Semanales</h2>
-          <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
+      <div className="space-y-4 relative z-10">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold">Horarios Semanales</h2>
+            <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="text-center min-w-[200px]">
+              <p className="font-semibold text-sm">
+                {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
+                {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <ExportSchedulesDialog businessId={businessId} />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <div className="text-center min-w-[200px]">
-            <p className="font-semibold">
-              {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
-              {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+        <div className="flex justify-end gap-2">
           <Button
             variant="destructive"
             onClick={() => setDeleteWeekDialogOpen(true)}
             className="gap-2"
+            size="sm"
           >
             <Trash2 className="w-4 h-4" />
             Eliminar Semana
           </Button>
+          <ExportSchedulesDialog businessId={businessId} />
         </div>
       </div>
       
