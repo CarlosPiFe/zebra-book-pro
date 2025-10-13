@@ -222,134 +222,84 @@ export function useBookingAvailability(businessId: string | undefined) {
     return availableSlots;
   };
 
-  // Check if there are available tables for a time slot
+  // Check if there are available tables for a time slot - SIMPLIFIED VERSION
   const hasAvailableTables = (date: string, startTime: string, partySize: number): boolean => {
-    // Find tables that can accommodate party size
+    console.log(`🔍 [NUEVA VERIFICACIÓN] Fecha: ${date}, Hora: ${startTime}, Personas: ${partySize}`);
+
+    // 1. Buscar mesas que puedan acomodar al grupo
     const suitableTables = tables.filter((table) => table.max_capacity >= partySize);
+    console.log(
+      `📋 Mesas adecuadas para ${partySize} personas:`,
+      suitableTables.map((t) => `Mesa ${t.table_number} (${t.max_capacity} pers)`),
+    );
 
-    if (suitableTables.length === 0) return false;
+    if (suitableTables.length === 0) {
+      console.log(`❌ NO hay mesas que puedan acomodar ${partySize} personas`);
+      return false;
+    }
 
-    // Calculate end time based on slot duration
-    const [hour, minute] = startTime.split(":").map(Number);
-    let endMinutes = hour * 60 + minute + slotDuration;
-    const endHour = Math.floor(endMinutes / 60) % 24;
-    const endMinute = endMinutes % 60;
-    const endTime = `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+    // 2. Buscar reservas que se superpongan con este horario
+    const bookingsForDate = bookings.filter((booking) => booking.booking_date === date);
+    console.log(`📅 Todas las reservas para ${date}:`, bookingsForDate);
 
-    // Helper function to check if two time ranges overlap
-    const timesOverlap = (start1: string, end1: string, start2: string, end2: string): boolean => {
-      const [s1Hour, s1Minute] = start1.split(":").map(Number);
-      const [e1Hour, e1Minute] = end1.split(":").map(Number);
-      const [s2Hour, s2Minute] = start2.split(":").map(Number);
-      const [e2Hour, e2Minute] = end2.split(":").map(Number);
+    // 3. Función simple para verificar superposición
+    const isTimeOverlapping = (
+      bookingStart: string,
+      bookingEnd: string,
+      slotStart: string,
+      slotEnd: string,
+    ): boolean => {
+      const bookingStartMin = parseInt(bookingStart.split(":")[0]) * 60 + parseInt(bookingStart.split(":")[1]);
+      const bookingEndMin = parseInt(bookingEnd.split(":")[0]) * 60 + parseInt(bookingEnd.split(":")[1]);
+      const slotStartMin = parseInt(slotStart.split(":")[0]) * 60 + parseInt(slotStart.split(":")[1]);
+      const slotEndMin = parseInt(slotEnd.split(":")[0]) * 60 + parseInt(slotEnd.split(":")[1]);
 
-      let s1Minutes = s1Hour * 60 + s1Minute;
-      let e1Minutes = e1Hour * 60 + e1Minute;
-      let s2Minutes = s2Hour * 60 + s2Minute;
-      let e2Minutes = e2Hour * 60 + e2Minute;
+      // Verificar si hay superposición
+      const overlaps = !(bookingEndMin <= slotStartMin || bookingStartMin >= slotEndMin);
 
-      // Handle midnight crossing
-      if (e1Minutes < s1Minutes) e1Minutes += 24 * 60;
-      if (e2Minutes < s2Minutes) e2Minutes += 24 * 60;
-
-      // Normalize early morning hours (0-6) to be considered as next day
-      if (s1Hour < 6) s1Minutes += 24 * 60;
-      if (e1Hour < 6) e1Minutes += 24 * 60;
-      if (s2Hour < 6) s2Minutes += 24 * 60;
-      if (e2Hour < 6) e2Minutes += 24 * 60;
-
-      // Check for overlap: ranges overlap if they don't end before the other starts
-      const overlaps = !(e1Minutes <= s2Minutes || s1Minutes >= e2Minutes);
-
-      // Debug log for time overlap calculation
-      if (start1 === "21:30" || start2 === "21:30") {
-        console.log(`[Time Overlap Debug] ${start1}-${end1} vs ${start2}-${end2}`);
-        console.log(`[Time Overlap Debug] Minutes: ${s1Minutes}-${e1Minutes} vs ${s2Minutes}-${e2Minutes}`);
-        console.log(`[Time Overlap Debug] Overlaps: ${overlaps}`);
+      if (slotStart === "21:30") {
+        console.log(
+          `⏰ [21:30] Verificando: ${bookingStart}-${bookingEnd} vs ${slotStart}-${slotEnd} = ${overlaps ? "SUPERPONE" : "NO SUPERPONE"}`,
+        );
       }
 
       return overlaps;
     };
 
-    // Get all bookings for this date and time slot
-    const overlappingBookings = bookings.filter((booking) => {
-      if (booking.booking_date !== date) return false;
-      const overlaps = timesOverlap(booking.start_time, booking.end_time, startTime, endTime);
-      console.log(
-        `[Time Overlap Check] ${booking.start_time}-${booking.end_time} vs ${startTime}-${endTime}: ${overlaps ? "OVERLAPS" : "NO OVERLAP"}`,
-      );
-      return overlaps;
-    });
+    // 4. Calcular hora de fin del slot
+    const [hour, minute] = startTime.split(":").map(Number);
+    const endMinutes = hour * 60 + minute + slotDuration;
+    const endHour = Math.floor(endMinutes / 60) % 24;
+    const endMinute = endMinutes % 60;
+    const endTime = `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
 
-    console.log(`[Availability Check] Date: ${date}, Time: ${startTime}-${endTime}, Party: ${partySize}`);
-    console.log(
-      `[Availability Check] Suitable tables: ${suitableTables.length}`,
-      suitableTables.map((t) => `T${t.table_number}(${t.max_capacity})`),
-    );
-    console.log(`[Availability Check] Overlapping bookings: ${overlappingBookings.length}`, overlappingBookings);
-    console.log(
-      `[Availability Check] All bookings for date:`,
-      bookings.filter((b) => b.booking_date === date),
+    // 5. Buscar reservas superpuestas
+    const overlappingBookings = bookingsForDate.filter((booking) =>
+      isTimeOverlapping(booking.start_time, booking.end_time, startTime, endTime),
     );
 
-    // Count how many suitable tables are occupied
+    console.log(`🔄 Reservas superpuestas con ${startTime}-${endTime}:`, overlappingBookings);
+
+    // 6. Verificar qué mesas están ocupadas
     const occupiedTableIds = new Set(
       overlappingBookings.filter((booking) => booking.table_id).map((booking) => booking.table_id),
     );
 
-    // Check if at least one suitable table is available
+    console.log(`🚫 Mesas ocupadas:`, Array.from(occupiedTableIds));
+
+    // 7. Encontrar mesas disponibles
     const availableTables = suitableTables.filter((table) => !occupiedTableIds.has(table.id));
-
     console.log(
-      `[Availability Check] Available tables: ${availableTables.length}`,
-      availableTables.map((t) => `T${t.table_number}(${t.max_capacity})`),
+      `✅ Mesas disponibles para ${partySize} personas:`,
+      availableTables.map((t) => `Mesa ${t.table_number} (${t.max_capacity} pers)`),
     );
 
-    // Also need to consider bookings without assigned tables (auto-assign)
-    // These consume table capacity but don't have table_id yet
-    const autoBookings = overlappingBookings.filter((booking) => !booking.table_id);
+    // 8. Verificar si hay al menos una mesa disponible
+    const hasAvailableTable = availableTables.length > 0;
 
-    console.log(`[Availability Check] Auto bookings (no table assigned): ${autoBookings.length}`, autoBookings);
+    console.log(`🎯 RESULTADO FINAL para ${startTime}: ${hasAvailableTable ? "DISPONIBLE" : "NO DISPONIBLE"}`);
 
-    // For the specific party size, we need at least one table that can accommodate them
-    // We don't need to sum capacities - we need ONE table that fits the group
-
-    // Calculate how much capacity is already consumed by auto-assign bookings
-    let totalAutoCapacityNeeded = 0;
-    autoBookings.forEach((booking) => {
-      totalAutoCapacityNeeded += booking.party_size;
-    });
-
-    // Check if we have at least one available table that can accommodate the party size
-    // AND that there's enough remaining capacity for auto-assign bookings
-    const hasSuitableTable = availableTables.length > 0;
-
-    // For auto-assign bookings, we need enough total capacity
-    const totalAvailableCapacity = availableTables.reduce((sum, table) => sum + table.max_capacity, 0);
-    const hasEnoughCapacityForAuto = totalAvailableCapacity >= totalAutoCapacityNeeded;
-
-    console.log(
-      `[Availability Check] Required capacity: ${totalAutoCapacityNeeded} (auto bookings), Available capacity: ${totalAvailableCapacity}`,
-    );
-    console.log(
-      `[Availability Check] Has suitable table: ${hasSuitableTable}, Has enough capacity for auto: ${hasEnoughCapacityForAuto}`,
-    );
-
-    // We need at least one suitable table available AND enough capacity for existing auto bookings
-    const isAvailable = hasSuitableTable && hasEnoughCapacityForAuto;
-    console.log(`[Availability Check] Result: ${isAvailable ? "AVAILABLE" : "NOT AVAILABLE"}`);
-
-    // Extra debug for 21:30 specifically
-    if (startTime === "21:30") {
-      console.log(`[21:30 DEBUG] Party size: ${partySize}`);
-      console.log(`[21:30 DEBUG] Suitable tables:`, suitableTables);
-      console.log(`[21:30 DEBUG] Available tables:`, availableTables);
-      console.log(`[21:30 DEBUG] Has suitable table: ${hasSuitableTable}`);
-      console.log(`[21:30 DEBUG] Has enough capacity for auto: ${hasEnoughCapacityForAuto}`);
-      console.log(`[21:30 DEBUG] Final result: ${isAvailable}`);
-    }
-
-    return isAvailable;
+    return hasAvailableTable;
   };
 
   // Get next available time slot
