@@ -45,6 +45,9 @@ export default function BusinessDetails() {
     notes: "",
   });
 
+  // Estado para controlar si se han cargado las horas
+  const [hoursLoaded, setHoursLoaded] = useState(false);
+
   // Use availability hook
   const {
     isDateAvailable,
@@ -158,6 +161,7 @@ export default function BusinessDetails() {
   // Handle date change
   const handleDateChange = (date: Date | undefined) => {
     setBookingForm({ ...bookingForm, bookingDate: date, startTime: "" });
+    setHoursLoaded(false); // Reset cuando cambia la fecha
   };
 
   // Get all time slots with availability info for selected date
@@ -181,11 +185,36 @@ export default function BusinessDetails() {
   const handlePartySizeChange = (value: string) => {
     const newPartySize = parseInt(value);
     setBookingForm({ ...bookingForm, partySize: value, startTime: "" });
+    setHoursLoaded(false); // Reset cuando cambia el número de personas
     
     // Show warning if selected party size has no availability
     if (bookingForm.bookingDate && !partySizeHasAvailability(newPartySize)) {
       toast.warning(`No hay disponibilidad para ${newPartySize} ${newPartySize === 1 ? 'persona' : 'personas'} en esta fecha. Por favor selecciona otra fecha.`);
     }
+  };
+
+  // Función para cargar las horas disponibles
+  const handleLoadHours = () => {
+    if (!bookingForm.bookingDate) {
+      toast.error("Por favor selecciona una fecha primero");
+      return;
+    }
+    
+    // Ejecutar la comprobación de disponibilidad
+    const slots = getTimeSlotsWithAvailability(bookingForm.bookingDate, parseInt(bookingForm.partySize));
+    
+    if (slots.length === 0) {
+      toast.error("No hay horarios disponibles para la fecha y número de personas seleccionadas");
+    } else {
+      const availableCount = slots.filter(s => s.available).length;
+      if (availableCount === 0) {
+        toast.warning("Todos los horarios están completos para esta fecha");
+      } else {
+        toast.success(`${availableCount} ${availableCount === 1 ? 'horario disponible' : 'horarios disponibles'}`);
+      }
+    }
+    
+    setHoursLoaded(true);
   };
 
   const openInGoogleMaps = () => {
@@ -531,52 +560,67 @@ export default function BusinessDetails() {
 
                   <div>
                     <Label>Hora de entrada *</Label>
-                    <Select
-                      value={bookingForm.startTime}
-                      onValueChange={(value) => {
-                        const slot = timeSlotsWithAvailability.find(s => s.time === value);
-                        if (slot && slot.available) {
-                          setBookingForm({ ...bookingForm, startTime: value });
-                        }
-                      }}
-                      disabled={!bookingForm.bookingDate || timeSlotsWithAvailability.length === 0}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={
-                          !bookingForm.bookingDate 
-                            ? "Primero selecciona una fecha"
-                            : timeSlotsWithAvailability.length === 0
-                            ? "No hay horarios disponibles"
-                            : "Seleccionar hora"
-                        } />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover z-[100]">
-                        {timeSlotsWithAvailability.length > 0 ? (
-                          timeSlotsWithAvailability.map((slot) => (
-                            <SelectItem 
-                              key={slot.time} 
-                              value={slot.time}
-                              disabled={!slot.available}
-                              className={!slot.available ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
-                            >
-                              <div className="flex items-center justify-between w-full gap-4">
-                                <div className="flex items-center gap-2">
-                                  <Clock className="h-4 w-4" />
-                                  <span className={!slot.available ? "text-muted-foreground" : ""}>{slot.time}</span>
+                    
+                    {!hoursLoaded ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleLoadHours}
+                        disabled={!bookingForm.bookingDate || availabilityLoading}
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        {availabilityLoading ? "Cargando..." : "Mostrar horas disponibles"}
+                      </Button>
+                    ) : (
+                      <Select
+                        value={bookingForm.startTime}
+                        onValueChange={(value) => {
+                          const slot = timeSlotsWithAvailability.find(s => s.time === value);
+                          if (slot && slot.available) {
+                            setBookingForm({ ...bookingForm, startTime: value });
+                          }
+                        }}
+                        disabled={!bookingForm.bookingDate || timeSlotsWithAvailability.length === 0}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={
+                            !bookingForm.bookingDate 
+                              ? "Primero selecciona una fecha"
+                              : timeSlotsWithAvailability.length === 0
+                              ? "No hay horarios disponibles"
+                              : "Seleccionar hora"
+                          } />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-[100]">
+                          {timeSlotsWithAvailability.length > 0 ? (
+                            timeSlotsWithAvailability.map((slot) => (
+                              <SelectItem 
+                                key={slot.time} 
+                                value={slot.time}
+                                disabled={!slot.available}
+                                className={!slot.available ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
+                              >
+                                <div className="flex items-center justify-between w-full gap-4">
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span className={!slot.available ? "text-muted-foreground" : ""}>{slot.time}</span>
+                                  </div>
+                                  {!slot.available && (
+                                    <span className="text-xs text-muted-foreground font-medium">Completo</span>
+                                  )}
                                 </div>
-                                {!slot.available && (
-                                  <span className="text-xs text-muted-foreground font-medium">Completo</span>
-                                )}
-                              </div>
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-slots" disabled>
+                              No hay horarios disponibles
                             </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="no-slots" disabled>
-                            No hay horarios disponibles
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    
                     {parseInt(bookingForm.partySize) > maxTableCapacity && (
                       <p className="text-sm text-muted-foreground mt-1">
                         Para reservas de más de {maxTableCapacity} personas, contáctanos.
