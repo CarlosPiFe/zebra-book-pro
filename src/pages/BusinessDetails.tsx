@@ -89,7 +89,7 @@ export default function BusinessDetails() {
 
   // 🔹 Función para cargar y verificar horas disponibles
   const handleLoadHours = async () => {
-    const { bookingDate, partySize, clientName, clientPhone } = bookingForm;
+    const { bookingDate, partySize } = bookingForm;
 
     // Validaciones básicas
     if (!bookingDate) {
@@ -99,11 +99,6 @@ export default function BusinessDetails() {
 
     if (!partySize || parseInt(partySize) <= 0) {
       toast.error("Selecciona el número de personas");
-      return;
-    }
-
-    if (!clientName || !clientPhone) {
-      toast.warning("Rellena tu nombre y teléfono antes de buscar horarios");
       return;
     }
 
@@ -135,12 +130,10 @@ export default function BusinessDetails() {
   // 🔄 Recalcular horas automáticamente si cambian fecha o número de personas
   useEffect(() => {
     if (bookingForm.bookingDate && !availabilityLoading) {
-      // Pequeño delay para asegurar que los datos estén actualizados
-      const timer = setTimeout(() => {
-        handleLoadHours();
-      }, 100);
-
-      return () => clearTimeout(timer);
+      // Recalcular disponibilidad inmediatamente
+      setHoursLoaded(true);
+    } else if (!bookingForm.bookingDate) {
+      setHoursLoaded(false);
     }
   }, [bookingForm.bookingDate, bookingForm.partySize, availabilityLoading]);
 
@@ -160,14 +153,15 @@ export default function BusinessDetails() {
   const handlePartySizeChange = (value: string) => {
     const newPartySize = parseInt(value);
     setBookingForm({ ...bookingForm, partySize: value, startTime: undefined });
+
+    // Resetear horas cargadas para forzar recálculo
     setHoursLoaded(false);
 
-    if (bookingForm.bookingDate && !partySizeHasAvailability(newPartySize)) {
-      toast.warning(
-        `No hay disponibilidad para ${newPartySize} ${
-          newPartySize === 1 ? "persona" : "personas"
-        } en esta fecha. Por favor selecciona otra fecha.`,
-      );
+    // Si ya tenemos fecha, recalcular inmediatamente
+    if (bookingForm.bookingDate) {
+      setTimeout(() => {
+        setHoursLoaded(true);
+      }, 50);
     }
   };
 
@@ -263,8 +257,13 @@ export default function BusinessDetails() {
     : [];
 
   // Debug: Log para ver qué horarios están disponibles
+  console.log("=== DEBUG DISPONIBILIDAD ===");
+  console.log("Fecha seleccionada:", bookingForm.bookingDate);
+  console.log("Número de personas:", bookingForm.partySize);
   console.log("Time slots with availability:", timeSlotsWithAvailability);
   console.log("Available time slots:", availableTimeSlots);
+  console.log("Horas cargadas:", hoursLoaded);
+  console.log("===========================");
 
   // 🧱 Renderizado principal
   if (loading) {
