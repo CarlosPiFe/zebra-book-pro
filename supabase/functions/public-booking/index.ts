@@ -194,7 +194,18 @@ serve(async (req) => {
       partySize
     );
 
-    // Create the booking
+    // If no table is available, return error and don't create booking
+    if (tableId === null) {
+      console.log("No hay disponibilidad para esta fecha y hora");
+      return new Response(
+        JSON.stringify({ 
+          error: "No hay disponibilidad para la fecha y hora seleccionadas. Por favor, elige otro horario." 
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Create the booking only if table is available
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -207,7 +218,7 @@ serve(async (req) => {
         end_time: endTime,
         party_size: partySize,
         notes: notes || null,
-        status: status,
+        status: "reserved",
         table_id: tableId,
         business_phone: business.phone
       })
