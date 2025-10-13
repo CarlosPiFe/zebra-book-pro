@@ -682,7 +682,6 @@ export type Database = {
         Row: {
           booking_date: string | null
           business_id: string | null
-          created_at: string | null
           end_time: string | null
           id: string | null
           party_size: number | null
@@ -694,7 +693,6 @@ export type Database = {
         Insert: {
           booking_date?: string | null
           business_id?: string | null
-          created_at?: string | null
           end_time?: string | null
           id?: string | null
           party_size?: number | null
@@ -706,7 +704,6 @@ export type Database = {
         Update: {
           booking_date?: string | null
           business_id?: string | null
-          created_at?: string | null
           end_time?: string | null
           id?: string | null
           party_size?: number | null
