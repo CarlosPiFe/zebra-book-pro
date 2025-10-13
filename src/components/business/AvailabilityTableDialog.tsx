@@ -64,6 +64,15 @@ export function AvailabilityTableDialog({
       const dateString = format(selectedDate, "yyyy-MM-dd");
       const dayOfWeek = selectedDate.getDay();
 
+      // Cargar configuración del negocio (duración de reserva)
+      const { data: businessData, error: businessError } = await supabase
+        .from("businesses")
+        .select("booking_slot_duration_minutes")
+        .eq("id", businessId)
+        .single();
+
+      if (businessError) throw businessError;
+
       // Cargar mesas del negocio
       const { data: tablesData, error: tablesError } = await supabase
         .from("tables")
@@ -87,7 +96,7 @@ export function AvailabilityTableDialog({
       // Cargar horario de disponibilidad del negocio para ese día
       const { data: availabilityData, error: availabilityError } = await supabase
         .from("availability_slots")
-        .select("start_time, end_time, slot_duration_minutes")
+        .select("start_time, end_time")
         .eq("business_id", businessId)
         .eq("day_of_week", dayOfWeek)
         .order("start_time", { ascending: true });
@@ -95,9 +104,9 @@ export function AvailabilityTableDialog({
       if (availabilityError) throw availabilityError;
 
       // Generar franjas horarias
-      if (availabilityData && availabilityData.length > 0) {
+      if (availabilityData && availabilityData.length > 0 && businessData) {
         const slots: TimeSlot[] = [];
-        const slotDuration = availabilityData[0].slot_duration_minutes;
+        const slotDuration = businessData.booking_slot_duration_minutes;
 
         availabilityData.forEach((slot) => {
           const [startHour, startMin] = slot.start_time.split(":").map(Number);
