@@ -550,22 +550,22 @@ export default function BusinessDetails() {
                             : "Seleccionar hora"
                         } />
                       </SelectTrigger>
-                      <SelectContent className="bg-background z-50">
+                      <SelectContent className="bg-popover z-[100]">
                         {timeSlotsWithAvailability.length > 0 ? (
                           timeSlotsWithAvailability.map((slot) => (
                             <SelectItem 
                               key={slot.time} 
                               value={slot.time}
                               disabled={!slot.available}
-                              className={!slot.available ? "opacity-50 text-muted-foreground" : ""}
+                              className={!slot.available ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}
                             >
-                              <div className="flex items-center gap-2 justify-between w-full">
+                              <div className="flex items-center justify-between w-full gap-4">
                                 <div className="flex items-center gap-2">
                                   <Clock className="h-4 w-4" />
-                                  {slot.time}
+                                  <span className={!slot.available ? "text-muted-foreground" : ""}>{slot.time}</span>
                                 </div>
                                 {!slot.available && (
-                                  <span className="text-xs text-muted-foreground ml-2">Completo</span>
+                                  <span className="text-xs text-muted-foreground font-medium">Completo</span>
                                 )}
                               </div>
                             </SelectItem>
