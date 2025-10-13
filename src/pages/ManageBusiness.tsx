@@ -25,6 +25,7 @@ interface Business {
   booking_slot_duration_minutes: number;
   website: string | null;
   social_media: any;
+  booking_additional_message?: string | null;
 }
 
 const ManageBusiness = () => {

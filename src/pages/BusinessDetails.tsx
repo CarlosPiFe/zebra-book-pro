@@ -25,6 +25,7 @@ interface Business {
   image_url: string | null;
   website: string | null;
   social_media: any;
+  booking_additional_message?: string | null;
 }
 
 export default function BusinessDetails() {
@@ -427,6 +428,15 @@ export default function BusinessDetails() {
             <Card className="sticky top-4">
               <CardContent className="pt-6">
                 <h3 className="text-xl font-semibold mb-4">Haz tu reserva</h3>
+                
+                {business.booking_additional_message && (
+                  <div className="mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                    <p className="text-sm leading-relaxed text-foreground">
+                      {business.booking_additional_message}
+                    </p>
+                  </div>
+                )}
+
                 <form onSubmit={handleBookingSubmit} className="space-y-4">
                   <div>
                     <Label htmlFor="clientName">Nombre *</Label>

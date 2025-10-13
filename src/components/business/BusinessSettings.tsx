@@ -28,6 +28,7 @@ interface Business {
   auto_complete_in_progress?: boolean;
   auto_complete_delayed?: boolean;
   mark_delayed_as_no_show?: boolean;
+  booking_additional_message?: string | null;
 }
 
 interface BusinessSettingsProps {
@@ -60,6 +61,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     auto_complete_in_progress: business.auto_complete_in_progress ?? true,
     auto_complete_delayed: business.auto_complete_delayed ?? true,
     mark_delayed_as_no_show: business.mark_delayed_as_no_show ?? false,
+    booking_additional_message: business.booking_additional_message || "",
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -325,13 +327,13 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Duración de la Reserva
+            Reservas
           </CardTitle>
           <CardDescription>
-            Define la duración predeterminada para cada reserva
+            Configura los ajustes de las reservas de tu negocio
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
           <div className="space-y-4">
             <Label>Duración de la Reserva</Label>
             <div className="grid grid-cols-2 gap-4">
@@ -392,35 +394,54 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
               Esta duración se aplicará automáticamente a todas las reservas nuevas. 
               Las reservas manuales pueden personalizar la hora de finalización si es necesario.
             </p>
-            <Button
-              type="button"
-              onClick={async () => {
-                setLoading(true);
-                try {
-                  const { error } = await supabase
-                    .from("businesses")
-                    .update({
-                      booking_slot_duration_minutes: formData.booking_slot_duration_minutes,
-                    })
-                    .eq("id", business.id);
-
-                  if (error) throw error;
-
-                  toast.success("Duración de reserva actualizada correctamente");
-                  onUpdate();
-                } catch (error) {
-                  console.error("Error updating booking duration:", error);
-                  toast.error("Error al actualizar la duración");
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-              className="w-full"
-            >
-              {loading ? "Guardando..." : "Aplicar Cambios"}
-            </Button>
           </div>
+
+          <div className="space-y-4 border-t pt-6">
+            <div className="space-y-2">
+              <Label htmlFor="booking_additional_message">Mensaje Adicional</Label>
+              <Textarea
+                id="booking_additional_message"
+                value={formData.booking_additional_message}
+                onChange={(e) => setFormData({ ...formData, booking_additional_message: e.target.value })}
+                placeholder="Ej: Por favor llega 10 minutos antes de tu cita"
+                rows={3}
+                className="resize-none"
+              />
+              <p className="text-sm text-muted-foreground">
+                Este mensaje se mostrará a los clientes cuando realicen una reserva en tu negocio.
+              </p>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const { error } = await supabase
+                  .from("businesses")
+                  .update({
+                    booking_slot_duration_minutes: formData.booking_slot_duration_minutes,
+                    booking_additional_message: formData.booking_additional_message,
+                  })
+                  .eq("id", business.id);
+
+                if (error) throw error;
+
+                toast.success("Configuración de reservas actualizada correctamente");
+                onUpdate();
+              } catch (error) {
+                console.error("Error updating booking settings:", error);
+                toast.error("Error al actualizar la configuración");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? "Guardando..." : "Guardar Configuración de Reservas"}
+          </Button>
         </CardContent>
       </Card>
 
