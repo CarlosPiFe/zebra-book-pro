@@ -117,21 +117,28 @@ export function useBookingAvailability(businessId: string | undefined) {
         }
 
         console.log("📊 TOTAL DE RESERVAS ENCONTRADAS:", bookingsData?.length || 0);
-        console.log("📋 TODAS LAS RESERVAS:");
-        bookingsData?.forEach((booking, index) => {
-          console.log(`📝 Reserva ${index + 1}:`, {
-            id: booking.id,
-            fecha: booking.booking_date,
-            hora_inicio: booking.start_time,
-            hora_fin: booking.end_time,
-            personas: booking.party_size,
-            mesa_id: booking.table_id,
-            estado: booking.status,
-            cliente: booking.client_name,
-            telefono: booking.client_phone,
-            TODO_EL_OBJETO: booking,
+
+        if (bookingsData && bookingsData.length > 0) {
+          console.log("📋 TODAS LAS RESERVAS:");
+          bookingsData.forEach((booking, index) => {
+            console.log(`📝 Reserva ${index + 1}:`, {
+              id: booking.id,
+              fecha: booking.booking_date,
+              hora_inicio: booking.start_time,
+              hora_fin: booking.end_time,
+              personas: booking.party_size,
+              mesa_id: booking.table_id,
+              estado: booking.status,
+              cliente: booking.client_name,
+              telefono: booking.client_phone,
+              TODO_EL_OBJETO: booking,
+            });
           });
-        });
+        } else {
+          console.log("❌ NO HAY RESERVAS EN LA BASE DE DATOS");
+          console.log("💡 Por eso todos los horarios aparecen como disponibles");
+          console.log("💡 Para probar, crea una reserva para 21:30 con 9 personas");
+        }
 
         setBookings(bookingsData || []);
 
@@ -270,12 +277,12 @@ export function useBookingAvailability(businessId: string | undefined) {
   const getTimeSlotsWithAvailability = (date: Date, partySize: number): Array<{ time: string; available: boolean }> => {
     if (!date) return [];
 
-    const dateStr = date.toISOString().split("T")[0];
+    const localDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
     const allSlots = getAllTimeSlots(date);
 
     return allSlots.map((timeSlot) => ({
       time: timeSlot,
-      available: hasAvailableTables(dateStr, timeSlot, partySize),
+      available: hasAvailableTables(localDateStr, timeSlot, partySize),
     }));
   };
 
@@ -283,12 +290,21 @@ export function useBookingAvailability(businessId: string | undefined) {
   const getAvailableTimeSlots = (date: Date, partySize: number): string[] => {
     if (!date) return [];
 
+    console.log(`🗓️ [CONVERSIÓN DE FECHA] Fecha original:`, date);
+    console.log(`🗓️ [CONVERSIÓN DE FECHA] toISOString():`, date.toISOString());
+
     const dateStr = date.toISOString().split("T")[0];
+    console.log(`🗓️ [CONVERSIÓN DE FECHA] Fecha convertida: "${dateStr}"`);
+
+    // Alternativa: usar métodos locales
+    const localDateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+    console.log(`🗓️ [CONVERSIÓN DE FECHA] Fecha local: "${localDateStr}"`);
+
     const allSlots = getAllTimeSlots(date);
 
     // Filter out slots that don't have available tables
     const availableSlots = allSlots.filter((timeSlot) => {
-      return hasAvailableTables(dateStr, timeSlot, partySize);
+      return hasAvailableTables(localDateStr, timeSlot, partySize);
     });
 
     return availableSlots;
@@ -296,7 +312,8 @@ export function useBookingAvailability(businessId: string | undefined) {
 
   // Check if there are available tables for a time slot - SIMPLIFIED VERSION
   const hasAvailableTables = (date: string, startTime: string, partySize: number): boolean => {
-    console.log(`🔍 [NUEVA VERIFICACIÓN] Fecha: ${date}, Hora: ${startTime}, Personas: ${partySize}`);
+    console.log(`🔍 [NUEVA VERIFICACIÓN] Fecha recibida: "${date}", Hora: ${startTime}, Personas: ${partySize}`);
+    console.log(`📅 Tipo de fecha: ${typeof date}, Longitud: ${date.length}`);
 
     // 1. Buscar mesas que puedan acomodar al grupo
     const suitableTables = tables.filter((table) => table.max_capacity >= partySize);
