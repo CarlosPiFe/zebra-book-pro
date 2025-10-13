@@ -19,7 +19,7 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { Plus, Info, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addMinutes } from "date-fns";
-import { z } from "zod";
+import { getTimeSlotId } from "@/lib/timeSlots";
 import { format } from "date-fns";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -361,8 +361,15 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         }
       }
 
+      // Get time slot ID for the booking
+      const timeSlotId = await getTimeSlotId(formData.start_time);
+      if (!timeSlotId) {
+        toast.error("Error: No se pudo determinar el horario");
+        return;
+      }
+
       // Create booking
-      const { error: bookingError } = await supabase.from("bookings").insert({
+      const { error: bookingError } = await supabase.from("bookings").insert([{
         business_id: businessId,
         client_name: formData.client_name,
         client_email: formData.client_email || null,
@@ -374,7 +381,8 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         notes: formData.notes || null,
         table_id: tableId,
         status: status,
-      });
+        time_slot_id: timeSlotId,
+      }]);
 
       if (bookingError) throw bookingError;
 

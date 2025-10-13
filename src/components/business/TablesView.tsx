@@ -300,7 +300,7 @@ export function TablesView({ businessId }: TablesViewProps) {
       const startTime = now.toTimeString().slice(0, 5);
       const endTime = new Date(now.getTime() + 2 * 60 * 60 * 1000).toTimeString().slice(0, 5);
 
-      const { error } = await supabase.from("bookings").insert({
+      const { error } = await supabase.from("bookings").insert([{
         table_id: selectedTable.id,
         business_id: businessId,
         booking_date: today,
@@ -308,7 +308,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         end_time: endTime,
         client_name: "Cliente sin reserva",
         status: "occupied",
-      });
+      }]);
 
       if (error) throw error;
 
@@ -449,7 +449,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         // Create new booking
         const { error } = await supabase
           .from("bookings")
-          .insert(bookingData);
+          .insert([bookingData]);
 
         if (error) throw error;
         toast.success("Reserva creada correctamente");
