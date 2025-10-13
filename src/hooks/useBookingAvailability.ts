@@ -56,20 +56,19 @@ export function useBookingAvailability(businessId: string | undefined) {
         if (tablesError) throw tablesError;
         setTables(tablesData || []);
 
-        // Load bookings (for the next 30 days)
+        // Load bookings using secure view (for the next 30 days)
+        // This view only exposes non-sensitive fields needed for availability checks
         const today = new Date().toISOString().split('T')[0];
         const futureDate = new Date();
         futureDate.setDate(futureDate.getDate() + 30);
         const future = futureDate.toISOString().split('T')[0];
 
         const { data: bookingsData, error: bookingsError } = await supabase
-          .from("bookings")
-          .select("*")
+          .from("booking_availability")
+          .select("id, business_id, booking_date, start_time, end_time, table_id, party_size, status")
           .eq("business_id", businessId)
           .gte("booking_date", today)
-          .lte("booking_date", future)
-          .neq("status", "cancelled")
-          .neq("status", "completed");
+          .lte("booking_date", future);
 
         if (bookingsError) throw bookingsError;
         setBookings(bookingsData || []);
