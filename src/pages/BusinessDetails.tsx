@@ -105,34 +105,29 @@ export default function BusinessDetails() {
 
     setSubmitting(true);
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      
-      const response = await fetch(`${supabaseUrl}/functions/v1/public-booking`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": supabaseKey,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('public-booking', {
+        body: {
           businessId,
           clientName: bookingForm.clientName,
-          clientEmail: bookingForm.clientEmail,
+          clientEmail: bookingForm.clientEmail || undefined,
           clientPhone: bookingForm.clientPhone,
           bookingDate: format(bookingForm.bookingDate, "yyyy-MM-dd"),
           startTime: bookingForm.startTime,
           partySize: parseInt(bookingForm.partySize),
-          notes: bookingForm.notes,
-        }),
+          notes: bookingForm.notes || undefined,
+        },
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Error al crear la reserva");
+      if (error) {
+        console.error("Booking error:", error);
+        throw new Error(error.message || "Error al crear la reserva");
       }
 
-      toast.success("¡Reserva enviada correctamente!");
+      if (!data || !data.success) {
+        throw new Error(data?.error || "Error al crear la reserva");
+      }
+
+      toast.success("¡Reserva confirmada correctamente! Nos pondremos en contacto contigo pronto.");
       setBookingForm({
         clientName: "",
         clientEmail: "",
@@ -144,7 +139,17 @@ export default function BusinessDetails() {
       });
     } catch (error) {
       console.error("Error creating booking:", error);
-      toast.error("Error al enviar la reserva");
+      const errorMessage = error instanceof Error ? error.message : "Error al enviar la reserva";
+      
+      if (errorMessage.includes("not found") || errorMessage.includes("not accepting")) {
+        toast.error("Este negocio no está aceptando reservas en este momento");
+      } else if (errorMessage.includes("Too many")) {
+        toast.error("Demasiadas solicitudes. Por favor, intenta más tarde");
+      } else if (errorMessage.includes("past dates")) {
+        toast.error("No se pueden hacer reservas para fechas pasadas");
+      } else {
+        toast.error("Lo sentimos, no hay disponibilidad en esa fecha u hora. Por favor, selecciona otra opción.");
+      }
     } finally {
       setSubmitting(false);
     }
