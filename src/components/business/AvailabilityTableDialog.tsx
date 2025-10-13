@@ -16,7 +16,6 @@ interface AvailabilityTableDialogProps {
   onOpenChange: (open: boolean) => void;
   businessId: string;
   selectedDate: Date;
-  partySize?: number;
   onTimeSlotSelect: (startTime: string, endTime: string, tableId: string) => void;
 }
 
@@ -37,7 +36,7 @@ interface Booking {
 }
 
 interface TimeSlot {
-  startTime: string;
+  time: string;
   endTime: string;
 }
 
@@ -46,7 +45,6 @@ export function AvailabilityTableDialog({
   onOpenChange,
   businessId,
   selectedDate,
-  partySize,
   onTimeSlotSelect,
 }: AvailabilityTableDialogProps) {
   const [tables, setTables] = useState<Table[]>([]);
@@ -56,18 +54,18 @@ export function AvailabilityTableDialog({
 
   useEffect(() => {
     if (open) {
-      loadData();
+      loadAvailabilityData();
     }
-  }, [open, selectedDate, businessId, partySize]);
+  }, [open, selectedDate, businessId]);
 
-  const loadData = async () => {
+  const loadAvailabilityData = async () => {
     try {
       setLoading(true);
       const dateString = format(selectedDate, "yyyy-MM-dd");
       const dayOfWeek = selectedDate.getDay();
 
-      // 1. Cargar configuración del negocio
-      const { data: business, error: businessError } = await supabase
+      // Cargar configuración del negocio (duración de reserva)
+      const { data: businessData, error: businessError } = await supabase
         .from("businesses")
         .select("booking_slot_duration_minutes")
         .eq("id", businessId)
@@ -75,21 +73,16 @@ export function AvailabilityTableDialog({
 
       if (businessError) throw businessError;
 
-      // 2. Cargar mesas (filtradas por capacidad si se especifica)
-      let tablesQuery = supabase
+      // Cargar mesas del negocio
+      const { data: tablesData, error: tablesError } = await supabase
         .from("tables")
         .select("*")
         .eq("business_id", businessId)
         .order("table_number", { ascending: true });
 
-      if (partySize && partySize > 0) {
-        tablesQuery = tablesQuery.gte("max_capacity", partySize);
-      }
-
-      const { data: tablesData, error: tablesError } = await tablesQuery;
       if (tablesError) throw tablesError;
 
-      // 3. Cargar reservas del día (solo activas)
+      // Cargar reservas del día
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
         .select("*")
@@ -100,8 +93,8 @@ export function AvailabilityTableDialog({
 
       if (bookingsError) throw bookingsError;
 
-      // 4. Cargar horarios de apertura para el día
-      const { data: availability, error: availabilityError } = await supabase
+      // Cargar horario de disponibilidad del negocio para ese día
+      const { data: availabilityData, error: availabilityError } = await supabase
         .from("availability_slots")
         .select("start_time, end_time")
         .eq("business_id", businessId)
@@ -110,12 +103,46 @@ export function AvailabilityTableDialog({
 
       if (availabilityError) throw availabilityError;
 
-      // 5. Generar franjas horarias
-      const slots = generateTimeSlots(availability, business.booking_slot_duration_minutes);
+      // Generar franjas horarias
+      if (availabilityData && availabilityData.length > 0 && businessData) {
+        const slots: TimeSlot[] = [];
+        const slotDuration = businessData.booking_slot_duration_minutes;
+
+        availabilityData.forEach((slot) => {
+          const [startHour, startMin] = slot.start_time.split(":").map(Number);
+          const [endHour, endMin] = slot.end_time.split(":").map(Number);
+
+          let currentTime = startHour * 60 + startMin;
+          let endTime = endHour * 60 + endMin;
+
+          // Detectar cruce de medianoche: si la hora de fin es menor que la de inicio,
+          // significa que el horario se extiende al día siguiente
+          if (endTime <= currentTime) {
+            // Añadir 24 horas (1440 minutos) a la hora de fin para tratarla como del día siguiente
+            endTime += 24 * 60;
+          }
+
+          while (currentTime < endTime) {
+            const hours = Math.floor(currentTime / 60) % 24; // Aplicar módulo 24 para manejar horas >= 24
+            const minutes = currentTime % 60;
+            const nextTime = currentTime + slotDuration;
+            const nextHours = Math.floor(nextTime / 60) % 24;
+            const nextMinutes = nextTime % 60;
+
+            slots.push({
+              time: `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`,
+              endTime: `${String(nextHours).padStart(2, "0")}:${String(nextMinutes).padStart(2, "0")}`,
+            });
+
+            currentTime = nextTime;
+          }
+        });
+
+        setTimeSlots(slots);
+      }
 
       setTables(tablesData || []);
       setBookings(bookingsData || []);
-      setTimeSlots(slots);
     } catch (error) {
       console.error("Error loading availability:", error);
       toast.error("Error al cargar la disponibilidad");
@@ -124,78 +151,34 @@ export function AvailabilityTableDialog({
     }
   };
 
-  const generateTimeSlots = (
-    availability: Array<{ start_time: string; end_time: string }>,
-    slotDuration: number
-  ): TimeSlot[] => {
-    const slots: TimeSlot[] = [];
-
-    availability.forEach((period) => {
-      const [startHour, startMin] = period.start_time.split(":").map(Number);
-      const [endHour, endMin] = period.end_time.split(":").map(Number);
-
-      let currentMinutes = startHour * 60 + startMin;
-      let endMinutes = endHour * 60 + endMin;
-
-      // Detectar cruce de medianoche
-      if (endMinutes <= currentMinutes) {
-        endMinutes += 24 * 60;
-      }
-
-      // Generar slots
-      while (currentMinutes < endMinutes) {
-        const nextMinutes = currentMinutes + slotDuration;
-        
-        const startH = Math.floor(currentMinutes / 60) % 24;
-        const startM = currentMinutes % 60;
-        const endH = Math.floor(nextMinutes / 60) % 24;
-        const endM = nextMinutes % 60;
-
-        slots.push({
-          startTime: `${String(startH).padStart(2, "0")}:${String(startM).padStart(2, "0")}`,
-          endTime: `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`,
-        });
-
-        currentMinutes = nextMinutes;
-      }
-    });
-
-    return slots;
-  };
-
-  const isSlotOccupied = (tableId: string, slotStart: string, slotEnd: string): Booking | null => {
-    const parseTime = (time: string): number => {
+  const isTableOccupied = (tableId: string, slotTime: string, slotEndTime: string): Booking | null => {
+    // Normalizar horas para comparación (manejar cruce de medianoche)
+    const normalizeTime = (time: string): number => {
       const [hours, minutes] = time.split(":").map(Number);
-      return hours * 60 + minutes;
+      let totalMinutes = hours * 60 + minutes;
+      
+      // Si la hora es de madrugada (00:00-05:59), añadir 24 horas para tratarla como continuación del día anterior
+      if (hours >= 0 && hours < 6) {
+        totalMinutes += 24 * 60;
+      }
+      
+      return totalMinutes;
     };
 
-    const slotStartMin = parseTime(slotStart);
-    let slotEndMin = parseTime(slotEnd);
-
-    // Si el slot cruza medianoche
-    if (slotEndMin <= slotStartMin) {
-      slotEndMin += 24 * 60;
-    }
+    const slotStart = normalizeTime(slotTime);
+    const slotEnd = normalizeTime(slotEndTime);
 
     return bookings.find((booking) => {
-      if (booking.table_id !== tableId) return false;
-
-      const bookingStartMin = parseTime(booking.start_time);
-      let bookingEndMin = parseTime(booking.end_time);
-
-      // Si la reserva cruza medianoche
-      if (bookingEndMin <= bookingStartMin) {
-        bookingEndMin += 24 * 60;
-      }
-
-      // Verificar solapamiento
-      return bookingStartMin < slotEndMin && slotStartMin < bookingEndMin;
+      const bookingStart = normalizeTime(booking.start_time);
+      const bookingEnd = normalizeTime(booking.end_time);
+      
+      return booking.table_id === tableId && bookingStart < slotEnd && bookingEnd > slotStart;
     }) || null;
   };
 
-  const handleSlotClick = (tableId: string, startTime: string, endTime: string) => {
-    const occupied = isSlotOccupied(tableId, startTime, endTime);
-    if (!occupied) {
+  const handleCellClick = (tableId: string, startTime: string, endTime: string) => {
+    const booking = isTableOccupied(tableId, startTime, endTime);
+    if (!booking) {
       onTimeSlotSelect(startTime, endTime, tableId);
       onOpenChange(false);
     }
@@ -224,7 +207,7 @@ export function AvailabilityTableDialog({
             Disponibilidad - {format(selectedDate, "dd/MM/yyyy")}
           </DialogTitle>
         </DialogHeader>
-
+        
         <div className="flex-1 overflow-auto">
           <div className="min-w-max">
             <table className="w-full border-collapse">
@@ -247,13 +230,13 @@ export function AvailabilityTableDialog({
                 </tr>
               </thead>
               <tbody>
-                {timeSlots.map((slot, index) => (
-                  <tr key={index}>
+                {timeSlots.map((slot) => (
+                  <tr key={slot.time}>
                     <td className="border border-border p-2 bg-muted/50 font-medium text-sm">
-                      {slot.startTime} - {slot.endTime}
+                      {slot.time} - {slot.endTime}
                     </td>
                     {tables.map((table) => {
-                      const booking = isSlotOccupied(table.id, slot.startTime, slot.endTime);
+                      const booking = isTableOccupied(table.id, slot.time, slot.endTime);
                       const isOccupied = !!booking;
 
                       return (
@@ -269,7 +252,7 @@ export function AvailabilityTableDialog({
                                 )}
                                 onClick={() => {
                                   if (!isOccupied) {
-                                    handleSlotClick(table.id, slot.startTime, slot.endTime);
+                                    handleCellClick(table.id, slot.time, slot.endTime);
                                   }
                                 }}
                               >

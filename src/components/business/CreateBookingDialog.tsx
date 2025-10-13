@@ -24,7 +24,6 @@ import { format } from "date-fns";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AvailabilityTableDialog } from "./AvailabilityTableDialog";
-import { getTimeSlotId } from "@/lib/timeSlots";
 
 const createBookingSchema = (isHospitality: boolean) => z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -362,13 +361,6 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         }
       }
 
-      // Obtener time_slot_id
-      const timeSlotId = await getTimeSlotId(formData.start_time);
-      if (!timeSlotId) {
-        toast.error("No se pudo obtener la franja horaria");
-        return;
-      }
-
       // Create booking
       const { error: bookingError } = await supabase.from("bookings").insert({
         business_id: businessId,
@@ -382,7 +374,6 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         notes: formData.notes || null,
         table_id: tableId,
         status: status,
-        time_slot_id: timeSlotId,
       });
 
       if (bookingError) throw bookingError;
@@ -641,16 +632,15 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         </form>
       </DialogContent>
 
-        {bookingDate && (
-          <AvailabilityTableDialog
-            open={availabilityDialogOpen}
-            onOpenChange={setAvailabilityDialogOpen}
-            businessId={businessId}
-            selectedDate={bookingDate}
-            partySize={parseInt(partySize) || undefined}
-            onTimeSlotSelect={handleTimeSlotSelect}
-          />
-        )}
+      {bookingDate && (
+        <AvailabilityTableDialog
+          open={availabilityDialogOpen}
+          onOpenChange={setAvailabilityDialogOpen}
+          businessId={businessId}
+          selectedDate={bookingDate}
+          onTimeSlotSelect={handleTimeSlotSelect}
+        />
+      )}
     </Dialog>
   );
 }

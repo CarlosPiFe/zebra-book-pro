@@ -104,7 +104,6 @@ export type Database = {
           start_time: string
           status: string
           table_id: string | null
-          time_slot_id: string
           updated_at: string
         }
         Insert: {
@@ -123,7 +122,6 @@ export type Database = {
           start_time: string
           status?: string
           table_id?: string | null
-          time_slot_id: string
           updated_at?: string
         }
         Update: {
@@ -142,7 +140,6 @@ export type Database = {
           start_time?: string
           status?: string
           table_id?: string | null
-          time_slot_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -165,13 +162,6 @@ export type Database = {
             columns: ["table_id"]
             isOneToOne: false
             referencedRelation: "tables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_time_slot_id_fkey"
-            columns: ["time_slot_id"]
-            isOneToOne: false
-            referencedRelation: "time_slots"
             referencedColumns: ["id"]
           },
         ]
@@ -593,27 +583,6 @@ export type Database = {
           },
         ]
       }
-      time_slots: {
-        Row: {
-          created_at: string
-          id: string
-          slot_order: number
-          slot_time: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          slot_order: number
-          slot_time: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          slot_order?: number
-          slot_time?: string
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -678,67 +647,7 @@ export type Database = {
       }
     }
     Views: {
-      booking_availability: {
-        Row: {
-          booking_date: string | null
-          business_id: string | null
-          created_at: string | null
-          end_time: string | null
-          id: string | null
-          party_size: number | null
-          start_time: string | null
-          status: string | null
-          table_id: string | null
-          time_slot_id: string | null
-        }
-        Insert: {
-          booking_date?: string | null
-          business_id?: string | null
-          created_at?: string | null
-          end_time?: string | null
-          id?: string | null
-          party_size?: number | null
-          start_time?: string | null
-          status?: string | null
-          table_id?: string | null
-          time_slot_id?: string | null
-        }
-        Update: {
-          booking_date?: string | null
-          business_id?: string | null
-          created_at?: string | null
-          end_time?: string | null
-          id?: string | null
-          party_size?: number | null
-          start_time?: string | null
-          status?: string | null
-          table_id?: string | null
-          time_slot_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "bookings_business_id_fkey"
-            columns: ["business_id"]
-            isOneToOne: false
-            referencedRelation: "businesses"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_table_id_fkey"
-            columns: ["table_id"]
-            isOneToOne: false
-            referencedRelation: "tables"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_time_slot_id_fkey"
-            columns: ["time_slot_id"]
-            isOneToOne: false
-            referencedRelation: "time_slots"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       check_rate_limit: {
