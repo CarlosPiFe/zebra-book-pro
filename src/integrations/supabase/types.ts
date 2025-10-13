@@ -524,6 +524,24 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_cleanup_log: {
+        Row: {
+          cleaned_at: string | null
+          id: string
+          records_deleted: number | null
+        }
+        Insert: {
+          cleaned_at?: string | null
+          id?: string
+          records_deleted?: number | null
+        }
+        Update: {
+          cleaned_at?: string | null
+          id?: string
+          records_deleted?: number | null
+        }
+        Relationships: []
+      }
       tables: {
         Row: {
           business_id: string
@@ -634,6 +652,10 @@ export type Database = {
           p_window_minutes?: number
         }
         Returns: boolean
+      }
+      cleanup_old_schedules: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_public_businesses: {
         Args: Record<PropertyKey, never>
