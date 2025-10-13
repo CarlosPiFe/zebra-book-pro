@@ -29,6 +29,7 @@ import { z } from "zod";
 import { format, parse, addMinutes } from "date-fns";
 import { Info, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getTimeSlotId } from "@/lib/timeSlots";
 
 const bookingSchema = z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -296,6 +297,13 @@ export function EditBookingDialog({
         status = result.status;
       }
 
+      // Obtener time_slot_id
+      const timeSlotId = await getTimeSlotId(formData.start_time);
+      if (!timeSlotId) {
+        toast.error("No se pudo obtener la franja horaria");
+        return;
+      }
+
       const { error: updateError } = await supabase
         .from("bookings")
         .update({
@@ -309,6 +317,7 @@ export function EditBookingDialog({
           notes: formData.notes || null,
           table_id: tableId,
           status: status,
+          time_slot_id: timeSlotId,
         })
         .eq("id", booking.id);
 
