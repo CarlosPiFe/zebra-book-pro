@@ -19,6 +19,7 @@ import { format, startOfWeek, addDays, addWeeks, subWeeks } from "date-fns";
 import { es } from "date-fns/locale";
 import { ScheduleCell } from "./ScheduleCell";
 import { EmployeeWeeklyCalendar } from "./EmployeeWeeklyCalendar";
+import { ExportSchedulesDialog } from "./ExportSchedulesDialog";
 import { cn } from "@/lib/utils";
 
 interface Employee {
@@ -331,6 +332,7 @@ export const WeeklyScheduleView = ({ businessId }: WeeklyScheduleViewProps) => {
         </div>
 
         <div className="flex items-center gap-4">
+          <ExportSchedulesDialog businessId={businessId} />
           <Button
             variant="outline"
             size="icon"
