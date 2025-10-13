@@ -294,29 +294,34 @@ export function useBookingAvailability(businessId: string | undefined) {
 
     console.log(`[Availability Check] Auto bookings (no table assigned): ${autoBookings.length}`, autoBookings);
 
-    // Calculate total capacity needed vs available
+    // For the specific party size, we need at least one table that can accommodate them
+    // We don't need to sum capacities - we need ONE table that fits the group
+
+    // Calculate how much capacity is already consumed by auto-assign bookings
     let totalAutoCapacityNeeded = 0;
     autoBookings.forEach((booking) => {
       totalAutoCapacityNeeded += booking.party_size;
     });
 
-    // Calculate available capacity from unoccupied suitable tables
-    let totalAvailableCapacity = 0;
-    availableTables.forEach((table) => {
-      totalAvailableCapacity += table.max_capacity;
-    });
+    // Check if we have at least one available table that can accommodate the party size
+    // AND that there's enough remaining capacity for auto-assign bookings
+    const hasSuitableTable = availableTables.length > 0;
 
-    // Check if we have enough capacity for the new booking plus existing auto bookings
-    const requiredCapacity = partySize + totalAutoCapacityNeeded;
+    // For auto-assign bookings, we need enough total capacity
+    const totalAvailableCapacity = availableTables.reduce((sum, table) => sum + table.max_capacity, 0);
+    const hasEnoughCapacityForAuto = totalAvailableCapacity >= totalAutoCapacityNeeded;
 
     console.log(
-      `[Availability Check] Required capacity: ${requiredCapacity} (${partySize} new + ${totalAutoCapacityNeeded} auto), Available capacity: ${totalAvailableCapacity}`,
+      `[Availability Check] Required capacity: ${totalAutoCapacityNeeded} (auto bookings), Available capacity: ${totalAvailableCapacity}`,
+    );
+    console.log(
+      `[Availability Check] Has suitable table: ${hasSuitableTable}, Has enough capacity for auto: ${hasEnoughCapacityForAuto}`,
     );
 
-    const isAvailable = availableTables.length > 0 && totalAvailableCapacity >= requiredCapacity;
+    // We need at least one suitable table available AND enough capacity for existing auto bookings
+    const isAvailable = hasSuitableTable && hasEnoughCapacityForAuto;
     console.log(`[Availability Check] Result: ${isAvailable ? "AVAILABLE" : "NOT AVAILABLE"}`);
 
-    // We need at least one available table AND enough total capacity
     return isAvailable;
   };
 
