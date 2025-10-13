@@ -262,6 +262,10 @@ export default function BusinessDetails() {
     ? getAvailableTimeSlots(bookingForm.bookingDate, parseInt(bookingForm.partySize))
     : [];
 
+  // Debug: Log para ver qué horarios están disponibles
+  console.log("Time slots with availability:", timeSlotsWithAvailability);
+  console.log("Available time slots:", availableTimeSlots);
+
   // 🧱 Renderizado principal
   if (loading) {
     return (
@@ -405,17 +409,15 @@ export default function BusinessDetails() {
                           <SelectValue placeholder="Seleccionar hora" />
                         </SelectTrigger>
                         <SelectContent>
-                          {timeSlotsWithAvailability.filter((s) => s.available).length > 0 ? (
-                            timeSlotsWithAvailability
-                              .filter((s) => s.available)
-                              .map((s) => (
-                                <SelectItem key={s.time} value={s.time}>
-                                  <div className="flex items-center justify-between w-full">
-                                    <span>{s.time}</span>
-                                    <span className="text-xs text-green-600 ml-2">✓ Disponible</span>
-                                  </div>
-                                </SelectItem>
-                              ))
+                          {availableTimeSlots.length > 0 ? (
+                            availableTimeSlots.map((time) => (
+                              <SelectItem key={time} value={time}>
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{time}</span>
+                                  <span className="text-xs text-green-600 ml-2">✓ Disponible</span>
+                                </div>
+                              </SelectItem>
+                            ))
                           ) : (
                             <SelectItem disabled value="no-slots">
                               <div className="flex items-center justify-between w-full">
