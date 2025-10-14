@@ -194,21 +194,29 @@ serve(async (req) => {
       partySize
     );
 
-    // If no table is available, return error and don't create booking
-    if (tableId === null) {
-      console.log("No hay disponibilidad para esta fecha y hora");
-      return new Response(
-        JSON.stringify({ 
-          error: "No hay disponibilidad para la fecha y hora seleccionadas. Por favor, elige otro horario." 
-        }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Determine initial booking status based on business booking mode
-    const bookingStatus = business.booking_mode === 'manual' ? 'pending_confirmation' : 'reserved';
+    // Determine initial booking status and table assignment based on business booking mode
+    let finalTableId: string | null = tableId;
+    let bookingStatus: string;
     
-    // Create the booking only if table is available
+    if (business.booking_mode === 'manual') {
+      // In manual mode, always create booking as pending_confirmation regardless of table availability
+      bookingStatus = 'pending_confirmation';
+      // Keep table assignment if available, otherwise null (business will assign later)
+    } else {
+      // In automatic mode, only create booking if table is available
+      if (tableId === null) {
+        console.log("No hay disponibilidad para esta fecha y hora (modo automático)");
+        return new Response(
+          JSON.stringify({ 
+            error: "No hay disponibilidad para la fecha y hora seleccionadas. Por favor, elige otro horario." 
+          }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      bookingStatus = 'reserved';
+    }
+    
+    // Create the booking
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -222,7 +230,7 @@ serve(async (req) => {
         party_size: partySize,
         notes: notes || null,
         status: bookingStatus,
-        table_id: tableId,
+        table_id: finalTableId,
         business_phone: business.phone
       })
       .select()
