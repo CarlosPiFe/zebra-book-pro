@@ -147,7 +147,7 @@ serve(async (req) => {
     // Get business information and verify it exists and is active
     const { data: business, error: businessError } = await supabase
       .from("businesses")
-      .select("booking_slot_duration_minutes, phone, is_active")
+      .select("booking_slot_duration_minutes, phone, is_active, booking_mode")
       .eq("id", businessId)
       .eq("is_active", true)
       .single();
@@ -205,6 +205,9 @@ serve(async (req) => {
       );
     }
 
+    // Determine initial booking status based on business booking mode
+    const bookingStatus = business.booking_mode === 'manual' ? 'pending_confirmation' : 'reserved';
+    
     // Create the booking only if table is available
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
@@ -218,7 +221,7 @@ serve(async (req) => {
         end_time: endTime,
         party_size: partySize,
         notes: notes || null,
-        status: "reserved",
+        status: bookingStatus,
         table_id: tableId,
         business_phone: business.phone
       })
@@ -235,11 +238,17 @@ serve(async (req) => {
 
     console.log("Booking created successfully:", booking.id);
 
+    // Return appropriate message based on booking mode
+    const responseMessage = business.booking_mode === 'manual' 
+      ? "Tu solicitud de reserva ha sido enviada correctamente. El negocio confirmará tu reserva en breve."
+      : "Reserva creada correctamente";
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         booking,
-        message: "Reserva creada correctamente" 
+        message: responseMessage,
+        requiresConfirmation: business.booking_mode === 'manual'
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
