@@ -147,7 +147,7 @@ serve(async (req) => {
     // Get business information and verify it exists and is active
     const { data: business, error: businessError } = await supabase
       .from("businesses")
-      .select("booking_slot_duration_minutes, phone, is_active, booking_mode")
+      .select("booking_slot_duration_minutes, phone, is_active")
       .eq("id", businessId)
       .eq("is_active", true)
       .single();
@@ -194,29 +194,18 @@ serve(async (req) => {
       partySize
     );
 
-    // Determine initial booking status and table assignment based on business booking mode
-    let finalTableId: string | null = tableId;
-    let bookingStatus: string;
-    
-    if (business.booking_mode === 'manual') {
-      // In manual mode, always create booking as pending_confirmation regardless of table availability
-      bookingStatus = 'pending_confirmation';
-      // Keep table assignment if available, otherwise null (business will assign later)
-    } else {
-      // In automatic mode, only create booking if table is available
-      if (tableId === null) {
-        console.log("No hay disponibilidad para esta fecha y hora (modo automático)");
-        return new Response(
-          JSON.stringify({ 
-            error: "No hay disponibilidad para la fecha y hora seleccionadas. Por favor, elige otro horario." 
-          }),
-          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      bookingStatus = 'reserved';
+    // If no table is available, return error and don't create booking
+    if (tableId === null) {
+      console.log("No hay disponibilidad para esta fecha y hora");
+      return new Response(
+        JSON.stringify({ 
+          error: "No hay disponibilidad para la fecha y hora seleccionadas. Por favor, elige otro horario." 
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-    
-    // Create the booking
+
+    // Create the booking only if table is available
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -229,8 +218,8 @@ serve(async (req) => {
         end_time: endTime,
         party_size: partySize,
         notes: notes || null,
-        status: bookingStatus,
-        table_id: finalTableId,
+        status: "reserved",
+        table_id: tableId,
         business_phone: business.phone
       })
       .select()
@@ -246,17 +235,11 @@ serve(async (req) => {
 
     console.log("Booking created successfully:", booking.id);
 
-    // Return appropriate message based on booking mode
-    const responseMessage = business.booking_mode === 'manual' 
-      ? "Tu solicitud de reserva ha sido enviada correctamente. El negocio confirmará tu reserva en breve."
-      : "Reserva creada correctamente";
-
     return new Response(
       JSON.stringify({ 
         success: true, 
         booking,
-        message: responseMessage,
-        requiresConfirmation: business.booking_mode === 'manual'
+        message: "Reserva creada correctamente" 
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

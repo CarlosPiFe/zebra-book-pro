@@ -30,7 +30,6 @@ interface Business {
   mark_delayed_as_no_show?: boolean;
   booking_additional_message?: string | null;
   schedule_view_mode?: string;
-  booking_mode?: string;
 }
 
 interface BusinessSettingsProps {
@@ -65,7 +64,6 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     mark_delayed_as_no_show: business.mark_delayed_as_no_show ?? false,
     booking_additional_message: business.booking_additional_message || "",
     schedule_view_mode: business.schedule_view_mode || "editable",
-    booking_mode: business.booking_mode || "automatic",
   });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -394,79 +392,10 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Tipo de Reserva
+            Reservas
           </CardTitle>
           <CardDescription>
-            Configura cómo se gestionan las reservas de los clientes
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-4">
-            <Label>Modo de confirmación de reservas</Label>
-            <Select
-              value={formData.booking_mode}
-              onValueChange={(value) => setFormData({ ...formData, booking_mode: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona modo de reserva" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="automatic">Reserva automática</SelectItem>
-                <SelectItem value="manual">Confirmación manual</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="rounded-lg border p-4 bg-muted/50">
-              {formData.booking_mode === 'automatic' ? (
-                <p className="text-sm text-muted-foreground">
-                  <strong>Reserva automática:</strong> El cliente recibe confirmación inmediata cuando realiza la reserva. La reserva queda confirmada automáticamente en tu sistema.
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  <strong>Confirmación manual:</strong> El negocio revisa y aprueba cada reserva antes de confirmarla. El cliente recibirá un mensaje indicando que su solicitud está pendiente de confirmación.
-                </p>
-              )}
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            onClick={async () => {
-              setLoading(true);
-              try {
-                const { error } = await supabase
-                  .from("businesses")
-                  .update({
-                    booking_mode: formData.booking_mode,
-                  })
-                  .eq("id", business.id);
-
-                if (error) throw error;
-
-                toast.success("Modo de reserva actualizado correctamente");
-                onUpdate();
-              } catch (error) {
-                console.error("Error updating booking mode:", error);
-                toast.error("Error al actualizar el modo de reserva");
-              } finally {
-                setLoading(false);
-              }
-            }}
-            disabled={loading}
-            className="w-full"
-          >
-            {loading ? "Guardando..." : "Guardar Modo de Reserva"}
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Duración de Reservas
-          </CardTitle>
-          <CardDescription>
-            Configura la duración predeterminada de las reservas
+            Configura los ajustes de las reservas de tu negocio
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

@@ -268,8 +268,6 @@ export function BookingsView({ businessId }: BookingsViewProps) {
     switch (status) {
       case "reserved":
         return "bg-orange-500/20 text-orange-700 border border-orange-500 hover:bg-orange-500/20 hover:text-orange-700 hover:border-orange-500";
-      case "pending_confirmation":
-        return "bg-amber-500/20 text-amber-700 border border-amber-500 hover:bg-amber-500/20 hover:text-amber-700 hover:border-amber-500";
       case "pending":
         return "bg-yellow-500/20 text-yellow-700 border border-yellow-500 hover:bg-yellow-500/20 hover:text-yellow-700 hover:border-yellow-500";
       case "occupied":
@@ -290,9 +288,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case "reserved":
-        return "Confirmada";
-      case "pending_confirmation":
-        return "Pendiente de confirmación";
+        return "Pendiente";
       case "pending":
         return "Retraso";
       case "occupied":

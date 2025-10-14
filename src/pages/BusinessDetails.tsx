@@ -27,7 +27,6 @@ interface Business {
   website: string | null;
   social_media: any;
   booking_additional_message?: string | null;
-  booking_mode?: string;
 }
 
 export default function BusinessDetails() {
@@ -126,7 +125,7 @@ export default function BusinessDetails() {
       // 2. Obtener configuración del negocio para calcular end_time
       const { data: businessData, error: businessError } = await supabase
         .from("businesses")
-        .select("booking_slot_duration_minutes, category, booking_mode")
+        .select("booking_slot_duration_minutes, category")
         .eq("id", businessId)
         .single();
 
@@ -134,7 +133,6 @@ export default function BusinessDetails() {
 
       const slotDuration = businessData.booking_slot_duration_minutes;
       const isHospitality = businessData.category.toLowerCase() === "restaurante" || businessData.category.toLowerCase() === "bar";
-      const requiresManualConfirmation = businessData.booking_mode === 'manual';
 
       // 3. Calcular hora de fin
       const [hours, minutes] = bookingForm.startTime.split(":").map(Number);
@@ -145,9 +143,9 @@ export default function BusinessDetails() {
 
       // 4. Buscar mesa disponible automáticamente (misma lógica que CreateBookingDialog)
       let tableId: string | null = null;
-      let status: "reserved" | "pending" | "pending_confirmation" = requiresManualConfirmation ? "pending_confirmation" : "reserved";
+      let status: "reserved" | "pending" = "reserved";
 
-      if (isHospitality && !requiresManualConfirmation) {
+      if (isHospitality) {
         const { data: tablesData, error: tablesError } = await supabase
           .from("tables")
           .select("*")
@@ -223,13 +221,8 @@ export default function BusinessDetails() {
         throw bookingError;
       }
 
-      // 7. Mensaje de éxito con distinción entre pendiente de confirmación y reserva automática
-      if (status === "pending_confirmation") {
-        toast.success(
-          "Tu solicitud de reserva ha sido enviada correctamente. El negocio confirmará tu reserva en breve. Te contactarán para confirmar la cita.",
-          { duration: 6000 }
-        );
-      } else if (status === "reserved") {
+      // 7. Mensaje de éxito
+      if (status === "reserved") {
         toast.success("¡Reserva confirmada correctamente! Nos pondremos en contacto contigo pronto.");
       } else {
         toast.warning("Reserva creada como pendiente. El negocio confirmará la disponibilidad.");

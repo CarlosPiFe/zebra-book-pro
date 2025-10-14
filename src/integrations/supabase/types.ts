@@ -184,7 +184,6 @@ export type Database = {
           auto_complete_in_progress: boolean | null
           auto_mark_in_progress: boolean | null
           booking_additional_message: string | null
-          booking_mode: string
           booking_slot_duration_minutes: number
           category: string
           created_at: string
@@ -209,7 +208,6 @@ export type Database = {
           auto_complete_in_progress?: boolean | null
           auto_mark_in_progress?: boolean | null
           booking_additional_message?: string | null
-          booking_mode?: string
           booking_slot_duration_minutes?: number
           category: string
           created_at?: string
@@ -234,7 +232,6 @@ export type Database = {
           auto_complete_in_progress?: boolean | null
           auto_mark_in_progress?: boolean | null
           booking_additional_message?: string | null
-          booking_mode?: string
           booking_slot_duration_minutes?: number
           category?: string
           created_at?: string
