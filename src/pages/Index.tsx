@@ -8,7 +8,7 @@ import { Search, Calendar, Clock, MapPin, Star } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsMobile } from "@/hooks/use-mobile";
-import heroImage from "@/assets/hero-bg.jpg";
+import heroImage from "@/assets/zebra-pattern-bg.jpg";
 
 interface Business {
   id: string;
