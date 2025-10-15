@@ -564,8 +564,8 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
 
                           {room.timeSlots.length === 0 ? (
                             <div className="p-4 border rounded-lg bg-accent/10 border-accent/30">
-                              <p className="text-sm font-medium text-accent-foreground/90 flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
+                              <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-foreground" />
                                 Horario heredado del local
                               </p>
                               <p className="text-sm text-muted-foreground mt-1">
