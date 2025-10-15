@@ -46,6 +46,8 @@ export default function BusinessDetails() {
     notes: "",
   });
 
+  const [phoneError, setPhoneError] = useState<string>("");
+
   // Hook de disponibilidad
   const {
     isDateAvailable,
@@ -96,12 +98,57 @@ export default function BusinessDetails() {
     setBookingForm({ ...bookingForm, partySize: value, startTime: undefined });
   };
 
+  // Validar teléfono
+  const validatePhone = (phone: string): boolean => {
+    if (!phone.trim()) {
+      setPhoneError("");
+      return false;
+    }
+
+    // Limpiar espacios para contar dígitos
+    const digitsOnly = phone.replace(/\s/g, '');
+    
+    // Verificar que solo contenga dígitos, espacios y el símbolo +
+    const validChars = /^[\d\s+]+$/;
+    if (!validChars.test(phone)) {
+      setPhoneError("Introduce un número de teléfono válido (por ejemplo, +34 612345678).");
+      return false;
+    }
+
+    // Contar dígitos
+    const digitCount = digitsOnly.replace(/\+/g, '').length;
+    
+    // Debe tener entre 9 y 15 dígitos
+    if (digitCount < 9 || digitCount > 15) {
+      setPhoneError("Introduce un número de teléfono válido (por ejemplo, +34 612345678).");
+      return false;
+    }
+
+    // Si comienza con +, debe tener al menos 2 dígitos después del +
+    if (digitsOnly.startsWith('+')) {
+      const afterPlus = digitsOnly.substring(1);
+      if (afterPlus.length < 9) {
+        setPhoneError("Introduce un número de teléfono válido (por ejemplo, +34 612345678).");
+        return false;
+      }
+    }
+
+    setPhoneError("");
+    return true;
+  };
+
   // 💾 Enviar reserva - Usando el edge function public-booking
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!bookingForm.clientName || !bookingForm.clientPhone || !bookingForm.bookingDate || !bookingForm.startTime) {
       toast.error("Por favor completa todos los campos obligatorios");
+      return;
+    }
+
+    // Validar teléfono antes de enviar
+    if (!validatePhone(bookingForm.clientPhone)) {
+      toast.error("Por favor introduce un número de teléfono válido");
       return;
     }
 
@@ -359,8 +406,21 @@ export default function BusinessDetails() {
                     <Input
                       type="tel"
                       value={bookingForm.clientPhone}
-                      onChange={(e) => setBookingForm({ ...bookingForm, clientPhone: e.target.value })}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setBookingForm({ ...bookingForm, clientPhone: value });
+                        if (value) {
+                          validatePhone(value);
+                        } else {
+                          setPhoneError("");
+                        }
+                      }}
+                      placeholder="+34 612345678"
+                      className={phoneError ? "border-destructive" : ""}
                     />
+                    {phoneError && (
+                      <p className="text-sm text-destructive mt-1">{phoneError}</p>
+                    )}
                   </div>
 
                   <div>
@@ -444,7 +504,7 @@ export default function BusinessDetails() {
                   <Button
                     type="submit"
                     className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover-scale"
-                    disabled={submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading}
+                    disabled={submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading || !!phoneError || !bookingForm.clientPhone}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
                     {submitting ? "Enviando..." : "Confirmar reserva"}
