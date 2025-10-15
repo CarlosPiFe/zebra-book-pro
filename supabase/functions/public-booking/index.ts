@@ -184,22 +184,7 @@ serve(async (req) => {
     const endDate = new Date(startDate.getTime() + business.booking_slot_duration_minutes * 60000);
     const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
 
-    // Get time_slot_id - REQUIRED for all bookings
-    const { data: timeSlot, error: timeSlotError } = await supabase
-      .from("time_slots")
-      .select("id")
-      .eq("slot_time", startTime)
-      .single();
-
-    if (timeSlotError || !timeSlot) {
-      console.error("Time slot not found for:", startTime, timeSlotError);
-      return new Response(
-        JSON.stringify({ error: "Invalid time slot selected" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    // Check booking mode
+    // Check booking mode BEFORE processing time slot
     const isManualConfirmation = business.booking_mode === 'manual';
     
     let tableId: string | null = null;
@@ -229,6 +214,7 @@ serve(async (req) => {
         console.log("No hay disponibilidad para esta fecha y hora");
         return new Response(
           JSON.stringify({ 
+            success: false,
             error: "No hay disponibilidad para la fecha y hora seleccionadas. Por favor, elige otro horario." 
           }),
           { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -237,6 +223,57 @@ serve(async (req) => {
       
       bookingStatus = "reserved";
       responseMessage = "Reserva creada correctamente";
+    }
+
+    // Get time_slot_id - REQUIRED for all bookings
+    const { data: timeSlot, error: timeSlotError } = await supabase
+      .from("time_slots")
+      .select("id")
+      .eq("slot_time", startTime)
+      .maybeSingle();
+
+    if (timeSlotError) {
+      console.error("Error fetching time slot:", timeSlotError);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: "Error al procesar la hora seleccionada. Por favor, intenta de nuevo." 
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    let timeSlotId: string;
+
+    if (!timeSlot) {
+      console.log("Time slot not found for:", startTime, "- creating new one");
+      // Try to create the time slot on the fly
+      const timeSlotOrder = Math.floor((parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1])) / 15);
+      
+      const { data: newTimeSlot, error: createError } = await supabase
+        .from("time_slots")
+        .insert({
+          slot_time: startTime,
+          slot_order: timeSlotOrder
+        })
+        .select("id")
+        .single();
+
+      if (createError || !newTimeSlot) {
+        console.error("Could not create time slot:", createError);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: "No se pudo procesar la reserva. Por favor, contacta con el negocio directamente." 
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      timeSlotId = newTimeSlot.id;
+      console.log("Created new time slot:", timeSlotId);
+    } else {
+      timeSlotId = timeSlot.id;
     }
 
     // Create the booking with time_slot_id
@@ -255,7 +292,7 @@ serve(async (req) => {
         status: bookingStatus,
         table_id: tableId,
         business_phone: business.phone,
-        time_slot_id: timeSlot.id
+        time_slot_id: timeSlotId
       })
       .select()
       .single();
@@ -263,7 +300,11 @@ serve(async (req) => {
     if (bookingError) {
       console.error("Booking error:", bookingError);
       return new Response(
-        JSON.stringify({ error: "Failed to create booking", details: bookingError.message }),
+        JSON.stringify({ 
+          success: false,
+          error: "No se pudo crear la reserva. Por favor, intenta de nuevo.",
+          details: bookingError.message 
+        }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -279,10 +320,14 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Unexpected error:", error);
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     return new Response(
-      JSON.stringify({ error: "An error occurred processing your booking", details: errorMessage }),
+      JSON.stringify({ 
+        success: false,
+        error: "Ocurrió un error al procesar tu reserva. Por favor, intenta de nuevo.",
+        details: errorMessage 
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
