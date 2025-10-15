@@ -135,7 +135,7 @@ All colors MUST be HSL.
 }
 
 .phone-input-custom .react-international-phone-input-container {
-  @apply w-full flex gap-2;
+  @apply w-full flex gap-3;
 }
 
 .phone-input-custom .react-international-phone-input {
