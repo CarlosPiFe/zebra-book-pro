@@ -359,7 +359,7 @@ export default function BusinessDetails() {
                     } else {
                       setPhoneError("");
                     }
-                  }} inputClassName={phoneError ? "!border-destructive" : ""} className="phone-input-custom mx-0 px-0 text-base" />
+                  }} inputClassName={phoneError ? "!border-destructive" : ""} className="phone-input-custom px-0 text-base mx-0" />
                     {phoneError && <p className="text-sm text-destructive mt-1">{phoneError}</p>}
                   </div>
 
