@@ -145,7 +145,7 @@ export function EditBookingDialog({
 
       if (tablesError) throw tablesError;
 
-      // Get occupied tables for this time slot (excluding current booking and pending_confirmation)
+      // Get occupied tables for this time slot (excluding current booking and pending_confirmation bookings)
       const { data: existingBookings, error: bookingsError } = await supabase
         .from("bookings")
         .select("table_id")

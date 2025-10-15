@@ -96,7 +96,7 @@ export default function BusinessDetails() {
     setBookingForm({ ...bookingForm, partySize: value, startTime: undefined });
   };
 
-  // 💾 Enviar reserva - Usando la misma lógica que el panel interno
+  // 💾 Enviar reserva - Usando el edge function public-booking
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -110,125 +110,37 @@ export default function BusinessDetails() {
 
     setSubmitting(true);
     try {
-      // 1. Verificación final de disponibilidad en tiempo real
-      await refreshAvailability();
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      const isStillAvailable = hasAvailableTables(dateStr, bookingForm.startTime, partySize);
-
-      if (!isStillAvailable) {
-        toast.error("Esta franja acaba de ocuparse, elige otra hora");
-        setBookingForm({ ...bookingForm, startTime: undefined });
-        return;
-      }
-
-      // 2. Obtener configuración del negocio para calcular end_time
-      const { data: businessData, error: businessError } = await supabase
-        .from("businesses")
-        .select("booking_slot_duration_minutes, category")
-        .eq("id", businessId)
-        .single();
-
-      if (businessError) throw businessError;
-
-      const slotDuration = businessData.booking_slot_duration_minutes;
-      const isHospitality = businessData.category.toLowerCase() === "restaurante" || businessData.category.toLowerCase() === "bar";
-
-      // 3. Calcular hora de fin
-      const [hours, minutes] = bookingForm.startTime.split(":").map(Number);
-      const startDate = new Date();
-      startDate.setHours(hours, minutes, 0, 0);
-      const endDate = new Date(startDate.getTime() + slotDuration * 60000);
-      const endTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
-
-      // 4. Buscar mesa disponible automáticamente (misma lógica que CreateBookingDialog)
-      let tableId: string | null = null;
-      let status: "reserved" | "pending" = "reserved";
-
-      if (isHospitality) {
-        const { data: tablesData, error: tablesError } = await supabase
-          .from("tables")
-          .select("*")
-          .eq("business_id", businessId)
-          .order("max_capacity", { ascending: true });
-
-        if (tablesError) throw tablesError;
-
-        if (tablesData && tablesData.length > 0) {
-          // Obtener reservas existentes para detectar mesas ocupadas
-          const { data: existingBookings, error: bookingsError } = await supabase
-            .from("bookings")
-            .select("table_id")
-            .eq("booking_date", dateStr)
-            .neq("status", "cancelled")
-            .neq("status", "completed")
-            .or(`and(start_time.lt.${endTime},end_time.gt.${bookingForm.startTime})`);
-
-          if (bookingsError) throw bookingsError;
-
-          const occupiedTableIds = new Set(existingBookings?.map((b) => b.table_id) || []);
-
-          // Buscar mesa exacta o la más pequeña disponible
-          const exactMatch = tablesData.find(
-            (t) => t.max_capacity === partySize && !occupiedTableIds.has(t.id)
-          );
-
-          if (exactMatch) {
-            tableId = exactMatch.id;
-            status = "reserved";
-          } else {
-            const availableTable = tablesData.find(
-              (t) => t.max_capacity >= partySize && !occupiedTableIds.has(t.id)
-            );
-
-            if (availableTable) {
-              tableId = availableTable.id;
-              status = "reserved";
-            } else {
-              status = "pending";
-            }
-          }
+      // Llamar al edge function public-booking que maneja el booking_mode
+      const { data, error } = await supabase.functions.invoke('public-booking', {
+        body: {
+          businessId: businessId,
+          clientName: bookingForm.clientName,
+          clientEmail: bookingForm.clientEmail || undefined,
+          clientPhone: bookingForm.clientPhone,
+          bookingDate: dateStr,
+          startTime: bookingForm.startTime,
+          partySize: partySize,
+          notes: bookingForm.notes || undefined
         }
-      }
-
-      // 5. Obtener time_slot_id usando la misma función que el panel interno
-      const timeSlotId = await getTimeSlotId(bookingForm.startTime);
-      
-      if (!timeSlotId) {
-        toast.error("Error al procesar la reserva. Por favor, intenta de nuevo.");
-        console.error("No se pudo obtener time_slot_id para:", bookingForm.startTime);
-        return;
-      }
-
-      // 6. Insertar reserva (misma estructura que CreateBookingDialog)
-      const { error: bookingError } = await supabase.from("bookings").insert({
-        business_id: businessId,
-        client_name: bookingForm.clientName,
-        client_email: bookingForm.clientEmail || null,
-        client_phone: bookingForm.clientPhone,
-        booking_date: dateStr,
-        start_time: bookingForm.startTime,
-        end_time: endTime,
-        party_size: partySize,
-        notes: bookingForm.notes || null,
-        table_id: tableId,
-        status: status,
-        time_slot_id: timeSlotId,
       });
 
-      if (bookingError) {
-        console.error("Error al insertar reserva:", bookingError);
-        throw bookingError;
+      if (error) {
+        console.error("Error en la reserva:", error);
+        throw error;
       }
 
-      // 7. Mensaje de éxito
-      if (status === "reserved") {
-        toast.success("¡Reserva confirmada correctamente! Nos pondremos en contacto contigo pronto.");
+      if (!data.success) {
+        throw new Error(data.error || "Error al crear la reserva");
+      }
+
+      // Mostrar el mensaje que viene del edge function
+      if (data.booking?.status === 'pending_confirmation') {
+        toast.info(data.message || "Tu reserva ha sido registrada. El negocio confirmará tu cita en breve.");
       } else {
-        toast.warning("Reserva creada como pendiente. El negocio confirmará la disponibilidad.");
+        toast.success(data.message || "¡Reserva confirmada correctamente!");
       }
 
-      // 8. Resetear formulario
+      // Resetear formulario
       setBookingForm({
         clientName: "",
         clientEmail: "",
@@ -244,14 +156,12 @@ export default function BusinessDetails() {
       console.error("Error creando reserva:", error);
       
       // Mensajes de error más específicos
-      if (error?.code === '23502') {
-        toast.error("Error en los datos de la reserva. Por favor, verifica todos los campos.");
-      } else if (error?.code === '23503') {
-        toast.error("El negocio no está disponible en este momento.");
-      } else if (error?.message?.includes("RLS")) {
-        toast.error("No tienes permisos para crear esta reserva.");
+      if (error?.message?.includes("availability") || error?.message?.includes("disponibilidad")) {
+        toast.error(error.message);
+      } else if (error?.message?.includes("rate limit")) {
+        toast.error("Demasiadas solicitudes. Por favor, espera un momento e intenta de nuevo.");
       } else {
-        toast.error("No se pudo crear la reserva. Por favor, intenta de nuevo.");
+        toast.error(error?.message || "No se pudo crear la reserva. Por favor, intenta de nuevo.");
       }
     } finally {
       setSubmitting(false);

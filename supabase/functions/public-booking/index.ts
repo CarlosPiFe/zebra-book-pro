@@ -194,7 +194,7 @@ serve(async (req) => {
     if (isManualConfirmation) {
       // Manual confirmation mode: create booking without table assignment
       bookingStatus = "pending_confirmation";
-      responseMessage = "Tu reserva ha sido registrada correctamente. El negocio confirmará tu cita en breve. Te contactarán para confirmar la reserva.";
+      responseMessage = "Tu reserva ha sido enviada correctamente. El negocio contactará contigo para confirmarla.";
       console.log("Creating booking in manual confirmation mode - no table assignment");
     } else {
       // Automatic confirmation mode: find and assign table
