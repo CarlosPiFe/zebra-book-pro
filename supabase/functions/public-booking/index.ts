@@ -1,10 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// Create admin client with service_role key for bypassing RLS
+const getSupabaseAdmin = () => {
+  return createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
+  );
 };
 
 // Input validation schema
@@ -20,7 +34,7 @@ const PublicBookingSchema = z.object({
 });
 
 async function findAvailableTable(
-  supabase: SupabaseClient,
+  supabase: ReturnType<typeof getSupabaseAdmin>,
   businessId: string,
   bookingDate: string,
   startTime: string,
@@ -75,9 +89,9 @@ async function findAvailableTable(
 
   // Check each table for availability
   for (const table of tables) {
-    const tableBookings = existingBookings?.filter(b => b.table_id === table.id) || [];
+    const tableBookings = existingBookings?.filter((b: any) => b.table_id === table.id) || [];
     
-    const isAvailable = !tableBookings.some(booking =>
+    const isAvailable = !tableBookings.some((booking: any) =>
       hasTimeOverlap(startTime, endTime, booking.start_time, booking.end_time)
     );
 
@@ -98,22 +112,22 @@ serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
+    // Use admin client with service_role key to bypass RLS
+    const supabase = getSupabaseAdmin();
 
     // Parse and validate request body
     const rawBody = await req.json();
-    console.log("Public booking request received");
+    console.log("📥 create-reservation request body:", JSON.stringify(rawBody));
 
     const validationResult = PublicBookingSchema.safeParse(rawBody);
     if (!validationResult.success) {
-      console.error("Validation failed:", validationResult.error.issues);
+      console.error("❌ STEP: validation | Validation failed:", validationResult.error.issues);
       const errorMessages = validationResult.error.issues.map(issue => issue.message).join(", ");
       return new Response(
         JSON.stringify({ 
-          error: "Invalid input data", 
+          success: false,
+          step: 'validation',
+          error: "Datos de entrada inválidos", 
           details: errorMessages,
           issues: validationResult.error.issues 
         }),
@@ -132,17 +146,26 @@ serve(async (req) => {
       notes 
     } = validationResult.data;
 
+    console.log("✅ STEP: validation | Input validated successfully");
+
     // Validate date is not in the past
     const bookingDateObj = new Date(bookingDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
     if (bookingDateObj < today) {
+      console.error("❌ STEP: date-validation | Booking date is in the past");
       return new Response(
-        JSON.stringify({ error: "Cannot create bookings for past dates" }),
+        JSON.stringify({ 
+          success: false,
+          step: 'date-validation',
+          error: "No se pueden crear reservas para fechas pasadas" 
+        }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log("✅ STEP: date-validation | Date is valid");
 
     // Get business information and verify it exists and is active
     const { data: business, error: businessError } = await supabase
@@ -150,15 +173,23 @@ serve(async (req) => {
       .select("booking_slot_duration_minutes, phone, is_active, booking_mode")
       .eq("id", businessId)
       .eq("is_active", true)
-      .single();
+      .maybeSingle();
 
     if (businessError || !business) {
-      console.error("Business not found or inactive:", businessError);
+      console.error("❌ STEP: business-lookup | Business not found or inactive:", businessError);
       return new Response(
-        JSON.stringify({ error: "Business not found or not accepting bookings" }),
+        JSON.stringify({ 
+          success: false,
+          step: 'business-lookup',
+          error: "Negocio no encontrado o no acepta reservas" 
+        }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    const confirmationMode = business?.booking_mode ?? 'automatic';
+    console.log("📌 confirmationMode =", confirmationMode);
+    console.log("✅ STEP: business-lookup | Business found:", businessId);
 
     // Check rate limiting for this business
     const { data: rateLimitOk, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
@@ -169,12 +200,18 @@ serve(async (req) => {
     });
 
     if (rateLimitError || !rateLimitOk) {
-      console.error('Rate limit exceeded for business:', businessId);
+      console.error('❌ STEP: rate-limit | Rate limit exceeded for business:', businessId);
       return new Response(
-        JSON.stringify({ error: 'Too many booking requests. Please try again later.' }),
+        JSON.stringify({ 
+          success: false,
+          step: 'rate-limit',
+          error: 'Demasiadas solicitudes de reserva. Por favor, intenta más tarde.' 
+        }),
         { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    console.log("✅ STEP: rate-limit | Rate limit OK");
 
     // Calculate end time based on business slot duration
     const [hours, minutes] = startTime.split(':').map(Number);
@@ -184,20 +221,23 @@ serve(async (req) => {
     const endDate = new Date(startDate.getTime() + business.booking_slot_duration_minutes * 60000);
     const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
 
-    // Check booking mode BEFORE processing time slot
-    const isManualConfirmation = business.booking_mode === 'manual';
-    
+    console.log("✅ STEP: time-calculation | End time calculated:", endTime);
+
+    // Determine booking flow based on confirmation mode
     let tableId: string | null = null;
     let bookingStatus: string;
     let responseMessage: string;
 
-    if (isManualConfirmation) {
-      // Manual confirmation mode: create booking without table assignment
+    if (confirmationMode === 'manual') {
+      // MANUAL CONFIRMATION MODE
       bookingStatus = "pending_confirmation";
+      tableId = null; // No table assignment for manual confirmation
       responseMessage = "Tu reserva ha sido enviada correctamente. El negocio contactará contigo para confirmarla.";
-      console.log("Creating booking in manual confirmation mode - no table assignment");
+      console.log("📌 STEP: booking-mode | Manual confirmation - no table assignment");
     } else {
-      // Automatic confirmation mode: find and assign table
+      // AUTOMATIC CONFIRMATION MODE
+      console.log("📌 STEP: booking-mode | Automatic confirmation - checking table availability");
+      
       const result = await findAvailableTable(
         supabase,
         businessId,
@@ -209,12 +249,12 @@ serve(async (req) => {
       
       tableId = result.tableId;
       
-      // If no table is available in automatic mode, return error
       if (tableId === null) {
-        console.log("No hay disponibilidad para esta fecha y hora");
+        console.error("❌ STEP: table-availability | No tables available");
         return new Response(
           JSON.stringify({ 
             success: false,
+            step: 'table-availability',
             error: "No hay disponibilidad para la fecha y hora seleccionadas. Por favor, elige otro horario." 
           }),
           { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -223,9 +263,12 @@ serve(async (req) => {
       
       bookingStatus = "reserved";
       responseMessage = "Reserva creada correctamente";
+      console.log("✅ STEP: table-availability | Table assigned:", tableId);
     }
 
-    // Get time_slot_id - REQUIRED for all bookings
+    // Get or create time_slot_id - REQUIRED for all bookings
+    console.log("📌 STEP: time-slot | Looking up time slot for:", startTime);
+    
     const { data: timeSlot, error: timeSlotError } = await supabase
       .from("time_slots")
       .select("id")
@@ -233,11 +276,13 @@ serve(async (req) => {
       .maybeSingle();
 
     if (timeSlotError) {
-      console.error("Error fetching time slot:", timeSlotError);
+      console.error("❌ STEP: time-slot | Error fetching time slot:", timeSlotError);
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: "Error al procesar la hora seleccionada. Por favor, intenta de nuevo." 
+          step: 'time-slot',
+          error: "Error al procesar la hora seleccionada. Por favor, intenta de nuevo.",
+          details: timeSlotError.message
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
@@ -246,8 +291,9 @@ serve(async (req) => {
     let timeSlotId: string;
 
     if (!timeSlot) {
-      console.log("Time slot not found for:", startTime, "- creating new one");
-      // Try to create the time slot on the fly
+      console.log("📌 STEP: time-slot | Time slot not found, creating new one");
+      
+      // Create time slot on the fly with upsert-safe approach
       const timeSlotOrder = Math.floor((parseInt(startTime.split(':')[0]) * 60 + parseInt(startTime.split(':')[1])) / 15);
       
       const { data: newTimeSlot, error: createError } = await supabase
@@ -257,26 +303,31 @@ serve(async (req) => {
           slot_order: timeSlotOrder
         })
         .select("id")
-        .single();
+        .maybeSingle();
 
       if (createError || !newTimeSlot) {
-        console.error("Could not create time slot:", createError);
+        console.error("❌ STEP: time-slot-create | Could not create time slot:", createError);
         return new Response(
           JSON.stringify({ 
             success: false,
-            error: "No se pudo procesar la reserva. Por favor, contacta con el negocio directamente." 
+            step: 'time-slot-create',
+            error: "No se pudo procesar la reserva. Por favor, contacta con el negocio directamente.",
+            details: createError?.message
           }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
       timeSlotId = newTimeSlot.id;
-      console.log("Created new time slot:", timeSlotId);
+      console.log("✅ STEP: time-slot-create | Created new time slot:", timeSlotId);
     } else {
       timeSlotId = timeSlot.id;
+      console.log("✅ STEP: time-slot | Time slot found:", timeSlotId);
     }
 
     // Create the booking with time_slot_id
+    console.log("📌 STEP: booking-insert | Creating booking with status:", bookingStatus);
+    
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -295,13 +346,14 @@ serve(async (req) => {
         time_slot_id: timeSlotId
       })
       .select()
-      .single();
+      .maybeSingle();
 
     if (bookingError) {
-      console.error("Booking error:", bookingError);
+      console.error("❌ STEP: booking-insert | Booking creation failed:", bookingError);
       return new Response(
         JSON.stringify({ 
           success: false,
+          step: 'booking-insert',
           error: "No se pudo crear la reserva. Por favor, intenta de nuevo.",
           details: bookingError.message 
         }),
@@ -309,7 +361,13 @@ serve(async (req) => {
       );
     }
 
-    console.log("Booking created successfully:", booking.id);
+    console.log("✅ STEP: booking-insert | Booking created successfully:", booking?.id);
+    console.log("📊 FINAL RESULT:", {
+      bookingId: booking?.id,
+      status: bookingStatus,
+      tableId: tableId,
+      confirmationMode: confirmationMode
+    });
 
     return new Response(
       JSON.stringify({ 
@@ -317,14 +375,15 @@ serve(async (req) => {
         booking,
         message: responseMessage
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 201, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error) {
-    console.error("Unexpected error:", error);
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+  } catch (error: any) {
+    console.error("❌ FATAL ERROR:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ 
         success: false,
+        step: 'unexpected-error',
         error: "Ocurrió un error al procesar tu reserva. Por favor, intenta de nuevo.",
         details: errorMessage 
       }),
