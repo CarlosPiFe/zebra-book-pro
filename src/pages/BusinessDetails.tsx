@@ -16,7 +16,6 @@ import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { getTimeSlotId } from "@/lib/timeSlots";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
-
 interface Business {
   id: string;
   name: string;
@@ -30,9 +29,10 @@ interface Business {
   social_media: any;
   booking_additional_message?: string | null;
 }
-
 export default function BusinessDetails() {
-  const { businessId } = useParams();
+  const {
+    businessId
+  } = useParams();
   const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -45,9 +45,8 @@ export default function BusinessDetails() {
     partySize: "2",
     bookingDate: undefined as Date | undefined,
     startTime: undefined as string | undefined,
-    notes: "",
+    notes: ""
   });
-
   const [phoneError, setPhoneError] = useState<string>("");
 
   // Hook de disponibilidad
@@ -58,25 +57,20 @@ export default function BusinessDetails() {
     hasAvailableTables,
     refreshAvailability,
     loading: availabilityLoading,
-    tables,
+    tables
   } = useBookingAvailability(businessId);
-
-  const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map((t) => t.max_capacity)) : 20;
+  const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map(t => t.max_capacity)) : 20;
 
   // 🔹 Cargar negocio desde Supabase
   useEffect(() => {
     if (!businessId) return;
-
     const loadBusiness = async () => {
       setLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("businesses")
-          .select("*")
-          .eq("id", businessId)
-          .eq("is_active", true)
-          .maybeSingle();
-
+        const {
+          data,
+          error
+        } = await supabase.from("businesses").select("*").eq("id", businessId).eq("is_active", true).maybeSingle();
         if (error) throw error;
         setBusiness(data);
       } catch (error) {
@@ -86,18 +80,25 @@ export default function BusinessDetails() {
         setLoading(false);
       }
     };
-
     loadBusiness();
   }, [businessId]);
 
   // 📅 Cambiar fecha
   const handleDateChange = (date: Date | undefined) => {
-    setBookingForm({ ...bookingForm, bookingDate: date, startTime: undefined });
+    setBookingForm({
+      ...bookingForm,
+      bookingDate: date,
+      startTime: undefined
+    });
   };
 
   // 👥 Cambiar número de personas
   const handlePartySizeChange = (value: string) => {
-    setBookingForm({ ...bookingForm, partySize: value, startTime: undefined });
+    setBookingForm({
+      ...bookingForm,
+      partySize: value,
+      startTime: undefined
+    });
   };
 
   // Validar teléfono
@@ -110,7 +111,7 @@ export default function BusinessDetails() {
     // El componente PhoneInput ya incluye el prefijo, solo validamos que tenga contenido válido
     // Eliminar espacios y caracteres especiales excepto +
     const digitsOnly = phone.replace(/[\s\-()]/g, '');
-    
+
     // Debe empezar con + y tener al menos 10 caracteres (+XX XXXXXXX)
     if (!digitsOnly.startsWith('+') || digitsOnly.length < 10) {
       setPhoneError("Introduce un número de teléfono válido.");
@@ -123,7 +124,6 @@ export default function BusinessDetails() {
       setPhoneError("Introduce un número de teléfono válido.");
       return false;
     }
-
     setPhoneError("");
     return true;
   };
@@ -131,7 +131,6 @@ export default function BusinessDetails() {
   // 💾 Enviar reserva - Usando el edge function public-booking
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!bookingForm.clientName || !bookingForm.clientPhone || !bookingForm.bookingDate || !bookingForm.startTime) {
       toast.error("Por favor completa todos los campos obligatorios");
       return;
@@ -142,14 +141,15 @@ export default function BusinessDetails() {
       toast.error("Por favor introduce un número de teléfono válido");
       return;
     }
-
     const dateStr = format(bookingForm.bookingDate, "yyyy-MM-dd");
     const partySize = parseInt(bookingForm.partySize);
-
     setSubmitting(true);
     try {
       // Llamar al edge function public-booking que maneja el booking_mode
-      const { data, error } = await supabase.functions.invoke('public-booking', {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('public-booking', {
         body: {
           businessId: businessId,
           clientName: bookingForm.clientName,
@@ -161,12 +161,10 @@ export default function BusinessDetails() {
           notes: bookingForm.notes || undefined
         }
       });
-
       if (error) {
         console.error("Error en la reserva:", error);
         throw error;
       }
-
       if (!data.success) {
         throw new Error(data.error || "Error al crear la reserva");
       }
@@ -186,13 +184,12 @@ export default function BusinessDetails() {
         partySize: "2",
         bookingDate: undefined,
         startTime: undefined,
-        notes: "",
+        notes: ""
       });
-
       await refreshAvailability();
     } catch (error: any) {
       console.error("Error creando reserva:", error);
-      
+
       // Mensajes de error más específicos
       if (error?.message?.includes("availability") || error?.message?.includes("disponibilidad")) {
         toast.error(error.message);
@@ -205,7 +202,6 @@ export default function BusinessDetails() {
       setSubmitting(false);
     }
   };
-
   const openInGoogleMaps = () => {
     if (business?.address) {
       const encoded = encodeURIComponent(business.address);
@@ -216,13 +212,10 @@ export default function BusinessDetails() {
   // 🔍 Calcular horarios disponibles en tiempo real
   const getAvailableTimeSlotsForForm = (): string[] => {
     if (!bookingForm.bookingDate || !bookingForm.partySize) return [];
-
     const partySize = parseInt(bookingForm.partySize);
     if (isNaN(partySize) || partySize <= 0) return [];
-
     return getAvailableTimeSlots(bookingForm.bookingDate, partySize);
   };
-
   const availableTimeSlots = getAvailableTimeSlotsForForm();
 
   // Debug: Log para ver qué horarios están disponibles
@@ -234,16 +227,12 @@ export default function BusinessDetails() {
 
   // 🧱 Renderizado principal
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+    return <div className="min-h-screen bg-background flex items-center justify-center">
         <Skeleton className="h-8 w-32" />
-      </div>
-    );
+      </div>;
   }
-
   if (!business) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-center">
+    return <div className="min-h-screen flex items-center justify-center text-center">
         <div>
           <h1 className="text-2xl font-bold mb-4">Negocio no encontrado</h1>
           <Link to="/">
@@ -252,12 +241,9 @@ export default function BusinessDetails() {
             </Button>
           </Link>
         </div>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen bg-background">
+  return <div className="min-h-screen bg-background">
       {/* Botón Volver - FUERA del banner */}
       <div className="border-b border-border bg-background">
         <div className="container mx-auto px-4 py-4">
@@ -273,15 +259,7 @@ export default function BusinessDetails() {
       <div className="container mx-auto px-4 py-6">
         <Card className="overflow-hidden shadow-lg animate-fade-in">
           <div className="relative w-full h-64 md:h-80">
-            {business.image_url ? (
-              <img 
-                src={business.image_url} 
-                alt={business.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
-            )}
+            {business.image_url ? <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />}
             <div className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
               <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-2">{business.name}</h1>
@@ -297,8 +275,7 @@ export default function BusinessDetails() {
           {/* Columnas 1 y 2: Acerca de nosotros, Ubicación, Contacto */}
           <div className="lg:col-span-2 space-y-6">
             {/* Acerca de nosotros */}
-            {business.description && (
-              <Card className="shadow-md hover-scale transition-all">
+            {business.description && <Card className="shadow-md hover-scale transition-all">
                 <CardContent className="pt-6">
                   <h2 className="text-2xl font-semibold mb-4 flex items-center">
                     <Users className="mr-2 h-6 w-6 text-primary" />
@@ -306,65 +283,45 @@ export default function BusinessDetails() {
                   </h2>
                   <p className="text-muted-foreground leading-relaxed">{business.description}</p>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Ubicación */}
-            {business.address && (
-              <Card className="shadow-md hover-scale transition-all">
+            {business.address && <Card className="shadow-md hover-scale transition-all">
                 <CardContent className="pt-6">
                   <h2 className="text-2xl font-semibold mb-4 flex items-center">
                     <MapPin className="mr-2 h-6 w-6 text-primary" />
                     Ubicación
                   </h2>
                   <div className="aspect-video w-full rounded-lg overflow-hidden border border-border mb-4">
-                    <iframe
-                      width="100%"
-                      height="100%"
-                      frameBorder="0"
-                      style={{ border: 0 }}
-                      src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD3G8p1Ca5ZxGiQfdDcKRZZwQI0TL40oVk&q=${encodeURIComponent(business.address)}`}
-                      allowFullScreen
-                    />
+                    <iframe width="100%" height="100%" frameBorder="0" style={{
+                  border: 0
+                }} src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD3G8p1Ca5ZxGiQfdDcKRZZwQI0TL40oVk&q=${encodeURIComponent(business.address)}`} allowFullScreen />
                   </div>
                   <Button variant="outline" className="w-full hover-scale" onClick={openInGoogleMaps}>
                     <MapPin className="mr-2 h-4 w-4" /> Abrir en Google Maps
                   </Button>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
 
             {/* Contacto */}
-            {(business.phone || business.email) && (
-              <Card className="shadow-md hover-scale transition-all">
+            {(business.phone || business.email) && <Card className="shadow-md hover-scale transition-all">
                 <CardContent className="pt-6">
                   <h2 className="text-2xl font-semibold mb-4 flex items-center">
                     <Phone className="mr-2 h-6 w-6 text-primary" />
                     Contacto
                   </h2>
                   <div className="space-y-3">
-                    {business.phone && (
-                      <a 
-                        href={`tel:${business.phone}`}
-                        className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale"
-                      >
+                    {business.phone && <a href={`tel:${business.phone}`} className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale">
                         <Phone className="mr-3 h-5 w-5 text-primary" />
                         <span className="font-medium">{business.phone}</span>
-                      </a>
-                    )}
-                    {business.email && (
-                      <a 
-                        href={`mailto:${business.email}`}
-                        className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale"
-                      >
+                      </a>}
+                    {business.email && <a href={`mailto:${business.email}`} className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale">
                         <Mail className="mr-3 h-5 w-5 text-primary" />
                         <span className="font-medium">{business.email}</span>
-                      </a>
-                    )}
+                      </a>}
                   </div>
                 </CardContent>
-              </Card>
-            )}
+              </Card>}
           </div>
 
           {/* Columna 3: Haz tu reserva */}
@@ -377,50 +334,41 @@ export default function BusinessDetails() {
                 </h3>
                 
                 {/* Mensaje adicional del negocio */}
-                {business.booking_additional_message && (
-                  <div className="mb-4 p-4 bg-primary/10 border-l-4 border-primary rounded-md animate-fade-in">
+                {business.booking_additional_message && <div className="mb-4 p-4 bg-primary/10 border-l-4 border-primary rounded-md animate-fade-in">
                     <p className="text-sm text-foreground font-medium">{business.booking_additional_message}</p>
-                  </div>
-                )}
+                  </div>}
 
                 <form onSubmit={handleBookingSubmit} className="space-y-4">
                   <div>
                     <Label>Nombre *</Label>
-                    <Input
-                      value={bookingForm.clientName}
-                      onChange={(e) => setBookingForm({ ...bookingForm, clientName: e.target.value })}
-                    />
+                    <Input value={bookingForm.clientName} onChange={e => setBookingForm({
+                    ...bookingForm,
+                    clientName: e.target.value
+                  })} />
                   </div>
 
                   <div>
                     <Label>Teléfono *</Label>
-                    <PhoneInput
-                      defaultCountry="es"
-                      value={bookingForm.clientPhone}
-                      onChange={(phone) => {
-                        setBookingForm({ ...bookingForm, clientPhone: phone });
-                        if (phone) {
-                          validatePhone(phone);
-                        } else {
-                          setPhoneError("");
-                        }
-                      }}
-                      inputClassName={phoneError ? "!border-destructive" : ""}
-                      className="phone-input-custom"
-                    />
-                    {phoneError && (
-                      <p className="text-sm text-destructive mt-1">{phoneError}</p>
-                    )}
+                    <PhoneInput defaultCountry="es" value={bookingForm.clientPhone} onChange={phone => {
+                    setBookingForm({
+                      ...bookingForm,
+                      clientPhone: phone
+                    });
+                    if (phone) {
+                      validatePhone(phone);
+                    } else {
+                      setPhoneError("");
+                    }
+                  }} inputClassName={phoneError ? "!border-destructive" : ""} className="phone-input-custom mx-[3px]" />
+                    {phoneError && <p className="text-sm text-destructive mt-1">{phoneError}</p>}
                   </div>
 
                   <div>
                     <Label>Email</Label>
-                    <Input
-                      type="email"
-                      value={bookingForm.clientEmail}
-                      onChange={(e) => setBookingForm({ ...bookingForm, clientEmail: e.target.value })}
-                      placeholder="tu@email.com"
-                    />
+                    <Input type="email" value={bookingForm.clientEmail} onChange={e => setBookingForm({
+                    ...bookingForm,
+                    clientEmail: e.target.value
+                  })} placeholder="tu@email.com" />
                   </div>
 
                   <div>
@@ -430,106 +378,75 @@ export default function BusinessDetails() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({ length: maxTableCapacity }, (_, i) => i + 1).map((n) => (
-                          <SelectItem key={n} value={String(n)}>
+                        {Array.from({
+                        length: maxTableCapacity
+                      }, (_, i) => i + 1).map(n => <SelectItem key={n} value={String(n)}>
                             {n} {n === 1 ? "persona" : "personas"}
-                          </SelectItem>
-                        ))}
+                          </SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
                     <Label>Fecha *</Label>
-                    <DatePicker
-                      date={bookingForm.bookingDate}
-                      onDateChange={handleDateChange}
-                      placeholder="Seleccionar fecha"
-                      disabled={(d) => !isDateAvailable(d)}
-                    />
+                    <DatePicker date={bookingForm.bookingDate} onDateChange={handleDateChange} placeholder="Seleccionar fecha" disabled={d => !isDateAvailable(d)} />
                   </div>
 
                   <div>
                     <Label>Hora *</Label>
-                    <Select
-                      value={bookingForm.startTime ?? undefined}
-                      onValueChange={(v) => setBookingForm({ ...bookingForm, startTime: v })}
-                      disabled={!bookingForm.bookingDate || availabilityLoading}
-                    >
+                    <Select value={bookingForm.startTime ?? undefined} onValueChange={v => setBookingForm({
+                    ...bookingForm,
+                    startTime: v
+                  })} disabled={!bookingForm.bookingDate || availabilityLoading}>
                       <SelectTrigger>
-                        <SelectValue
-                          placeholder={
-                            !bookingForm.bookingDate
-                              ? "Selecciona una fecha primero"
-                              : availableTimeSlots.length === 0
-                                ? "No hay horarios disponibles"
-                                : "Seleccionar hora"
-                          }
-                        />
+                        <SelectValue placeholder={!bookingForm.bookingDate ? "Selecciona una fecha primero" : availableTimeSlots.length === 0 ? "No hay horarios disponibles" : "Seleccionar hora"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {availableTimeSlots.length > 0 ? (
-                          availableTimeSlots.map((time) => (
-                            <SelectItem key={time} value={time}>
+                        {availableTimeSlots.length > 0 ? availableTimeSlots.map(time => <SelectItem key={time} value={time}>
                               {time}
-                            </SelectItem>
-                          ))
-                        ) : bookingForm.bookingDate ? (
-                          <SelectItem disabled value="no-slots">
+                            </SelectItem>) : bookingForm.bookingDate ? <SelectItem disabled value="no-slots">
                             No hay horarios disponibles
-                          </SelectItem>
-                        ) : null}
+                          </SelectItem> : null}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
                     <Label>Notas adicionales</Label>
-                    <Textarea
-                      value={bookingForm.notes}
-                      onChange={(e) => setBookingForm({ ...bookingForm, notes: e.target.value })}
-                    />
+                    <Textarea value={bookingForm.notes} onChange={e => setBookingForm({
+                    ...bookingForm,
+                    notes: e.target.value
+                  })} />
                   </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover-scale"
-                    disabled={submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading || !!phoneError || !bookingForm.clientPhone}
-                  >
+                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover-scale" disabled={submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading || !!phoneError || !bookingForm.clientPhone}>
                     <Calendar className="mr-2 h-4 w-4" />
                     {submitting ? "Enviando..." : "Confirmar reserva"}
                   </Button>
                 </form>
 
                 {/* Botones de contacto - Alineados horizontalmente con separación */}
-                {(business.phone || business.email) && (
-                  <div className="mt-6 pt-4 border-t border-border">
+                {(business.phone || business.email) && <div className="mt-6 pt-4 border-t border-border">
                     <p className="text-sm text-muted-foreground mb-3 text-center">¿Prefieres contactarnos directamente?</p>
                     <div className="flex gap-3">
-                      {business.phone && (
-                        <a href={`tel:${business.phone}`} className="flex-1">
+                      {business.phone && <a href={`tel:${business.phone}`} className="flex-1">
                           <Button variant="outline" size="sm" className="w-full hover-scale">
                             <Phone className="mr-2 h-4 w-4" />
                             Llámanos
                           </Button>
-                        </a>
-                      )}
-                      {business.email && (
-                        <a href={`mailto:${business.email}`} className="flex-1">
+                        </a>}
+                      {business.email && <a href={`mailto:${business.email}`} className="flex-1">
                           <Button variant="outline" size="sm" className="w-full hover-scale">
                             <Mail className="mr-2 h-4 w-4" />
                             Escríbenos
                           </Button>
-                        </a>
-                      )}
+                        </a>}
                     </div>
-                  </div>
-                )}
+                  </div>}
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
