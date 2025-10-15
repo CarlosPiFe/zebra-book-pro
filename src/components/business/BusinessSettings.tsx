@@ -8,7 +8,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2, CalendarCheck, DoorOpen, Trash2, Plus, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BusinessHours } from "./BusinessHours";
@@ -92,13 +91,13 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
   const [rooms, setRooms] = useState<Room[]>([]);
 
   const daysOfWeek = [
-    { value: 1, label: "Lunes" },
-    { value: 2, label: "Martes" },
-    { value: 3, label: "Miércoles" },
-    { value: 4, label: "Jueves" },
-    { value: 5, label: "Viernes" },
-    { value: 6, label: "Sábado" },
-    { value: 0, label: "Domingo" },
+    { value: 1, label: "L" },
+    { value: 2, label: "M" },
+    { value: 3, label: "X" },
+    { value: 4, label: "J" },
+    { value: 5, label: "V" },
+    { value: 6, label: "S" },
+    { value: 0, label: "D" },
   ];
 
   const handleAddRoom = () => {
@@ -587,21 +586,18 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                                     </Button>
                                   </div>
 
-                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                  <div className="flex gap-2">
                                     {daysOfWeek.map((day) => (
-                                      <div key={day.value} className="flex items-center space-x-2">
-                                        <Checkbox
-                                          id={`day-${room.id}-${slot.id}-${day.value}`}
-                                          checked={slot.days.includes(day.value)}
-                                          onCheckedChange={() => handleToggleDay(room.id, slot.id, day.value)}
-                                        />
-                                        <Label
-                                          htmlFor={`day-${room.id}-${slot.id}-${day.value}`}
-                                          className="text-sm cursor-pointer"
-                                        >
-                                          {day.label}
-                                        </Label>
-                                      </div>
+                                      <Button
+                                        key={day.value}
+                                        type="button"
+                                        variant={slot.days.includes(day.value) ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => handleToggleDay(room.id, slot.id, day.value)}
+                                        className="h-9 w-9 p-0"
+                                      >
+                                        {day.label}
+                                      </Button>
                                     ))}
                                   </div>
 
