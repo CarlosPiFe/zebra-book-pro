@@ -14,6 +14,8 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { getTimeSlotId } from "@/lib/timeSlots";
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
 
 interface Business {
   id: string;
@@ -105,32 +107,21 @@ export default function BusinessDetails() {
       return false;
     }
 
-    // Limpiar espacios para contar dígitos
-    const digitsOnly = phone.replace(/\s/g, '');
+    // El componente PhoneInput ya incluye el prefijo, solo validamos que tenga contenido válido
+    // Eliminar espacios y caracteres especiales excepto +
+    const digitsOnly = phone.replace(/[\s\-()]/g, '');
     
-    // Verificar que solo contenga dígitos, espacios y el símbolo +
-    const validChars = /^[\d\s+]+$/;
-    if (!validChars.test(phone)) {
-      setPhoneError("Introduce un número de teléfono válido (por ejemplo, +34 612345678).");
+    // Debe empezar con + y tener al menos 10 caracteres (+XX XXXXXXX)
+    if (!digitsOnly.startsWith('+') || digitsOnly.length < 10) {
+      setPhoneError("Introduce un número de teléfono válido.");
       return false;
     }
 
-    // Contar dígitos
-    const digitCount = digitsOnly.replace(/\+/g, '').length;
-    
-    // Debe tener entre 9 y 15 dígitos
-    if (digitCount < 9 || digitCount > 15) {
-      setPhoneError("Introduce un número de teléfono válido (por ejemplo, +34 612345678).");
+    // Verificar que después del + solo haya dígitos
+    const afterPlus = digitsOnly.substring(1);
+    if (!/^\d+$/.test(afterPlus)) {
+      setPhoneError("Introduce un número de teléfono válido.");
       return false;
-    }
-
-    // Si comienza con +, debe tener al menos 2 dígitos después del +
-    if (digitsOnly.startsWith('+')) {
-      const afterPlus = digitsOnly.substring(1);
-      if (afterPlus.length < 9) {
-        setPhoneError("Introduce un número de teléfono válido (por ejemplo, +34 612345678).");
-        return false;
-      }
     }
 
     setPhoneError("");
@@ -403,20 +394,19 @@ export default function BusinessDetails() {
 
                   <div>
                     <Label>Teléfono *</Label>
-                    <Input
-                      type="tel"
+                    <PhoneInput
+                      defaultCountry="es"
                       value={bookingForm.clientPhone}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setBookingForm({ ...bookingForm, clientPhone: value });
-                        if (value) {
-                          validatePhone(value);
+                      onChange={(phone) => {
+                        setBookingForm({ ...bookingForm, clientPhone: phone });
+                        if (phone) {
+                          validatePhone(phone);
                         } else {
                           setPhoneError("");
                         }
                       }}
-                      placeholder="+34 612345678"
-                      className={phoneError ? "border-destructive" : ""}
+                      inputClassName={phoneError ? "!border-destructive" : ""}
+                      className="phone-input-custom"
                     />
                     {phoneError && (
                       <p className="text-sm text-destructive mt-1">{phoneError}</p>
