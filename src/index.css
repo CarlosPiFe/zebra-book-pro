@@ -135,7 +135,7 @@ All colors MUST be HSL.
 }
 
 .phone-input-custom .react-international-phone-input-container {
-  @apply w-full;
+  @apply w-full flex gap-2;
 }
 
 .phone-input-custom .react-international-phone-input {
@@ -147,7 +147,7 @@ All colors MUST be HSL.
 }
 
 .phone-input-custom .react-international-phone-country-selector-button {
-  @apply h-10 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-l-md;
+  @apply h-10 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md;
 }
 
 .phone-input-custom .react-international-phone-country-selector-dropdown {
