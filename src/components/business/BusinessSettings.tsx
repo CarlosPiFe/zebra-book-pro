@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2 } from "lucide-react";
+import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2, CalendarCheck } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BusinessHours } from "./BusinessHours";
 import { cn } from "@/lib/utils";
 
@@ -65,6 +66,8 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     booking_additional_message: business.booking_additional_message || "",
     schedule_view_mode: business.schedule_view_mode || "editable",
   });
+  
+  const [bookingConfirmationType, setBookingConfirmationType] = useState<string>("automatic");
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -507,6 +510,49 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
           >
             {loading ? "Guardando..." : "Guardar Configuración de Reservas"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarCheck className="h-5 w-5" />
+            Confirmación de reservas
+          </CardTitle>
+          <CardDescription>
+            Elige si las reservas realizadas por los clientes se confirman automáticamente o si requieren tu aprobación manual antes de ser efectivas
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <RadioGroup
+            value={bookingConfirmationType}
+            onValueChange={setBookingConfirmationType}
+            className="space-y-4"
+          >
+            <div className="flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent/50 transition-colors">
+              <RadioGroupItem value="automatic" id="automatic" className="mt-0.5" />
+              <div className="space-y-1 flex-1">
+                <Label htmlFor="automatic" className="text-base font-medium cursor-pointer">
+                  Confirmación automática
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Las reservas se confirman inmediatamente cuando el cliente las realiza. El cliente recibe confirmación instantánea.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent/50 transition-colors">
+              <RadioGroupItem value="manual" id="manual" className="mt-0.5" />
+              <div className="space-y-1 flex-1">
+                <Label htmlFor="manual" className="text-base font-medium cursor-pointer">
+                  Confirmación manual (requiere aprobación)
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Las reservas quedan pendientes hasta que las apruebes manualmente desde tu panel. Ideal para negocios que necesitan validar disponibilidad.
+                </p>
+              </div>
+            </div>
+          </RadioGroup>
         </CardContent>
       </Card>
 
