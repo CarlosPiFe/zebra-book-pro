@@ -563,11 +563,22 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                           </div>
 
                           {room.timeSlots.length === 0 ? (
-                            <p className="text-sm text-muted-foreground italic">
-                              No hay tramos horarios configurados. La sala estará cerrada todos los días.
-                            </p>
+                            <div className="p-4 border rounded-lg bg-accent/10 border-accent/30">
+                              <p className="text-sm font-medium text-accent-foreground/90 flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                Horario heredado del local
+                              </p>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                Esta sala seguirá el horario de apertura general del negocio. 
+                                Si deseas establecer horarios específicos para esta sala, añade un tramo horario.
+                              </p>
+                            </div>
                           ) : (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
+                              <p className="text-sm text-muted-foreground">
+                                Horarios específicos de la sala. Los días y horarios no incluidos estarán cerrados.
+                              </p>
+                              <div className="space-y-3">
                               {room.timeSlots.map((slot) => (
                                 <div key={slot.id} className="p-4 border rounded-lg space-y-3 bg-muted/30">
                                   <div className="flex items-center justify-between">
@@ -627,6 +638,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                                   </div>
                                 </div>
                               ))}
+                            </div>
                             </div>
                           )}
                         </div>
