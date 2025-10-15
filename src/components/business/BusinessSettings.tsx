@@ -6,18 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2, CalendarCheck, DoorOpen, Trash2, Plus } from "lucide-react";
+import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2, CalendarCheck, DoorOpen, Trash2, Plus, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BusinessHours } from "./BusinessHours";
 import { cn } from "@/lib/utils";
 
+interface TimeSlot {
+  id: string;
+  days: number[]; // 0 = Domingo, 1 = Lunes, ..., 6 = Sábado
+  openTime: string;
+  closeTime: string;
+}
+
 interface Room {
   id: string;
   name: string;
-  openTime: string;
-  closeTime: string;
+  timeSlots: TimeSlot[];
   isActive: boolean;
 }
 
@@ -84,12 +91,21 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
   const [customRoomsEnabled, setCustomRoomsEnabled] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
 
+  const daysOfWeek = [
+    { value: 1, label: "Lunes" },
+    { value: 2, label: "Martes" },
+    { value: 3, label: "Miércoles" },
+    { value: 4, label: "Jueves" },
+    { value: 5, label: "Viernes" },
+    { value: 6, label: "Sábado" },
+    { value: 0, label: "Domingo" },
+  ];
+
   const handleAddRoom = () => {
     const newRoom: Room = {
       id: `temp-${Date.now()}`,
       name: "",
-      openTime: "",
-      closeTime: "",
+      timeSlots: [],
       isActive: true,
     };
     setRooms([...rooms, newRoom]);
@@ -102,6 +118,61 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
   const handleRoomChange = (id: string, field: keyof Room, value: any) => {
     setRooms(rooms.map(room => 
       room.id === id ? { ...room, [field]: value } : room
+    ));
+  };
+
+  const handleAddTimeSlot = (roomId: string) => {
+    const newTimeSlot: TimeSlot = {
+      id: `slot-${Date.now()}`,
+      days: [],
+      openTime: "",
+      closeTime: "",
+    };
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? { ...room, timeSlots: [...room.timeSlots, newTimeSlot] }
+        : room
+    ));
+  };
+
+  const handleRemoveTimeSlot = (roomId: string, slotId: string) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? { ...room, timeSlots: room.timeSlots.filter(slot => slot.id !== slotId) }
+        : room
+    ));
+  };
+
+  const handleTimeSlotChange = (roomId: string, slotId: string, field: keyof TimeSlot, value: any) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? {
+            ...room,
+            timeSlots: room.timeSlots.map(slot =>
+              slot.id === slotId ? { ...slot, [field]: value } : slot
+            )
+          }
+        : room
+    ));
+  };
+
+  const handleToggleDay = (roomId: string, slotId: string, day: number) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? {
+            ...room,
+            timeSlots: room.timeSlots.map(slot =>
+              slot.id === slotId 
+                ? {
+                    ...slot,
+                    days: slot.days.includes(day)
+                      ? slot.days.filter(d => d !== day)
+                      : [...slot.days, day]
+                  }
+                : slot
+            )
+          }
+        : room
     ));
   };
 
@@ -477,25 +548,91 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor={`room-open-${room.id}`}>Hora de apertura</Label>
-                            <Input
-                              id={`room-open-${room.id}`}
-                              type="time"
-                              value={room.openTime}
-                              onChange={(e) => handleRoomChange(room.id, 'openTime', e.target.value)}
-                            />
+                        {/* Tramos de horarios */}
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-base">Horarios</Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddTimeSlot(room.id)}
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              Añadir tramo
+                            </Button>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`room-close-${room.id}`}>Hora de cierre</Label>
-                            <Input
-                              id={`room-close-${room.id}`}
-                              type="time"
-                              value={room.closeTime}
-                              onChange={(e) => handleRoomChange(room.id, 'closeTime', e.target.value)}
-                            />
-                          </div>
+
+                          {room.timeSlots.length === 0 ? (
+                            <p className="text-sm text-muted-foreground italic">
+                              No hay tramos horarios configurados. La sala estará cerrada todos los días.
+                            </p>
+                          ) : (
+                            <div className="space-y-3">
+                              {room.timeSlots.map((slot) => (
+                                <div key={slot.id} className="p-4 border rounded-lg space-y-3 bg-muted/30">
+                                  <div className="flex items-center justify-between">
+                                    <Label className="text-sm font-medium flex items-center gap-2">
+                                      <Calendar className="h-4 w-4" />
+                                      Días de la semana
+                                    </Label>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleRemoveTimeSlot(room.id, slot.id)}
+                                      className="h-7 px-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {daysOfWeek.map((day) => (
+                                      <div key={day.value} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          id={`day-${room.id}-${slot.id}-${day.value}`}
+                                          checked={slot.days.includes(day.value)}
+                                          onCheckedChange={() => handleToggleDay(room.id, slot.id, day.value)}
+                                        />
+                                        <Label
+                                          htmlFor={`day-${room.id}-${slot.id}-${day.value}`}
+                                          className="text-sm cursor-pointer"
+                                        >
+                                          {day.label}
+                                        </Label>
+                                      </div>
+                                    ))}
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`slot-open-${slot.id}`} className="text-sm">
+                                        Hora de apertura
+                                      </Label>
+                                      <Input
+                                        id={`slot-open-${slot.id}`}
+                                        type="time"
+                                        value={slot.openTime}
+                                        onChange={(e) => handleTimeSlotChange(room.id, slot.id, 'openTime', e.target.value)}
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor={`slot-close-${slot.id}`} className="text-sm">
+                                        Hora de cierre
+                                      </Label>
+                                      <Input
+                                        id={`slot-close-${slot.id}`}
+                                        type="time"
+                                        value={slot.closeTime}
+                                        onChange={(e) => handleTimeSlotChange(room.id, slot.id, 'closeTime', e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         <div className="flex items-center justify-between pt-2 border-t">
@@ -543,9 +680,9 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                 <Button
                   type="button"
                   onClick={handleSaveRooms}
-                  className="w-full bg-accent hover:bg-accent/90"
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  💾 Guardar configuración
+                  Guardar configuración de salas
                 </Button>
               )}
             </div>
