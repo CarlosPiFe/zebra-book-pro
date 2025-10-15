@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2, CalendarCheck, DoorOpen, Trash2, Plus, Calendar } from "lucide-react";
+import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2, CalendarCheck, DoorOpen, Trash2, Plus, Calendar, Edit } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -89,6 +89,8 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
   // Estado para la configuración de salas
   const [customRoomsEnabled, setCustomRoomsEnabled] = useState(false);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
 
   const daysOfWeek = [
     { value: 1, label: "L" },
@@ -100,6 +102,38 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     { value: 0, label: "D" },
   ];
 
+  // Cargar salas al montar el componente
+  useEffect(() => {
+    loadRooms();
+  }, [business.id]);
+
+  const loadRooms = async () => {
+    setLoadingRooms(true);
+    try {
+      const { data, error } = await supabase
+        .from('business_rooms')
+        .select('*')
+        .eq('business_id', business.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setCustomRoomsEnabled(true);
+        setRooms(data.map(room => ({
+          id: room.id,
+          name: room.name,
+          timeSlots: (room.time_slots as unknown as TimeSlot[]) || [],
+          isActive: room.is_active,
+        })));
+      }
+    } catch (error) {
+      console.error('Error al cargar salas:', error);
+    } finally {
+      setLoadingRooms(false);
+    }
+  };
+
   const handleAddRoom = () => {
     const newRoom: Room = {
       id: `temp-${Date.now()}`,
@@ -108,6 +142,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
       isActive: true,
     };
     setRooms([...rooms, newRoom]);
+    setEditingRoomId(newRoom.id);
   };
 
   const handleRemoveRoom = (id: string) => {
@@ -175,10 +210,121 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     ));
   };
 
-  const handleSaveRooms = () => {
-    // Por ahora solo mostramos un toast, sin conectar a la base de datos
-    toast.success("Configuración de salas guardada (solo UI por ahora)");
-    console.log("Salas guardadas:", rooms);
+  const handleSaveRooms = async () => {
+    setLoading(true);
+    try {
+      // Validar que todas las salas tengan nombre
+      const invalidRooms = rooms.filter(room => !room.name.trim());
+      if (invalidRooms.length > 0) {
+        toast.error("Todas las salas deben tener un nombre");
+        return;
+      }
+
+      // Obtener salas existentes
+      const { data: existingRooms, error: fetchError } = await supabase
+        .from('business_rooms')
+        .select('id')
+        .eq('business_id', business.id);
+
+      if (fetchError) throw fetchError;
+
+      const existingRoomIds = existingRooms?.map(r => r.id) || [];
+      const currentRoomIds = rooms.filter(r => !r.id.startsWith('temp-')).map(r => r.id);
+
+      // Eliminar salas que ya no están en la lista
+      const roomsToDelete = existingRoomIds.filter(id => !currentRoomIds.includes(id));
+      if (roomsToDelete.length > 0) {
+        const { error: deleteError } = await supabase
+          .from('business_rooms')
+          .delete()
+          .in('id', roomsToDelete);
+
+        if (deleteError) throw deleteError;
+      }
+
+      // Insertar o actualizar salas
+      for (const room of rooms) {
+        const roomData = {
+          business_id: business.id,
+          name: room.name,
+          time_slots: room.timeSlots as any,
+          is_active: room.isActive,
+        };
+
+        if (room.id.startsWith('temp-')) {
+          // Insertar nueva sala
+          const { error: insertError } = await supabase
+            .from('business_rooms')
+            .insert([roomData]);
+
+          if (insertError) throw insertError;
+        } else {
+          // Actualizar sala existente
+          const { error: updateError } = await supabase
+            .from('business_rooms')
+            .update(roomData)
+            .eq('id', room.id);
+
+          if (updateError) throw updateError;
+        }
+      }
+
+      toast.success("Configuración de salas guardada correctamente");
+      await loadRooms();
+      setEditingRoomId(null);
+    } catch (error) {
+      console.error('Error al guardar salas:', error);
+      toast.error("Error al guardar la configuración de salas");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleRoomActive = async (roomId: string, isActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('business_rooms')
+        .update({ is_active: isActive })
+        .eq('id', roomId);
+
+      if (error) throw error;
+
+      setRooms(rooms.map(room => 
+        room.id === roomId ? { ...room, isActive } : room
+      ));
+
+      toast.success(isActive ? "Sala activada" : "Sala desactivada");
+    } catch (error) {
+      console.error('Error al actualizar estado de la sala:', error);
+      toast.error("Error al actualizar el estado de la sala");
+    }
+  };
+
+  const formatRoomSchedule = (room: Room) => {
+    if (room.timeSlots.length === 0) {
+      return "Horario heredado del local";
+    }
+
+    const dayNames = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+    const scheduleGroups: { [key: string]: number[] } = {};
+
+    // Agrupar días por horario
+    room.timeSlots.forEach(slot => {
+      const timeKey = `${slot.openTime}-${slot.closeTime}`;
+      if (!scheduleGroups[timeKey]) {
+        scheduleGroups[timeKey] = [];
+      }
+      scheduleGroups[timeKey].push(...slot.days);
+    });
+
+    // Formatear cada grupo
+    const formattedGroups = Object.entries(scheduleGroups).map(([timeKey, days]) => {
+      const uniqueDays = Array.from(new Set(days)).sort((a, b) => a - b);
+      const dayLabels = uniqueDays.map(d => dayNames[d]).join(', ');
+      return `${dayLabels}: ${timeKey}`;
+    });
+
+    return formattedGroups.join(' | ');
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -526,33 +672,96 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
             <Switch
               id="custom-rooms-toggle"
               checked={customRoomsEnabled}
-              onCheckedChange={setCustomRoomsEnabled}
+              onCheckedChange={async (checked) => {
+                if (!checked && rooms.length > 0) {
+                  // Si se desactiva y hay salas, preguntar confirmación
+                  if (!confirm('¿Estás seguro? Esto eliminará todas las salas configuradas.')) {
+                    return;
+                  }
+                  // Eliminar todas las salas de la base de datos
+                  try {
+                    const { error } = await supabase
+                      .from('business_rooms')
+                      .delete()
+                      .eq('business_id', business.id);
+
+                    if (error) throw error;
+
+                    setRooms([]);
+                    toast.success('Salas eliminadas correctamente');
+                  } catch (error) {
+                    console.error('Error al eliminar salas:', error);
+                    toast.error('Error al eliminar las salas');
+                    return;
+                  }
+                }
+                setCustomRoomsEnabled(checked);
+              }}
             />
           </div>
 
           {customRoomsEnabled && (
             <div className="space-y-4 animate-in fade-in-50 duration-300">
-              {rooms.length > 0 && (
+              {loadingRooms ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  Cargando salas...
+                </div>
+              ) : rooms.length > 0 && (
                 <div className="space-y-3">
-                  {rooms.map((room) => (
-                    <Card key={room.id} className="border-2 hover:border-primary/50 transition-colors">
-                      <CardContent className="pt-6 space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor={`room-name-${room.id}`}>Nombre de la sala</Label>
-                          <Input
-                            id={`room-name-${room.id}`}
-                            value={room.name}
-                            onChange={(e) => handleRoomChange(room.id, 'name', e.target.value)}
-                            placeholder="Ej: Terraza, Comedor, Sala Privada..."
-                          />
-                        </div>
-
-                        {/* Tramos de horarios */}
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <Label className="text-base">Horarios</Label>
+                  {rooms.map((room) => {
+                    const isEditing = editingRoomId === room.id || room.id.startsWith('temp-');
+                    
+                    if (!isEditing) {
+                      // Vista compacta
+                      return (
+                        <div
+                          key={room.id}
+                          className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+                        >
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-base mb-1">{room.name}</h4>
+                            <p className="text-sm text-muted-foreground">
+                              {formatRoomSchedule(room)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Switch
+                              checked={room.isActive}
+                              onCheckedChange={(checked) => handleToggleRoomActive(room.id, checked)}
+                            />
                             <Button
                               type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingRoomId(room.id)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    // Vista de edición
+                    return (
+                      <Card key={room.id} className="border-2 hover:border-primary/50 transition-colors">
+                        <CardContent className="pt-6 space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor={`room-name-${room.id}`}>Nombre de la sala</Label>
+                            <Input
+                              id={`room-name-${room.id}`}
+                              value={room.name}
+                              onChange={(e) => handleRoomChange(room.id, 'name', e.target.value)}
+                              placeholder="Ej: Terraza, Comedor, Sala Privada..."
+                            />
+                          </div>
+
+                          {/* Tramos de horarios */}
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-base">Horarios</Label>
+                              <Button
+                                type="button"
                               variant="outline"
                               size="sm"
                               onClick={() => handleAddTimeSlot(room.id)}
@@ -670,7 +879,8 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -688,9 +898,10 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                 <Button
                   type="button"
                   onClick={handleSaveRooms}
-                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  disabled={loading}
+                  className="w-full bg-foreground hover:bg-foreground/90 text-background"
                 >
-                  Guardar configuración de salas
+                  {loading ? "Guardando..." : "Guardar configuración de salas"}
                 </Button>
               )}
             </div>
