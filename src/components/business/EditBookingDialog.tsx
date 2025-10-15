@@ -80,6 +80,7 @@ export function EditBookingDialog({
   const [customEndTime, setCustomEndTime] = useState(true);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [confirmWithoutTableDialogOpen, setConfirmWithoutTableDialogOpen] = useState(false);
   const [clientName, setClientName] = useState(booking.client_name);
   const [clientEmail, setClientEmail] = useState(booking.client_email || "");
   const [clientPhone, setClientPhone] = useState(booking.client_phone || "");
@@ -374,7 +375,7 @@ export function EditBookingDialog({
     try {
       setLoading(true);
       
-      // If confirming a pending_confirmation booking, assign a table
+      // If confirming a pending_confirmation booking, check availability first
       if (booking.status === "pending_confirmation" && newStatus === "reserved") {
         const dateString = format(bookingDate!, "yyyy-MM-dd");
         const result = await findAvailableTable(
@@ -385,6 +386,14 @@ export function EditBookingDialog({
           booking.id
         );
         
+        // If no table available, show warning modal
+        if (!result.tableId) {
+          setLoading(false);
+          setConfirmWithoutTableDialogOpen(true);
+          return;
+        }
+        
+        // Table available, confirm directly
         const { error } = await supabase
           .from("bookings")
           .update({ 
@@ -394,12 +403,7 @@ export function EditBookingDialog({
           .eq("id", booking.id);
 
         if (error) throw error;
-
-        if (result.tableId) {
-          toast.success("Reserva confirmada y mesa asignada");
-        } else {
-          toast.warning("Reserva confirmada pero sin mesa disponible. Quedará como pendiente.");
-        }
+        toast.success("Reserva confirmada y mesa asignada");
       } else {
         const { error } = await supabase
           .from("bookings")
@@ -423,6 +427,32 @@ export function EditBookingDialog({
     } catch (error) {
       console.error("Error updating status:", error);
       toast.error("Error al actualizar el estado");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmWithoutTable = async () => {
+    try {
+      setLoading(true);
+      
+      const { error } = await supabase
+        .from("bookings")
+        .update({ 
+          status: "reserved",
+          table_id: null
+        })
+        .eq("id", booking.id);
+
+      if (error) throw error;
+
+      toast.success("Reserva confirmada sin mesa asignada");
+      setConfirmWithoutTableDialogOpen(false);
+      onOpenChange(false);
+      onBookingUpdated();
+    } catch (error) {
+      console.error("Error confirming without table:", error);
+      toast.error("Error al confirmar la reserva");
     } finally {
       setLoading(false);
     }
@@ -734,6 +764,28 @@ export function EditBookingDialog({
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleCancel} className="bg-destructive hover:bg-destructive/90">
               Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={confirmWithoutTableDialogOpen} onOpenChange={setConfirmWithoutTableDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar reserva sin disponibilidad</AlertDialogTitle>
+            <AlertDialogDescription>
+              No quedan mesas disponibles para esta hora.
+              ¿Estás seguro de que quieres confirmar esta reserva igualmente?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmWithoutTable} 
+              disabled={loading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar de todos modos
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
