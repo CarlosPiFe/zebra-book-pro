@@ -6,12 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2, CalendarCheck } from "lucide-react";
+import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2, CalendarCheck, DoorOpen, Trash2, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BusinessHours } from "./BusinessHours";
 import { cn } from "@/lib/utils";
+
+interface Room {
+  id: string;
+  name: string;
+  openTime: string;
+  closeTime: string;
+  isActive: boolean;
+}
 
 interface Business {
   id: string;
@@ -71,6 +79,37 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
   const [bookingConfirmationType, setBookingConfirmationType] = useState<string>(
     business.booking_mode || "automatic"
   );
+
+  // Estado para la configuración de salas
+  const [customRoomsEnabled, setCustomRoomsEnabled] = useState(false);
+  const [rooms, setRooms] = useState<Room[]>([]);
+
+  const handleAddRoom = () => {
+    const newRoom: Room = {
+      id: `temp-${Date.now()}`,
+      name: "",
+      openTime: "",
+      closeTime: "",
+      isActive: true,
+    };
+    setRooms([...rooms, newRoom]);
+  };
+
+  const handleRemoveRoom = (id: string) => {
+    setRooms(rooms.filter(room => room.id !== id));
+  };
+
+  const handleRoomChange = (id: string, field: keyof Room, value: any) => {
+    setRooms(rooms.map(room => 
+      room.id === id ? { ...room, [field]: value } : room
+    ));
+  };
+
+  const handleSaveRooms = () => {
+    // Por ahora solo mostramos un toast, sin conectar a la base de datos
+    toast.success("Configuración de salas guardada (solo UI por ahora)");
+    console.log("Salas guardadas:", rooms);
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -391,6 +430,126 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
           >
             {loading ? "Guardando..." : "Guardar Configuración de Visualización"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DoorOpen className="h-5 w-5" />
+            Configuración de Salas
+          </CardTitle>
+          <CardDescription>
+            Gestiona los diferentes espacios o salas de tu local
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-start justify-between gap-4 rounded-lg border p-4">
+            <div className="space-y-1 flex-1">
+              <Label htmlFor="custom-rooms-toggle" className="text-base font-medium">
+                Activar salas personalizadas
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                Permite configurar diferentes espacios en tu local (Comedor, Terraza, Sala Privada, etc.)
+              </p>
+            </div>
+            <Switch
+              id="custom-rooms-toggle"
+              checked={customRoomsEnabled}
+              onCheckedChange={setCustomRoomsEnabled}
+            />
+          </div>
+
+          {customRoomsEnabled && (
+            <div className="space-y-4 animate-in fade-in-50 duration-300">
+              {rooms.length > 0 && (
+                <div className="space-y-3">
+                  {rooms.map((room) => (
+                    <Card key={room.id} className="border-2 hover:border-primary/50 transition-colors">
+                      <CardContent className="pt-6 space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor={`room-name-${room.id}`}>Nombre de la sala</Label>
+                          <Input
+                            id={`room-name-${room.id}`}
+                            value={room.name}
+                            onChange={(e) => handleRoomChange(room.id, 'name', e.target.value)}
+                            placeholder="Ej: Terraza, Comedor, Sala Privada..."
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor={`room-open-${room.id}`}>Hora de apertura</Label>
+                            <Input
+                              id={`room-open-${room.id}`}
+                              type="time"
+                              value={room.openTime}
+                              onChange={(e) => handleRoomChange(room.id, 'openTime', e.target.value)}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`room-close-${room.id}`}>Hora de cierre</Label>
+                            <Input
+                              id={`room-close-${room.id}`}
+                              type="time"
+                              value={room.closeTime}
+                              onChange={(e) => handleRoomChange(room.id, 'closeTime', e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <div className="flex items-center gap-3">
+                            <Switch
+                              id={`room-active-${room.id}`}
+                              checked={room.isActive}
+                              onCheckedChange={(checked) => handleRoomChange(room.id, 'isActive', checked)}
+                            />
+                            <Label htmlFor={`room-active-${room.id}`} className="cursor-pointer">
+                              {room.isActive ? (
+                                <span className="text-green-600 font-medium">Sala activa</span>
+                              ) : (
+                                <span className="text-muted-foreground font-medium">Sala cerrada</span>
+                              )}
+                            </Label>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleRemoveRoom(room.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Eliminar
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleAddRoom}
+                className="w-full border-dashed border-2 hover:border-primary hover:bg-primary/5"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Añadir sala
+              </Button>
+
+              {rooms.length > 0 && (
+                <Button
+                  type="button"
+                  onClick={handleSaveRooms}
+                  className="w-full bg-accent hover:bg-accent/90"
+                >
+                  💾 Guardar configuración
+                </Button>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
