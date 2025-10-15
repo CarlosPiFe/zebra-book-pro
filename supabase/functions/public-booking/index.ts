@@ -184,6 +184,21 @@ serve(async (req) => {
     const endDate = new Date(startDate.getTime() + business.booking_slot_duration_minutes * 60000);
     const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
 
+    // Get time_slot_id - REQUIRED for all bookings
+    const { data: timeSlot, error: timeSlotError } = await supabase
+      .from("time_slots")
+      .select("id")
+      .eq("slot_time", startTime)
+      .single();
+
+    if (timeSlotError || !timeSlot) {
+      console.error("Time slot not found for:", startTime, timeSlotError);
+      return new Response(
+        JSON.stringify({ error: "Invalid time slot selected" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Check booking mode
     const isManualConfirmation = business.booking_mode === 'manual';
     
@@ -224,7 +239,7 @@ serve(async (req) => {
       responseMessage = "Reserva creada correctamente";
     }
 
-    // Create the booking
+    // Create the booking with time_slot_id
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -239,7 +254,8 @@ serve(async (req) => {
         notes: notes || null,
         status: bookingStatus,
         table_id: tableId,
-        business_phone: business.phone
+        business_phone: business.phone,
+        time_slot_id: timeSlot.id
       })
       .select()
       .single();
