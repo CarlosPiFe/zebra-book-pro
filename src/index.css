@@ -135,7 +135,11 @@ All colors MUST be HSL.
 }
 
 .phone-input-custom .react-international-phone-input-container {
-  @apply w-full flex gap-3;
+  @apply w-full flex gap-3 items-center;
+}
+
+.phone-input-custom .react-international-phone-country-selector-button__button-content {
+  @apply flex-shrink-0;
 }
 
 .phone-input-custom .react-international-phone-input {
@@ -147,7 +151,7 @@ All colors MUST be HSL.
 }
 
 .phone-input-custom .react-international-phone-country-selector-button {
-  @apply h-10 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md;
+  @apply h-10 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md flex-shrink-0 min-w-[70px];
 }
 
 .phone-input-custom .react-international-phone-country-selector-dropdown {
