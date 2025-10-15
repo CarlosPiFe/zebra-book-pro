@@ -31,6 +31,7 @@ interface Business {
   mark_delayed_as_no_show?: boolean;
   booking_additional_message?: string | null;
   schedule_view_mode?: string;
+  booking_mode?: string;
 }
 
 interface BusinessSettingsProps {
@@ -67,7 +68,9 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     schedule_view_mode: business.schedule_view_mode || "editable",
   });
   
-  const [bookingConfirmationType, setBookingConfirmationType] = useState<string>("automatic");
+  const [bookingConfirmationType, setBookingConfirmationType] = useState<string>(
+    business.booking_mode || "automatic"
+  );
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -553,6 +556,35 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
               </div>
             </div>
           </RadioGroup>
+
+          <Button
+            type="button"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const { error } = await supabase
+                  .from("businesses")
+                  .update({
+                    booking_mode: bookingConfirmationType,
+                  })
+                  .eq("id", business.id);
+
+                if (error) throw error;
+
+                toast.success("Tipo de confirmación de reservas actualizado correctamente");
+                onUpdate();
+              } catch (error) {
+                console.error("Error updating booking confirmation type:", error);
+                toast.error("Error al actualizar el tipo de confirmación");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? "Guardando..." : "Guardar Tipo de Confirmación"}
+          </Button>
         </CardContent>
       </Card>
 

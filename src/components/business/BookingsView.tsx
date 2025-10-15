@@ -270,6 +270,8 @@ export function BookingsView({ businessId }: BookingsViewProps) {
         return "bg-orange-500/20 text-orange-700 border border-orange-500 hover:bg-orange-500/20 hover:text-orange-700 hover:border-orange-500";
       case "pending":
         return "bg-yellow-500/20 text-yellow-700 border border-yellow-500 hover:bg-yellow-500/20 hover:text-yellow-700 hover:border-yellow-500";
+      case "pending_confirmation":
+        return "bg-[#B99AD9]/20 text-[#7B5FA0] border border-[#B99AD9] hover:bg-[#B99AD9]/20 hover:text-[#7B5FA0] hover:border-[#B99AD9]";
       case "occupied":
         return "bg-green-500/20 text-green-700 border border-green-500 hover:bg-green-500/20 hover:text-green-700 hover:border-green-500";
       case "in_progress":
@@ -291,6 +293,8 @@ export function BookingsView({ businessId }: BookingsViewProps) {
         return "Pendiente";
       case "pending":
         return "Retraso";
+      case "pending_confirmation":
+        return "No confirmada";
       case "occupied":
         return "En curso";
       case "in_progress":

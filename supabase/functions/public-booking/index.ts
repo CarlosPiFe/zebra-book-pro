@@ -147,7 +147,7 @@ serve(async (req) => {
     // Get business information and verify it exists and is active
     const { data: business, error: businessError } = await supabase
       .from("businesses")
-      .select("booking_slot_duration_minutes, phone, is_active")
+      .select("booking_slot_duration_minutes, phone, is_active, booking_mode")
       .eq("id", businessId)
       .eq("is_active", true)
       .single();
@@ -184,28 +184,47 @@ serve(async (req) => {
     const endDate = new Date(startDate.getTime() + business.booking_slot_duration_minutes * 60000);
     const endTime = `${String(endDate.getHours()).padStart(2, '0')}:${String(endDate.getMinutes()).padStart(2, '0')}`;
 
-    // Find available table
-    const { tableId, status } = await findAvailableTable(
-      supabase,
-      businessId,
-      bookingDate,
-      startTime,
-      endTime,
-      partySize
-    );
+    // Check booking mode
+    const isManualConfirmation = business.booking_mode === 'manual';
+    
+    let tableId: string | null = null;
+    let bookingStatus: string;
+    let responseMessage: string;
 
-    // If no table is available, return error and don't create booking
-    if (tableId === null) {
-      console.log("No hay disponibilidad para esta fecha y hora");
-      return new Response(
-        JSON.stringify({ 
-          error: "No hay disponibilidad para la fecha y hora seleccionadas. Por favor, elige otro horario." 
-        }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    if (isManualConfirmation) {
+      // Manual confirmation mode: create booking without table assignment
+      bookingStatus = "pending_confirmation";
+      responseMessage = "Tu reserva ha sido registrada correctamente. El negocio confirmará tu cita en breve. Te contactarán para confirmar la reserva.";
+      console.log("Creating booking in manual confirmation mode - no table assignment");
+    } else {
+      // Automatic confirmation mode: find and assign table
+      const result = await findAvailableTable(
+        supabase,
+        businessId,
+        bookingDate,
+        startTime,
+        endTime,
+        partySize
       );
+      
+      tableId = result.tableId;
+      
+      // If no table is available in automatic mode, return error
+      if (tableId === null) {
+        console.log("No hay disponibilidad para esta fecha y hora");
+        return new Response(
+          JSON.stringify({ 
+            error: "No hay disponibilidad para la fecha y hora seleccionadas. Por favor, elige otro horario." 
+          }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      bookingStatus = "reserved";
+      responseMessage = "Reserva creada correctamente";
     }
 
-    // Create the booking only if table is available
+    // Create the booking
     const { data: booking, error: bookingError } = await supabase
       .from("bookings")
       .insert({
@@ -218,7 +237,7 @@ serve(async (req) => {
         end_time: endTime,
         party_size: partySize,
         notes: notes || null,
-        status: "reserved",
+        status: bookingStatus,
         table_id: tableId,
         business_phone: business.phone
       })
@@ -239,7 +258,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         booking,
-        message: "Reserva creada correctamente" 
+        message: responseMessage
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

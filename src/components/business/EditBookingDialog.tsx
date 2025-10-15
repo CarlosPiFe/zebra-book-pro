@@ -145,13 +145,14 @@ export function EditBookingDialog({
 
       if (tablesError) throw tablesError;
 
-      // Get occupied tables for this time slot (excluding current booking)
+      // Get occupied tables for this time slot (excluding current booking and pending_confirmation)
       const { data: existingBookings, error: bookingsError } = await supabase
         .from("bookings")
         .select("table_id")
         .eq("booking_date", dateString)
         .neq("status", "cancelled")
         .neq("status", "completed")
+        .neq("status", "pending_confirmation")
         .neq("id", booking.id)
         .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
 
@@ -207,12 +208,14 @@ export function EditBookingDialog({
       }
 
       // Using < and > (not <= and >=) so end time is exclusive - allows back-to-back bookings
+      // Exclude pending_confirmation bookings as they don't occupy tables
       const { data: existingBookings, error: bookingsError } = await supabase
         .from("bookings")
         .select("table_id")
         .eq("booking_date", date)
         .neq("status", "cancelled")
         .neq("status", "completed")
+        .neq("status", "pending_confirmation")
         .neq("id", excludeBookingId)
         .or(`and(start_time.lt.${endTime},end_time.gt.${startTime})`);
 
@@ -370,21 +373,51 @@ export function EditBookingDialog({
   const handleStatusChange = async (newStatus: string) => {
     try {
       setLoading(true);
-      const { error } = await supabase
-        .from("bookings")
-        .update({ status: newStatus })
-        .eq("id", booking.id);
+      
+      // If confirming a pending_confirmation booking, assign a table
+      if (booking.status === "pending_confirmation" && newStatus === "reserved") {
+        const dateString = format(bookingDate!, "yyyy-MM-dd");
+        const result = await findAvailableTable(
+          dateString,
+          startTime,
+          endTime,
+          parseInt(partySize),
+          booking.id
+        );
+        
+        const { error } = await supabase
+          .from("bookings")
+          .update({ 
+            status: newStatus,
+            table_id: result.tableId
+          })
+          .eq("id", booking.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const statusMessages: Record<string, string> = {
-        occupied: "Cliente marcado como llegado",
-        reserved: "Reserva marcada como pendiente",
-        pending: "Reserva marcada en retraso",
-        completed: "Reserva marcada como completada",
-      };
+        if (result.tableId) {
+          toast.success("Reserva confirmada y mesa asignada");
+        } else {
+          toast.warning("Reserva confirmada pero sin mesa disponible. Quedará como pendiente.");
+        }
+      } else {
+        const { error } = await supabase
+          .from("bookings")
+          .update({ status: newStatus })
+          .eq("id", booking.id);
 
-      toast.success(statusMessages[newStatus] || "Estado actualizado");
+        if (error) throw error;
+
+        const statusMessages: Record<string, string> = {
+          occupied: "Cliente marcado como llegado",
+          reserved: "Reserva marcada como pendiente",
+          pending: "Reserva marcada en retraso",
+          completed: "Reserva marcada como completada",
+        };
+
+        toast.success(statusMessages[newStatus] || "Estado actualizado");
+      }
+      
       onOpenChange(false);
       onBookingUpdated();
     } catch (error) {
@@ -610,6 +643,16 @@ export function EditBookingDialog({
           <DialogFooter className="gap-2 flex-col sm:flex-row sm:justify-between">
             {/* Left side: Status control buttons */}
             <div className="flex gap-2 w-full sm:w-auto">
+              {booking.status === "pending_confirmation" && (
+                <Button
+                  type="button"
+                  className="flex-1 sm:flex-none bg-[#7B5FA0] hover:bg-[#6B4F90] text-white"
+                  onClick={() => handleStatusChange("reserved")}
+                  disabled={loading}
+                >
+                  Confirmar reserva
+                </Button>
+              )}
               {(booking.status === "reserved" || booking.status === "pending") && (
                 <Button
                   type="button"
@@ -630,7 +673,7 @@ export function EditBookingDialog({
                   Completada
                 </Button>
               )}
-              {(booking.status === "reserved" || booking.status === "pending" || booking.status === "occupied") && (
+              {(booking.status === "reserved" || booking.status === "pending" || booking.status === "occupied" || booking.status === "pending_confirmation") && (
                 <Button
                   type="button"
                   variant="outline"
