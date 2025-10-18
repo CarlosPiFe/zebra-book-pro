@@ -29,11 +29,19 @@ interface Business {
   social_media: any;
   booking_additional_message?: string | null;
 }
+
+interface Room {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
 export default function BusinessDetails() {
   const {
     businessId
   } = useParams();
   const [business, setBusiness] = useState<Business | null>(null);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -43,6 +51,7 @@ export default function BusinessDetails() {
     clientEmail: "",
     clientPhone: "",
     partySize: "2",
+    roomId: undefined as string | undefined,
     bookingDate: undefined as Date | undefined,
     startTime: undefined as string | undefined,
     notes: ""
@@ -58,29 +67,44 @@ export default function BusinessDetails() {
     refreshAvailability,
     loading: availabilityLoading,
     tables
-  } = useBookingAvailability(businessId);
+  } = useBookingAvailability(businessId, bookingForm.roomId);
   const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map(t => t.max_capacity)) : 20;
 
-  // 🔹 Cargar negocio desde Supabase
+  // 🔹 Cargar negocio y salas desde Supabase
   useEffect(() => {
     if (!businessId) return;
-    const loadBusiness = async () => {
+    const loadData = async () => {
       setLoading(true);
       try {
+        // Cargar negocio
         const {
-          data,
-          error
+          data: businessData,
+          error: businessError
         } = await supabase.from("businesses").select("*").eq("id", businessId).eq("is_active", true).maybeSingle();
-        if (error) throw error;
-        setBusiness(data);
+        if (businessError) throw businessError;
+        setBusiness(businessData);
+
+        // Cargar salas activas
+        const {
+          data: roomsData,
+          error: roomsError
+        } = await supabase
+          .from("business_rooms")
+          .select("id, name, is_active")
+          .eq("business_id", businessId)
+          .eq("is_active", true)
+          .order("name");
+        
+        if (roomsError) throw roomsError;
+        setRooms(roomsData || []);
       } catch (error) {
-        console.error("Error cargando negocio:", error);
+        console.error("Error cargando datos:", error);
         toast.error("No se pudo cargar la información del negocio");
       } finally {
         setLoading(false);
       }
     };
-    loadBusiness();
+    loadData();
   }, [businessId]);
 
   // 📅 Cambiar fecha
@@ -97,6 +121,16 @@ export default function BusinessDetails() {
     setBookingForm({
       ...bookingForm,
       partySize: value,
+      startTime: undefined
+    });
+  };
+
+  // 🏠 Cambiar sala
+  const handleRoomChange = (value: string) => {
+    setBookingForm({
+      ...bookingForm,
+      roomId: value || undefined,
+      bookingDate: undefined,
       startTime: undefined
     });
   };
@@ -158,6 +192,7 @@ export default function BusinessDetails() {
           bookingDate: dateStr,
           startTime: bookingForm.startTime,
           partySize: partySize,
+          roomId: bookingForm.roomId || undefined,
           notes: bookingForm.notes || undefined
         }
       });
@@ -182,6 +217,7 @@ export default function BusinessDetails() {
         clientEmail: "",
         clientPhone: "",
         partySize: "2",
+        roomId: undefined,
         bookingDate: undefined,
         startTime: undefined,
         notes: ""
@@ -386,6 +422,26 @@ export default function BusinessDetails() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Selector de sala */}
+                  {rooms.length > 0 && (
+                    <div>
+                      <Label>Elegir sala</Label>
+                      <Select value={bookingForm.roomId || ""} onValueChange={handleRoomChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Todas las salas" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Todas las salas</SelectItem>
+                          {rooms.map((room) => (
+                            <SelectItem key={room.id} value={room.id}>
+                              {room.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   <div>
                     <Label>Fecha *</Label>

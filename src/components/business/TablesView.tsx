@@ -25,10 +25,17 @@ import { TimePicker } from "@/components/ui/time-picker";
 import { addMinutes } from "date-fns";
 import { getTimeSlotId } from "@/lib/timeSlots";
 
+interface Room {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
 interface Table {
   id: string;
   table_number: number;
   max_capacity: number;
+  room_id?: string | null;
   current_booking?: Booking | null;
   total_spent?: number;
   is_out_of_service?: boolean;
@@ -54,6 +61,8 @@ interface TablesViewProps {
 
 export function TablesView({ businessId }: TablesViewProps) {
   const [tables, setTables] = useState<Table[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAddTableDialogOpen, setIsAddTableDialogOpen] = useState(false);
   const [isBookingDialogOpen, setIsBookingDialogOpen] = useState(false);
@@ -62,6 +71,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [tableNumber, setTableNumber] = useState("");
   const [maxCapacity, setMaxCapacity] = useState("");
+  const [selectedRoomForTable, setSelectedRoomForTable] = useState<string>("");
   const [orders, setOrders] = useState<any[]>([]);
   const [deleteTableId, setDeleteTableId] = useState<string | null>(null);
   const [deleteBookingDialogOpen, setDeleteBookingDialogOpen] = useState(false);
@@ -84,6 +94,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [partySize, setPartySize] = useState("");
 
   useEffect(() => {
+    loadRooms();
     loadTables();
 
     // Subscribe to realtime changes in bookings table
@@ -108,6 +119,22 @@ export function TablesView({ businessId }: TablesViewProps) {
       supabase.removeChannel(channel);
     };
   }, [businessId, filterDate, filterTime]);
+
+  const loadRooms = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("business_rooms")
+        .select("id, name, is_active")
+        .eq("business_id", businessId)
+        .eq("is_active", true)
+        .order("name");
+
+      if (error) throw error;
+      setRooms(data || []);
+    } catch (error) {
+      console.error("Error loading rooms:", error);
+    }
+  };
 
   // Auto-calculate end time when start time changes
   useEffect(() => {
@@ -226,6 +253,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         business_id: businessId,
         table_number: parseInt(tableNumber),
         max_capacity: parseInt(maxCapacity),
+        room_id: selectedRoomForTable || null,
       });
 
       if (error) throw error;
@@ -234,6 +262,7 @@ export function TablesView({ businessId }: TablesViewProps) {
       setIsAddTableDialogOpen(false);
       setTableNumber("");
       setMaxCapacity("");
+      setSelectedRoomForTable("");
       loadTables();
     } catch (error: any) {
       console.error("Error adding table:", error);
@@ -642,6 +671,19 @@ export function TablesView({ businessId }: TablesViewProps) {
     );
   }
 
+  // Filtrar mesas según la sala seleccionada
+  const filteredTables = selectedRoomId
+    ? tables.filter(t => t.room_id === selectedRoomId)
+    : tables;
+
+  // Agrupar mesas por sala para vista "Todos"
+  const tablesByRoom = tables.reduce((acc, table) => {
+    const roomId = table.room_id || "sin-sala";
+    if (!acc[roomId]) acc[roomId] = [];
+    acc[roomId].push(table);
+    return acc;
+  }, {} as Record<string, Table[]>);
+
   return (
     <div className="space-y-4 bg-background min-h-screen">
       <h1 className="text-xl font-semibold">Gestión de Mesas</h1>
@@ -650,10 +692,10 @@ export function TablesView({ businessId }: TablesViewProps) {
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
           <CardDescription>
-            Selecciona fecha y hora para ver el estado de las mesas en ese momento
+            Selecciona fecha, hora y sala para ver el estado de las mesas
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Fecha</Label>
@@ -672,6 +714,34 @@ export function TablesView({ businessId }: TablesViewProps) {
               />
             </div>
           </div>
+
+          {/* Filtro de salas */}
+          {rooms.length > 0 && (
+            <div className="space-y-2">
+              <Label>Filtrar por sala</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant={selectedRoomId === null ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setSelectedRoomId(null)}
+                  className="rounded-lg"
+                >
+                  Todos
+                </Button>
+                {rooms.map((room) => (
+                  <Button
+                    key={room.id}
+                    variant={selectedRoomId === room.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedRoomId(room.id)}
+                    className="rounded-lg"
+                  >
+                    {room.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -693,28 +763,46 @@ export function TablesView({ businessId }: TablesViewProps) {
                   Completa la información de la mesa
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="table-number">Número de Mesa</Label>
-                  <Input
-                    id="table-number"
-                    type="number"
-                    placeholder="Ej: 1"
-                    value={tableNumber}
-                    onChange={(e) => setTableNumber(e.target.value)}
-                  />
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="table-number">Número de Mesa</Label>
+                    <Input
+                      id="table-number"
+                      type="number"
+                      placeholder="Ej: 1"
+                      value={tableNumber}
+                      onChange={(e) => setTableNumber(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="max-capacity">Capacidad Máxima</Label>
+                    <Input
+                      id="max-capacity"
+                      type="number"
+                      placeholder="Ej: 4"
+                      value={maxCapacity}
+                      onChange={(e) => setMaxCapacity(e.target.value)}
+                    />
+                  </div>
+                  {rooms.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="room">Sala (opcional)</Label>
+                      <Select value={selectedRoomForTable} onValueChange={setSelectedRoomForTable}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar sala" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sin sala específica</SelectItem>
+                          {rooms.map((room) => (
+                            <SelectItem key={room.id} value={room.id}>
+                              {room.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="max-capacity">Capacidad Máxima</Label>
-                  <Input
-                    id="max-capacity"
-                    type="number"
-                    placeholder="Ej: 4"
-                    value={maxCapacity}
-                    onChange={(e) => setMaxCapacity(e.target.value)}
-                  />
-                </div>
-              </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddTableDialogOpen(false)}>
                   Cancelar
@@ -762,6 +850,24 @@ export function TablesView({ businessId }: TablesViewProps) {
                       onChange={(e) => setMaxCapacity(e.target.value)}
                     />
                   </div>
+                  {rooms.length > 0 && (
+                    <div className="space-y-2">
+                      <Label htmlFor="room">Sala (opcional)</Label>
+                      <Select value={selectedRoomForTable} onValueChange={setSelectedRoomForTable}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Seleccionar sala" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="">Sin sala específica</SelectItem>
+                          {rooms.map((room) => (
+                            <SelectItem key={room.id} value={room.id}>
+                              {room.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsAddTableDialogOpen(false)}>
@@ -773,8 +879,69 @@ export function TablesView({ businessId }: TablesViewProps) {
             </Dialog>
           </div>
 
-          <div className={`grid gap-2 ${tables.length >= 8 ? 'grid-cols-[repeat(auto-fit,minmax(80px,1fr))]' : 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8'}`}>
-            {tables.map((table) => (
+          {/* Mostrar agrupado por salas si no hay filtro */}
+          {selectedRoomId === null && rooms.length > 0 ? (
+            <div className="space-y-6">
+              {Object.entries(tablesByRoom).map(([roomId, roomTables]) => {
+                const room = rooms.find(r => r.id === roomId);
+                const roomName = room ? room.name : "Sin sala asignada";
+                
+                return (
+                  <div key={roomId} className="space-y-2">
+                    <h3 className="text-lg font-semibold text-foreground">{roomName}</h3>
+                    <div className={`grid gap-2 ${roomTables.length >= 8 ? 'grid-cols-[repeat(auto-fit,minmax(80px,1fr))]' : 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8'}`}>
+                      {roomTables.map((table) => (
+                        <button
+                          key={table.id}
+                          onClick={() => handleTableClick(table)}
+                          className={`relative aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-between hover:shadow-md transition-all group ${getTableColor(table)}`}
+                        >
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTableId(table.id);
+                            }}
+                            className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded"
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </button>
+                          
+                          {getTableStatusLabel(table) && (
+                            <div className={`text-[9px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
+                              {getTableStatusLabel(table)}
+                            </div>
+                          )}
+                          
+                          <div className="flex flex-col items-center gap-1 flex-1 justify-center">
+                            <div className="text-lg font-bold text-foreground">
+                              {table.table_number}
+                            </div>
+                            <div className="flex items-center gap-0.5 text-[10px] text-foreground/80 font-medium">
+                              <Users className="h-3 w-3" />
+                              <span>{table.max_capacity}</span>
+                            </div>
+                            {table.current_booking && table.current_booking.client_name && (
+                              <div className="text-[9px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
+                                {table.current_booking.client_name}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {table.current_booking?.status === "occupied" && table.total_spent! > 0 && (
+                            <div className="text-xs font-bold text-primary">
+                              ${table.total_spent!.toFixed(2)}
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className={`grid gap-2 ${filteredTables.length >= 8 ? 'grid-cols-[repeat(auto-fit,minmax(80px,1fr))]' : 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8'}`}>
+              {filteredTables.map((table) => (
               <button
                 key={table.id}
                 onClick={() => handleTableClick(table)}
@@ -826,7 +993,8 @@ export function TablesView({ businessId }: TablesViewProps) {
                 )}
               </button>
             ))}
-          </div>
+            </div>
+          )}
 
           {/* Action Dialog */}
           <Dialog open={isActionDialogOpen} onOpenChange={setIsActionDialogOpen}>

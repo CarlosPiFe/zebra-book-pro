@@ -30,6 +30,7 @@ const PublicBookingSchema = z.object({
   bookingDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format (use YYYY-MM-DD)"),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, "Invalid time format (use HH:MM)"),
   partySize: z.number().int("Party size must be a whole number").min(1, "Party size must be at least 1").max(50, "Party size cannot exceed 50"),
+  roomId: z.string().uuid({ message: "Invalid room ID format" }).optional(),
   notes: z.string().max(500, "Notes are too long").optional()
 });
 
@@ -39,15 +40,22 @@ async function findAvailableTable(
   bookingDate: string,
   startTime: string,
   endTime: string,
-  partySize: number
+  partySize: number,
+  roomId?: string
 ): Promise<{ tableId: string | null; status: string }> {
-  // Get all tables for the business
-  const { data: tables, error: tablesError } = await supabase
+  // Get all tables for the business (filtered by room if provided)
+  let query = supabase
     .from("tables")
     .select("id, max_capacity")
     .eq("business_id", businessId)
-    .gte("max_capacity", partySize)
-    .order("max_capacity", { ascending: true });
+    .gte("max_capacity", partySize);
+
+  // Filter by room if specified
+  if (roomId) {
+    query = query.eq("room_id", roomId);
+  }
+
+  const { data: tables, error: tablesError } = await query.order("max_capacity", { ascending: true });
 
   if (tablesError || !tables || tables.length === 0) {
     console.log("No tables found with sufficient capacity");
@@ -143,6 +151,7 @@ serve(async (req) => {
       bookingDate, 
       startTime, 
       partySize,
+      roomId,
       notes 
     } = validationResult.data;
 
@@ -244,7 +253,8 @@ serve(async (req) => {
         bookingDate,
         startTime,
         endTime,
-        partySize
+        partySize,
+        roomId
       );
       
       tableId = result.tableId;
@@ -342,6 +352,7 @@ serve(async (req) => {
         notes: notes || null,
         status: bookingStatus,
         table_id: tableId,
+        room_id: roomId || null,
         business_phone: business.phone,
         time_slot_id: timeSlotId
       })

@@ -23,14 +23,21 @@ interface Table {
   id: string;
   table_number: number;
   max_capacity: number;
+  room_id?: string | null;
 }
 
-export function useBookingAvailability(businessId: string | undefined) {
+export function useBookingAvailability(businessId: string | undefined, roomId?: string | undefined) {
   const [availabilitySlots, setAvailabilitySlots] = useState<AvailabilitySlot[]>([]);
-  const [tables, setTables] = useState<Table[]>([]);
+  const [allTables, setAllTables] = useState<Table[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [slotDuration, setSlotDuration] = useState(60);
   const [loading, setLoading] = useState(true);
+
+  // Filtrar mesas por sala si se proporciona roomId
+  const tables = useMemo(() => {
+    if (!roomId) return allTables;
+    return allTables.filter(table => table.room_id === roomId);
+  }, [allTables, roomId]);
 
   useEffect(() => {
     if (!businessId) return;
@@ -85,11 +92,12 @@ export function useBookingAvailability(businessId: string | undefined) {
             id: table.id,
             numero: table.table_number,
             capacidad_maxima: table.max_capacity,
+            sala_id: table.room_id,
             TODO_EL_OBJETO: table,
           });
         });
 
-        setTables(tablesData || []);
+        setAllTables(tablesData || []);
 
         // Load bookings (for the next 30 days)
         const today = new Date().toISOString().split("T")[0];
@@ -480,7 +488,7 @@ export function useBookingAvailability(businessId: string | undefined) {
         .eq("business_id", businessId);
 
       if (tablesError) throw tablesError;
-      setTables(tablesData || []);
+      setAllTables(tablesData || []);
 
       const today = new Date().toISOString().split("T")[0];
       const futureDate = new Date();

@@ -101,6 +101,7 @@ export type Database = {
           id: string
           notes: string | null
           party_size: number
+          room_id: string | null
           start_time: string
           status: string
           table_id: string | null
@@ -120,6 +121,7 @@ export type Database = {
           id?: string
           notes?: string | null
           party_size?: number
+          room_id?: string | null
           start_time: string
           status?: string
           table_id?: string | null
@@ -139,6 +141,7 @@ export type Database = {
           id?: string
           notes?: string | null
           party_size?: number
+          room_id?: string | null
           start_time?: string
           status?: string
           table_id?: string | null
@@ -158,6 +161,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "business_rooms"
             referencedColumns: ["id"]
           },
           {
@@ -605,6 +615,7 @@ export type Database = {
           created_at: string
           id: string
           max_capacity: number
+          room_id: string | null
           table_number: number
           updated_at: string
         }
@@ -613,6 +624,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_capacity: number
+          room_id?: string | null
           table_number: number
           updated_at?: string
         }
@@ -621,6 +633,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_capacity?: number
+          room_id?: string | null
           table_number?: number
           updated_at?: string
         }
@@ -630,6 +643,13 @@ export type Database = {
             columns: ["business_id"]
             isOneToOne: false
             referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tables_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "business_rooms"
             referencedColumns: ["id"]
           },
         ]
