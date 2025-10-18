@@ -1004,7 +1004,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                             </div>
                             <div className="flex items-center gap-0.5 text-[10px] text-foreground/80 font-medium">
                               <Users className="h-3 w-3" />
-                              <span>{table.max_capacity}</span>
+                              <span>{table.min_capacity}-{table.max_capacity}</span>
                             </div>
                             {table.current_booking && table.current_booking.client_name && (
                               <div className="text-[9px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
@@ -1060,7 +1060,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                   {/* Capacidad */}
                   <div className="flex items-center gap-0.5 text-[10px] text-foreground/80 font-medium">
                     <Users className="h-3 w-3" />
-                    <span>{table.max_capacity}</span>
+                    <span>{table.min_capacity}-{table.max_capacity}</span>
                   </div>
                   
                   {/* Nombre del reservante */}
