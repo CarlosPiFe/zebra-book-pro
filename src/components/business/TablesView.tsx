@@ -77,8 +77,10 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [deleteTableId, setDeleteTableId] = useState<string | null>(null);
   const [deleteBookingDialogOpen, setDeleteBookingDialogOpen] = useState(false);
-  const [isChangeRoomDialogOpen, setIsChangeRoomDialogOpen] = useState(false);
+  const [isConfigDialogOpen, setIsConfigDialogOpen] = useState(false);
   const [newRoomIdForTable, setNewRoomIdForTable] = useState<string>("");
+  const [newMinCapacity, setNewMinCapacity] = useState<string>("");
+  const [newMaxCapacity, setNewMaxCapacity] = useState<string>("");
   
   // Filter states
   const [filterDate, setFilterDate] = useState<Date>(new Date());
@@ -592,31 +594,57 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
-  const handleOpenChangeRoomDialog = () => {
+  const handleOpenConfigDialog = () => {
     if (!selectedTable) return;
     setNewRoomIdForTable(selectedTable.room_id || "");
+    setNewMinCapacity(selectedTable.min_capacity?.toString() || "1");
+    setNewMaxCapacity(selectedTable.max_capacity?.toString() || "");
     setIsActionDialogOpen(false);
-    setIsChangeRoomDialogOpen(true);
+    setIsConfigDialogOpen(true);
   };
 
-  const handleChangeTableRoom = async () => {
+  const handleSaveTableConfig = async () => {
     if (!selectedTable) return;
+
+    const minCap = parseInt(newMinCapacity);
+    const maxCap = parseInt(newMaxCapacity);
+
+    if (isNaN(minCap) || isNaN(maxCap)) {
+      toast.error("Por favor ingresa valores válidos para las capacidades");
+      return;
+    }
+
+    if (minCap > maxCap) {
+      toast.error("La capacidad mínima no puede ser mayor que la máxima");
+      return;
+    }
+
+    if (minCap < 1) {
+      toast.error("La capacidad mínima debe ser al menos 1");
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from("tables")
-        .update({ room_id: newRoomIdForTable || null } as any)
+        .update({ 
+          room_id: newRoomIdForTable || null,
+          min_capacity: minCap,
+          max_capacity: maxCap
+        } as any)
         .eq("id", selectedTable.id);
 
       if (error) throw error;
 
-      toast.success("Sala de la mesa actualizada correctamente");
-      setIsChangeRoomDialogOpen(false);
+      toast.success("Configuración de la mesa actualizada correctamente");
+      setIsConfigDialogOpen(false);
       setNewRoomIdForTable("");
+      setNewMinCapacity("");
+      setNewMaxCapacity("");
       loadTables();
     } catch (error) {
-      console.error("Error changing table room:", error);
-      toast.error("Error al cambiar la sala de la mesa");
+      console.error("Error updating table config:", error);
+      toast.error("Error al actualizar la configuración de la mesa");
     }
   };
 
@@ -1091,16 +1119,14 @@ export function TablesView({ businessId }: TablesViewProps) {
                     >
                       Reservar
                     </Button>
-                    {rooms.length > 0 && (
-                      <Button
-                        variant="outline"
-                        className="h-12"
-                        onClick={handleOpenChangeRoomDialog}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Cambiar Sala
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      className="h-12"
+                      onClick={handleOpenConfigDialog}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Configuración
+                    </Button>
                     <Button
                       variant="outline"
                       className="border-red-500 text-red-600 hover:bg-red-50 h-12"
@@ -1135,16 +1161,14 @@ export function TablesView({ businessId }: TablesViewProps) {
                     >
                       Cambiar Reserva
                     </Button>
-                    {rooms.length > 0 && (
-                      <Button
-                        variant="outline"
-                        className="h-12"
-                        onClick={handleOpenChangeRoomDialog}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Cambiar Sala
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      className="h-12"
+                      onClick={handleOpenConfigDialog}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Configuración
+                    </Button>
                     <Button
                      variant="destructive"
                      className="h-12"
@@ -1183,10 +1207,10 @@ export function TablesView({ businessId }: TablesViewProps) {
                         <Button
                           variant="outline"
                           className="w-full h-12"
-                          onClick={handleOpenChangeRoomDialog}
+                          onClick={handleOpenConfigDialog}
                         >
                           <Edit className="h-4 w-4 mr-2" />
-                          Cambiar Sala
+                          Configuración
                         </Button>
                       )}
                       <div className="flex gap-2">
@@ -1400,38 +1424,68 @@ export function TablesView({ businessId }: TablesViewProps) {
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* Change Room Dialog */}
-          <Dialog open={isChangeRoomDialogOpen} onOpenChange={setIsChangeRoomDialogOpen}>
+          {/* Table Configuration Dialog */}
+          <Dialog open={isConfigDialogOpen} onOpenChange={setIsConfigDialogOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Cambiar Sala - Mesa {selectedTable?.table_number}</DialogTitle>
+                <DialogTitle>Configuración - Mesa {selectedTable?.table_number}</DialogTitle>
                 <DialogDescription>
-                  Selecciona la nueva sala para esta mesa
+                  Configura la sala y las capacidades de esta mesa
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
+                {rooms.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="new-room">Sala</Label>
+                    <Select value={newRoomIdForTable || "no-room"} onValueChange={(value) => setNewRoomIdForTable(value === "no-room" ? "" : value)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar sala" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no-room">Sin sala específica</SelectItem>
+                        {rooms.map((room) => (
+                          <SelectItem key={room.id} value={room.id}>
+                            {room.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
-                  <Label htmlFor="new-room">Sala</Label>
-                  <Select value={newRoomIdForTable || "no-room"} onValueChange={(value) => setNewRoomIdForTable(value === "no-room" ? "" : value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar sala" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="no-room">Sin sala específica</SelectItem>
-                      {rooms.map((room) => (
-                        <SelectItem key={room.id} value={room.id}>
-                          {room.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="new-min-capacity">Capacidad Mínima</Label>
+                  <Input
+                    id="new-min-capacity"
+                    type="number"
+                    placeholder="Ej: 1"
+                    value={newMinCapacity}
+                    onChange={(e) => setNewMinCapacity(e.target.value)}
+                    min="1"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Número mínimo de personas que pueden usar esta mesa
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-max-capacity">Capacidad Máxima</Label>
+                  <Input
+                    id="new-max-capacity"
+                    type="number"
+                    placeholder="Ej: 4"
+                    value={newMaxCapacity}
+                    onChange={(e) => setNewMaxCapacity(e.target.value)}
+                    min="1"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Número máximo de personas que pueden usar esta mesa
+                  </p>
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsChangeRoomDialogOpen(false)}>
+                <Button variant="outline" onClick={() => setIsConfigDialogOpen(false)}>
                   Cancelar
                 </Button>
-                <Button onClick={handleChangeTableRoom}>Guardar Cambios</Button>
+                <Button onClick={handleSaveTableConfig}>Guardar Cambios</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
