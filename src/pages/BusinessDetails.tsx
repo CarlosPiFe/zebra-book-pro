@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users } from "lucide-react";
@@ -40,15 +41,16 @@ export default function BusinessDetails() {
   const {
     businessId
   } = useParams();
+  const navigate = useNavigate();
   const [business, setBusiness] = useState<Business | null>(null);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  // Booking form state
+  // Booking form state (sin clientEmail porque se obtiene del usuario autenticado)
   const [bookingForm, setBookingForm] = useState({
     clientName: "",
-    clientEmail: "",
     clientPhone: "",
     partySize: "2",
     roomId: undefined as string | undefined,
@@ -69,6 +71,21 @@ export default function BusinessDetails() {
     tables
   } = useBookingAvailability(businessId, bookingForm.roomId);
   const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map(t => t.max_capacity)) : 20;
+
+  // 🔐 Verificar autenticación
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // 🔹 Cargar negocio y salas desde Supabase
   useEffect(() => {
@@ -165,6 +182,14 @@ export default function BusinessDetails() {
   // 💾 Enviar reserva - Usando el edge function public-booking
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Verificar autenticación
+    if (!user?.email) {
+      toast.error("Debes iniciar sesión para hacer una reserva");
+      navigate("/auth");
+      return;
+    }
+
     if (!bookingForm.clientName || !bookingForm.clientPhone || !bookingForm.bookingDate || !bookingForm.startTime) {
       toast.error("Por favor completa todos los campos obligatorios");
       return;
@@ -180,6 +205,7 @@ export default function BusinessDetails() {
     setSubmitting(true);
     try {
       // Llamar al edge function public-booking que maneja el booking_mode
+      // Usar el email del usuario autenticado
       const {
         data,
         error
@@ -187,7 +213,7 @@ export default function BusinessDetails() {
         body: {
           businessId: businessId,
           clientName: bookingForm.clientName,
-          clientEmail: bookingForm.clientEmail || undefined,
+          clientEmail: user.email,
           clientPhone: bookingForm.clientPhone,
           bookingDate: dateStr,
           startTime: bookingForm.startTime,
@@ -214,7 +240,6 @@ export default function BusinessDetails() {
       // Resetear formulario
       setBookingForm({
         clientName: "",
-        clientEmail: "",
         clientPhone: "",
         partySize: "2",
         roomId: undefined,
@@ -374,42 +399,53 @@ export default function BusinessDetails() {
                     <p className="text-sm text-foreground font-medium">{business.booking_additional_message}</p>
                   </div>}
 
+                {!user && (
+                  <div className="mb-4 p-4 bg-yellow-500/10 border-l-4 border-yellow-500 rounded-md">
+                    <p className="text-sm text-foreground font-medium">
+                      Debes <Link to="/auth" className="underline font-bold">iniciar sesión</Link> para hacer una reserva
+                    </p>
+                  </div>
+                )}
+
                 <form onSubmit={handleBookingSubmit} className="space-y-4">
                   <div>
                     <Label>Nombre *</Label>
-                    <Input value={bookingForm.clientName} onChange={e => setBookingForm({
-                    ...bookingForm,
-                    clientName: e.target.value
-                  })} />
+                    <Input 
+                      value={bookingForm.clientName} 
+                      onChange={e => setBookingForm({
+                        ...bookingForm,
+                        clientName: e.target.value
+                      })} 
+                      disabled={!user}
+                    />
                   </div>
 
                   <div>
                     <Label>Teléfono *</Label>
-                    <PhoneInput defaultCountry="es" value={bookingForm.clientPhone} onChange={phone => {
-                    setBookingForm({
-                      ...bookingForm,
-                      clientPhone: phone
-                    });
-                    if (phone) {
-                      validatePhone(phone);
-                    } else {
-                      setPhoneError("");
-                    }
-                  }} inputClassName={phoneError ? "!border-destructive" : ""} className="phone-input-custom px-0 text-base mx-0" />
+                    <PhoneInput 
+                      defaultCountry="es" 
+                      value={bookingForm.clientPhone} 
+                      onChange={phone => {
+                        setBookingForm({
+                          ...bookingForm,
+                          clientPhone: phone
+                        });
+                        if (phone) {
+                          validatePhone(phone);
+                        } else {
+                          setPhoneError("");
+                        }
+                      }} 
+                      inputClassName={phoneError ? "!border-destructive" : ""} 
+                      className="phone-input-custom px-0 text-base mx-0"
+                      disabled={!user}
+                    />
                     {phoneError && <p className="text-sm text-destructive mt-1">{phoneError}</p>}
                   </div>
 
                   <div>
-                    <Label>Email</Label>
-                    <Input type="email" value={bookingForm.clientEmail} onChange={e => setBookingForm({
-                    ...bookingForm,
-                    clientEmail: e.target.value
-                  })} placeholder="tu@email.com" />
-                  </div>
-
-                  <div>
                     <Label>Número de personas *</Label>
-                    <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange}>
+                    <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange} disabled={!user}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -427,7 +463,7 @@ export default function BusinessDetails() {
                   {rooms.length > 0 && (
                     <div>
                       <Label>Elegir sala</Label>
-                      <Select value={bookingForm.roomId || "all-rooms"} onValueChange={handleRoomChange}>
+                      <Select value={bookingForm.roomId || "all-rooms"} onValueChange={handleRoomChange} disabled={!user}>
                         <SelectTrigger>
                           <SelectValue placeholder="Todas las salas" />
                         </SelectTrigger>
@@ -445,15 +481,24 @@ export default function BusinessDetails() {
 
                   <div>
                     <Label>Fecha *</Label>
-                    <DatePicker date={bookingForm.bookingDate} onDateChange={handleDateChange} placeholder="Seleccionar fecha" disabled={d => !isDateAvailable(d)} />
+                    <DatePicker 
+                      date={bookingForm.bookingDate} 
+                      onDateChange={handleDateChange} 
+                      placeholder="Seleccionar fecha" 
+                      disabled={!user ? () => true : (d => !isDateAvailable(d))} 
+                    />
                   </div>
 
                   <div>
                     <Label>Hora *</Label>
-                    <Select value={bookingForm.startTime ?? undefined} onValueChange={v => setBookingForm({
-                    ...bookingForm,
-                    startTime: v
-                  })} disabled={!bookingForm.bookingDate || availabilityLoading}>
+                    <Select 
+                      value={bookingForm.startTime ?? undefined} 
+                      onValueChange={v => setBookingForm({
+                        ...bookingForm,
+                        startTime: v
+                      })} 
+                      disabled={!user || !bookingForm.bookingDate || availabilityLoading}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder={!bookingForm.bookingDate ? "Selecciona una fecha primero" : availableTimeSlots.length === 0 ? "No hay horarios disponibles" : "Seleccionar hora"} />
                       </SelectTrigger>
@@ -469,13 +514,21 @@ export default function BusinessDetails() {
 
                   <div>
                     <Label>Notas adicionales</Label>
-                    <Textarea value={bookingForm.notes} onChange={e => setBookingForm({
-                    ...bookingForm,
-                    notes: e.target.value
-                  })} />
+                    <Textarea 
+                      value={bookingForm.notes} 
+                      onChange={e => setBookingForm({
+                        ...bookingForm,
+                        notes: e.target.value
+                      })} 
+                      disabled={!user}
+                    />
                   </div>
 
-                  <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover-scale" disabled={submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading || !!phoneError || !bookingForm.clientPhone}>
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover-scale" 
+                    disabled={!user || submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading || !!phoneError || !bookingForm.clientPhone}
+                  >
                     <Calendar className="mr-2 h-4 w-4" />
                     {submitting ? "Enviando..." : "Confirmar reserva"}
                   </Button>
