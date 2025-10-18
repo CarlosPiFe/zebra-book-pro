@@ -787,12 +787,12 @@ export function TablesView({ businessId }: TablesViewProps) {
                   {rooms.length > 0 && (
                     <div className="space-y-2">
                       <Label htmlFor="room">Sala (opcional)</Label>
-                      <Select value={selectedRoomForTable} onValueChange={setSelectedRoomForTable}>
+                      <Select value={selectedRoomForTable || "no-room"} onValueChange={(value) => setSelectedRoomForTable(value === "no-room" ? "" : value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar sala" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sin sala específica</SelectItem>
+                          <SelectItem value="no-room">Sin sala específica</SelectItem>
                           {rooms.map((room) => (
                             <SelectItem key={room.id} value={room.id}>
                               {room.name}
@@ -853,12 +853,12 @@ export function TablesView({ businessId }: TablesViewProps) {
                   {rooms.length > 0 && (
                     <div className="space-y-2">
                       <Label htmlFor="room">Sala (opcional)</Label>
-                      <Select value={selectedRoomForTable} onValueChange={setSelectedRoomForTable}>
+                      <Select value={selectedRoomForTable || "no-room"} onValueChange={(value) => setSelectedRoomForTable(value === "no-room" ? "" : value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar sala" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Sin sala específica</SelectItem>
+                          <SelectItem value="no-room">Sin sala específica</SelectItem>
                           {rooms.map((room) => (
                             <SelectItem key={room.id} value={room.id}>
                               {room.name}

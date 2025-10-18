@@ -129,7 +129,7 @@ export default function BusinessDetails() {
   const handleRoomChange = (value: string) => {
     setBookingForm({
       ...bookingForm,
-      roomId: value || undefined,
+      roomId: value === "all-rooms" ? undefined : value,
       bookingDate: undefined,
       startTime: undefined
     });
@@ -427,12 +427,12 @@ export default function BusinessDetails() {
                   {rooms.length > 0 && (
                     <div>
                       <Label>Elegir sala</Label>
-                      <Select value={bookingForm.roomId || ""} onValueChange={handleRoomChange}>
+                      <Select value={bookingForm.roomId || "all-rooms"} onValueChange={handleRoomChange}>
                         <SelectTrigger>
                           <SelectValue placeholder="Todas las salas" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todas las salas</SelectItem>
+                          <SelectItem value="all-rooms">Todas las salas</SelectItem>
                           {rooms.map((room) => (
                             <SelectItem key={room.id} value={room.id}>
                               {room.name}
