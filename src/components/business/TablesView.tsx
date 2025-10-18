@@ -75,6 +75,8 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [orders, setOrders] = useState<any[]>([]);
   const [deleteTableId, setDeleteTableId] = useState<string | null>(null);
   const [deleteBookingDialogOpen, setDeleteBookingDialogOpen] = useState(false);
+  const [isChangeRoomDialogOpen, setIsChangeRoomDialogOpen] = useState(false);
+  const [newRoomIdForTable, setNewRoomIdForTable] = useState<string>("");
   
   // Filter states
   const [filterDate, setFilterDate] = useState<Date>(new Date());
@@ -573,6 +575,34 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
+  const handleOpenChangeRoomDialog = () => {
+    if (!selectedTable) return;
+    setNewRoomIdForTable(selectedTable.room_id || "");
+    setIsActionDialogOpen(false);
+    setIsChangeRoomDialogOpen(true);
+  };
+
+  const handleChangeTableRoom = async () => {
+    if (!selectedTable) return;
+
+    try {
+      const { error } = await supabase
+        .from("tables")
+        .update({ room_id: newRoomIdForTable || null } as any)
+        .eq("id", selectedTable.id);
+
+      if (error) throw error;
+
+      toast.success("Sala de la mesa actualizada correctamente");
+      setIsChangeRoomDialogOpen(false);
+      setNewRoomIdForTable("");
+      loadTables();
+    } catch (error) {
+      console.error("Error changing table room:", error);
+      toast.error("Error al cambiar la sala de la mesa");
+    }
+  };
+
   const getTableColor = (table: Table) => {
     // Rojo - fuera de servicio (prioridad máxima)
     if (table.is_out_of_service) {
@@ -692,7 +722,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         <CardHeader>
           <CardTitle>Filtros</CardTitle>
           <CardDescription>
-            Selecciona fecha, hora y sala para ver el estado de las mesas
+            Selecciona fecha y hora para ver el estado de las mesas
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -714,34 +744,6 @@ export function TablesView({ businessId }: TablesViewProps) {
               />
             </div>
           </div>
-
-          {/* Filtro de salas */}
-          {rooms.length > 0 && (
-            <div className="space-y-2">
-              <Label>Filtrar por sala</Label>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={selectedRoomId === null ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedRoomId(null)}
-                  className="rounded-lg"
-                >
-                  Todos
-                </Button>
-                {rooms.map((room) => (
-                  <Button
-                    key={room.id}
-                    variant={selectedRoomId === room.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedRoomId(room.id)}
-                    className="rounded-lg"
-                  >
-                    {room.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
@@ -814,7 +816,28 @@ export function TablesView({ businessId }: TablesViewProps) {
         </div>
       ) : (
         <>
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center gap-4">
+            {rooms.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Label className="text-sm font-medium whitespace-nowrap">Filtrar por sala:</Label>
+                <Select 
+                  value={selectedRoomId || "all-rooms"} 
+                  onValueChange={(value) => setSelectedRoomId(value === "all-rooms" ? null : value)}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all-rooms">Todos</SelectItem>
+                    {rooms.map((room) => (
+                      <SelectItem key={room.id} value={room.id}>
+                        {room.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <Dialog open={isAddTableDialogOpen} onOpenChange={setIsAddTableDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -1033,6 +1056,16 @@ export function TablesView({ businessId }: TablesViewProps) {
                     >
                       Reservar
                     </Button>
+                    {rooms.length > 0 && (
+                      <Button
+                        variant="outline"
+                        className="h-12"
+                        onClick={handleOpenChangeRoomDialog}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Cambiar Sala
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       className="border-red-500 text-red-600 hover:bg-red-50 h-12"
@@ -1067,6 +1100,16 @@ export function TablesView({ businessId }: TablesViewProps) {
                     >
                       Cambiar Reserva
                     </Button>
+                    {rooms.length > 0 && (
+                      <Button
+                        variant="outline"
+                        className="h-12"
+                        onClick={handleOpenChangeRoomDialog}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Cambiar Sala
+                      </Button>
+                    )}
                     <Button
                      variant="destructive"
                      className="h-12"
@@ -1101,6 +1144,16 @@ export function TablesView({ businessId }: TablesViewProps) {
                         <Receipt className="w-4 h-4 mr-2" />
                         Ver Pedido
                       </Button>
+                      {rooms.length > 0 && (
+                        <Button
+                          variant="outline"
+                          className="w-full h-12"
+                          onClick={handleOpenChangeRoomDialog}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Cambiar Sala
+                        </Button>
+                      )}
                       <div className="flex gap-2">
                         <Button
                           onClick={handleCompleteOccupancy}
@@ -1311,6 +1364,42 @@ export function TablesView({ businessId }: TablesViewProps) {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
+          {/* Change Room Dialog */}
+          <Dialog open={isChangeRoomDialogOpen} onOpenChange={setIsChangeRoomDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Cambiar Sala - Mesa {selectedTable?.table_number}</DialogTitle>
+                <DialogDescription>
+                  Selecciona la nueva sala para esta mesa
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-room">Sala</Label>
+                  <Select value={newRoomIdForTable || "no-room"} onValueChange={(value) => setNewRoomIdForTable(value === "no-room" ? "" : value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar sala" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no-room">Sin sala específica</SelectItem>
+                      {rooms.map((room) => (
+                        <SelectItem key={room.id} value={room.id}>
+                          {room.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsChangeRoomDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleChangeTableRoom}>Guardar Cambios</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>
