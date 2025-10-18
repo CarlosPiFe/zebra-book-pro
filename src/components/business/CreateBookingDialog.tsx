@@ -69,7 +69,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [partySize, setPartySize] = useState("2");
   const [notes, setNotes] = useState("");
   const [selectedTableId, setSelectedTableId] = useState<string>("auto");
-  const [tables, setTables] = useState<Array<{ id: string; table_number: number; max_capacity: number; isAvailable: boolean }>>([]);
+  const [tables, setTables] = useState<Array<{ id: string; table_number: number; max_capacity: number; min_capacity: number; isAvailable: boolean }>>([]);
 
   // Use availability hook
   const { hasAvailableTables } = useBookingAvailability(businessId);
@@ -177,6 +177,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         id: table.id,
         table_number: table.table_number,
         max_capacity: table.max_capacity,
+        min_capacity: table.min_capacity,
         isAvailable: !occupiedTableIds.has(table.id),
       })) || [];
 
@@ -260,20 +261,28 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         existingBookings?.map((b) => b.table_id) || []
       );
 
+      // Filter tables that meet capacity requirements (min <= partySize <= max)
+      const suitableTables = tables.filter(
+        (t) => t.min_capacity <= partySize && t.max_capacity >= partySize && !occupiedTableIds.has(t.id)
+      );
+
+      if (suitableTables.length === 0) {
+        // No available table - booking will be pending
+        return { tableId: null, status: "pending" };
+      }
+
       // Find the best available table
-      // Priority: exact capacity > larger capacity
-      const exactMatch = tables.find(
-        (t) => t.max_capacity === partySize && !occupiedTableIds.has(t.id)
+      // Priority: exact capacity > smaller capacity (but still suitable) > larger capacity
+      const exactMatch = suitableTables.find(
+        (t) => t.max_capacity === partySize
       );
 
       if (exactMatch) {
         return { tableId: exactMatch.id, status: "reserved" };
       }
 
-      // Find smallest available table that fits
-      const availableTable = tables.find(
-        (t) => t.max_capacity >= partySize && !occupiedTableIds.has(t.id)
-      );
+      // Find smallest suitable table
+      const availableTable = suitableTables[0]; // Already sorted by max_capacity ascending
 
       if (availableTable) {
         return { tableId: availableTable.id, status: "reserved" };

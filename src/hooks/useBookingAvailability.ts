@@ -23,6 +23,7 @@ interface Table {
   id: string;
   table_number: number;
   max_capacity: number;
+  min_capacity: number;
   room_id?: string | null;
 }
 
@@ -384,11 +385,16 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
     console.log(`🔍 [NUEVA VERIFICACIÓN] Fecha recibida: "${date}", Hora: ${startTime}, Personas: ${partySize}`);
     console.log(`📅 Tipo de fecha: ${typeof date}, Longitud: ${date.length}`);
 
-    // 1. Buscar mesas que puedan acomodar al grupo
-    const suitableTables = tables.filter((table) => table.max_capacity >= partySize);
+    // 1. Buscar mesas que puedan acomodar al grupo (entre min y max capacidad)
+    const suitableTables = tables.filter((table) => {
+      const meetsMinCapacity = table.min_capacity <= partySize;
+      const meetsMaxCapacity = table.max_capacity >= partySize;
+      return meetsMinCapacity && meetsMaxCapacity;
+    });
+    
     console.log(
       `📋 Mesas adecuadas para ${partySize} personas:`,
-      suitableTables.map((t) => `Mesa ${t.table_number} (${t.max_capacity} pers)`),
+      suitableTables.map((t) => `Mesa ${t.table_number} (${t.min_capacity}-${t.max_capacity} pers)`),
     );
 
     if (suitableTables.length === 0) {
@@ -449,7 +455,7 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
     const availableTables = suitableTables.filter((table) => !occupiedTableIds.has(table.id));
     console.log(
       `✅ Mesas disponibles para ${partySize} personas:`,
-      availableTables.map((t) => `Mesa ${t.table_number} (${t.max_capacity} pers)`),
+      availableTables.map((t) => `Mesa ${t.table_number} (${t.min_capacity}-${t.max_capacity} pers)`),
     );
 
     // 8. Verificar si hay al menos una mesa disponible

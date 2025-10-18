@@ -35,6 +35,7 @@ interface Table {
   id: string;
   table_number: number;
   max_capacity: number;
+  min_capacity: number;
   room_id?: string | null;
   current_booking?: Booking | null;
   total_spent?: number;
@@ -71,6 +72,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [tableNumber, setTableNumber] = useState("");
   const [maxCapacity, setMaxCapacity] = useState("");
+  const [minCapacity, setMinCapacity] = useState("");
   const [selectedRoomForTable, setSelectedRoomForTable] = useState<string>("");
   const [orders, setOrders] = useState<any[]>([]);
   const [deleteTableId, setDeleteTableId] = useState<string | null>(null);
@@ -245,8 +247,21 @@ export function TablesView({ businessId }: TablesViewProps) {
   };
 
   const handleAddTable = async () => {
-    if (!tableNumber || !maxCapacity) {
+    if (!tableNumber || !maxCapacity || !minCapacity) {
       toast.error("Por favor completa todos los campos");
+      return;
+    }
+
+    const minCap = parseInt(minCapacity);
+    const maxCap = parseInt(maxCapacity);
+
+    if (minCap > maxCap) {
+      toast.error("El mínimo de personas no puede ser mayor que el máximo");
+      return;
+    }
+
+    if (minCap < 1) {
+      toast.error("El mínimo de personas debe ser al menos 1");
       return;
     }
 
@@ -254,7 +269,8 @@ export function TablesView({ businessId }: TablesViewProps) {
       const { error } = await supabase.from("tables").insert({
         business_id: businessId,
         table_number: parseInt(tableNumber),
-        max_capacity: parseInt(maxCapacity),
+        max_capacity: maxCap,
+        min_capacity: minCap,
         room_id: selectedRoomForTable || null,
       });
 
@@ -264,6 +280,7 @@ export function TablesView({ businessId }: TablesViewProps) {
       setIsAddTableDialogOpen(false);
       setTableNumber("");
       setMaxCapacity("");
+      setMinCapacity("");
       setSelectedRoomForTable("");
       loadTables();
     } catch (error: any) {
@@ -864,6 +881,20 @@ export function TablesView({ businessId }: TablesViewProps) {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="min-capacity">Capacidad Mínima</Label>
+                    <Input
+                      id="min-capacity"
+                      type="number"
+                      placeholder="Ej: 1"
+                      value={minCapacity}
+                      onChange={(e) => setMinCapacity(e.target.value)}
+                      min="1"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Número mínimo de personas que pueden usar esta mesa
+                    </p>
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="max-capacity">Capacidad Máxima</Label>
                     <Input
                       id="max-capacity"
@@ -871,7 +902,11 @@ export function TablesView({ businessId }: TablesViewProps) {
                       placeholder="Ej: 4"
                       value={maxCapacity}
                       onChange={(e) => setMaxCapacity(e.target.value)}
+                      min="1"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Número máximo de personas que pueden usar esta mesa
+                    </p>
                   </div>
                   {rooms.length > 0 && (
                     <div className="space-y-2">

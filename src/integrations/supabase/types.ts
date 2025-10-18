@@ -615,6 +615,7 @@ export type Database = {
           created_at: string
           id: string
           max_capacity: number
+          min_capacity: number
           room_id: string | null
           table_number: number
           updated_at: string
@@ -624,6 +625,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_capacity: number
+          min_capacity?: number
           room_id?: string | null
           table_number: number
           updated_at?: string
@@ -633,6 +635,7 @@ export type Database = {
           created_at?: string
           id?: string
           max_capacity?: number
+          min_capacity?: number
           room_id?: string | null
           table_number?: number
           updated_at?: string

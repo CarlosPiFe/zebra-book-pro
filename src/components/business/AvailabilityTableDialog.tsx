@@ -24,6 +24,7 @@ interface Table {
   id: string;
   table_number: number;
   max_capacity: number;
+  min_capacity: number;
 }
 
 interface Booking {
@@ -83,7 +84,9 @@ export function AvailabilityTableDialog({
         .order("table_number", { ascending: true });
 
       if (partySize && partySize > 0) {
-        tablesQuery = tablesQuery.gte("max_capacity", partySize);
+        tablesQuery = tablesQuery
+          .gte("max_capacity", partySize)
+          .lte("min_capacity", partySize);
       }
 
       const { data: tablesData, error: tablesError } = await tablesQuery;
