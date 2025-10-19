@@ -67,7 +67,7 @@ const EmployeePortal = () => {
             name
           )
         `)
-        .eq("user_id", user.id)
+        .eq("email", user.email)
         .eq("is_active", true);
 
       if (error) throw error;

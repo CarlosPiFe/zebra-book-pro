@@ -1,10 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, User, LogOut } from "lucide-react";
+import { Calendar, User, LogOut, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { toast } from "sonner";
+import { useEmployeeAccess } from "@/hooks/useEmployeeAccess";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +21,7 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { isEmployee, loading: employeeLoading } = useEmployeeAccess(user);
 
   useEffect(() => {
     // Get initial session
@@ -82,6 +84,17 @@ export const Navbar = () => {
           <div className="flex items-center gap-4">
             {user ? (
               <>
+                {isEmployee && !employeeLoading && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/employee-portal")}
+                    className="gap-2"
+                  >
+                    <Briefcase className="h-4 w-4" />
+                    Portal de Empleado
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"

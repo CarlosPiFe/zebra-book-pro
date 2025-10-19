@@ -47,11 +47,13 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
   const [loading, setLoading] = useState(true);
   const [newEmployeeName, setNewEmployeeName] = useState("");
   const [newEmployeePosition, setNewEmployeePosition] = useState("");
+  const [newEmployeeEmail, setNewEmployeeEmail] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPosition, setEditPosition] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [vacations, setVacations] = useState<Vacation[]>([]);
   const [vacationDateRange, setVacationDateRange] = useState<DateRange>();
   const [newVacationNotes, setNewVacationNotes] = useState("");
@@ -115,6 +117,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           name: newEmployeeName.trim(),
           token: token,
           position: newEmployeePosition.trim() || null,
+          email: newEmployeeEmail.trim() || null,
         });
 
       if (error) throw error;
@@ -122,6 +125,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
       toast.success("Empleado creado exitosamente");
       setNewEmployeeName("");
       setNewEmployeePosition("");
+      setNewEmployeeEmail("");
       setIsDialogOpen(false);
       loadEmployees();
     } catch (error) {
@@ -156,10 +160,11 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
     toast.success("Link copiado al portapapeles");
   };
 
-  const handleEmployeeClick = async (employee: Employee) => {
+  const handleEmployeeClick = async (employee: Employee & { email?: string }) => {
     setSelectedEmployee(employee);
     setEditName(employee.name);
     setEditPosition(employee.position || "");
+    setEditEmail((employee as any).email || "");
     setIsEditDialogOpen(true);
     await loadVacations(employee.id);
   };
@@ -192,6 +197,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
         .update({
           name: editName.trim(),
           position: editPosition.trim() || null,
+          email: editEmail.trim() || null,
         })
         .eq("id", selectedEmployee.id);
 
@@ -309,6 +315,19 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                   placeholder="Ej: Cocinero, Gerente, Cajero"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="employeeEmail">Correo para Portal de Empleado (Opcional)</Label>
+                <Input
+                  id="employeeEmail"
+                  type="email"
+                  value={newEmployeeEmail}
+                  onChange={(e) => setNewEmployeeEmail(e.target.value)}
+                  placeholder="ejemplo@correo.com"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Si se introduce un correo, el empleado podrá acceder al Portal de Empleado con su cuenta
+                </p>
+              </div>
               <Button onClick={handleCreateEmployee} className="w-full">
                 <UserPlus className="w-4 h-4 mr-2" />
                 Crear Empleado
@@ -399,6 +418,19 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                   onChange={(e) => setEditPosition(e.target.value)}
                   placeholder="Cargo del empleado"
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editEmail">Correo para Portal de Empleado</Label>
+                <Input
+                  id="editEmail"
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  placeholder="ejemplo@correo.com"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Si se introduce un correo, el empleado podrá acceder al Portal de Empleado
+                </p>
               </div>
               <Button onClick={handleUpdateEmployee} className="w-full">
                 <Edit className="w-4 h-4 mr-2" />
