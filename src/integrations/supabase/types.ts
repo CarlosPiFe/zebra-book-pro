@@ -354,6 +354,57 @@ export type Database = {
           },
         ]
       }
+      employee_notifications: {
+        Row: {
+          business_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          message: string
+          payload: Json | null
+          read: boolean | null
+          title: string
+          type: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          message: string
+          payload?: Json | null
+          read?: boolean | null
+          title: string
+          type: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          message?: string
+          payload?: Json | null
+          read?: boolean | null
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_notifications_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_notifications_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_schedules: {
         Row: {
           created_at: string
@@ -564,6 +615,66 @@ export type Database = {
           },
         ]
       }
+      payroll_records: {
+        Row: {
+          business_id: string
+          created_at: string
+          document_url: string | null
+          employee_id: string
+          gross_amount: number
+          hours: number
+          id: string
+          net_amount: number
+          period_end: string
+          period_start: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          document_url?: string | null
+          employee_id: string
+          gross_amount?: number
+          hours?: number
+          id?: string
+          net_amount?: number
+          period_end: string
+          period_start: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          document_url?: string | null
+          employee_id?: string
+          gross_amount?: number
+          hours?: number
+          id?: string
+          net_amount?: number
+          period_end?: string
+          period_start?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_records_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_records_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -608,6 +719,64 @@ export type Database = {
           records_deleted?: number | null
         }
         Relationships: []
+      }
+      shift_change_requests: {
+        Row: {
+          business_id: string
+          created_at: string
+          employee_id: string
+          id: string
+          reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          schedule_id: string
+          status: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          employee_id: string
+          id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          schedule_id: string
+          status?: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          employee_id?: string
+          id?: string
+          reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          schedule_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_change_requests_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_change_requests_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "employee_weekly_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       tables: {
         Row: {
@@ -677,6 +846,60 @@ export type Database = {
           slot_time?: string
         }
         Relationships: []
+      }
+      timesheets: {
+        Row: {
+          approved: boolean | null
+          business_id: string
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          duration_minutes: number | null
+          employee_id: string
+          id: string
+          note: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved?: boolean | null
+          business_id: string
+          clock_in: string
+          clock_out?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          employee_id: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved?: boolean | null
+          business_id?: string
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          duration_minutes?: number | null
+          employee_id?: string
+          id?: string
+          note?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheets_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timesheets_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
