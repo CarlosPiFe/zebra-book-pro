@@ -17,6 +17,7 @@ interface EmployeeScheduleViewProps {
 export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeScheduleViewProps) => {
   const [loading, setLoading] = useState(true);
   const [schedules, setSchedules] = useState<any[]>([]);
+  const [vacations, setVacations] = useState<any[]>([]);
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
   const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
   const [changeReason, setChangeReason] = useState("");
@@ -24,6 +25,7 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
 
   useEffect(() => {
     loadSchedules();
+    loadVacations();
   }, [currentWeek, employeeId]);
 
   const loadSchedules = async () => {
@@ -46,6 +48,24 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
       toast.error("Error al cargar horarios");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadVacations = async () => {
+    try {
+      const weekEnd = addDays(currentWeek, 6);
+      
+      const { data, error } = await supabase
+        .from("employee_vacations")
+        .select("*")
+        .eq("employee_id", employeeId)
+        .or(`and(start_date.lte.${weekEnd.toISOString().split('T')[0]},end_date.gte.${currentWeek.toISOString().split('T')[0]})`);
+
+      if (error) throw error;
+      setVacations(data || []);
+    } catch (error) {
+      console.error("Error loading vacations:", error);
+      toast.error("Error al cargar vacaciones");
     }
   };
 
@@ -81,6 +101,13 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
   const getScheduleForDay = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return schedules.find(s => s.date === dateStr);
+  };
+
+  const isOnVacation = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return vacations.some(v => 
+      dateStr >= v.start_date && dateStr <= v.end_date
+    );
   };
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i));
@@ -122,6 +149,7 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
       <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
         {weekDays.map((day) => {
           const schedule = getScheduleForDay(day);
+          const onVacation = isOnVacation(day);
           const isToday = format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
 
           return (
@@ -134,7 +162,13 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
                 <p className="text-sm text-muted-foreground">{format(day, "d MMM", { locale: es })}</p>
               </div>
 
-              {schedule && !schedule.is_day_off ? (
+              {onVacation ? (
+                <div className="bg-yellow-100 dark:bg-yellow-900/20 rounded-lg p-3 text-center">
+                  <p className="font-medium text-sm text-yellow-800 dark:text-yellow-200">
+                    🌴 Vacaciones
+                  </p>
+                </div>
+              ) : schedule && !schedule.is_day_off ? (
                 <div className="bg-primary/10 rounded-lg p-3 text-center">
                   <p className="font-medium text-sm">
                     {schedule.start_time} - {schedule.end_time}
