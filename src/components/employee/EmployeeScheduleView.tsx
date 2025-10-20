@@ -2,9 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { format, startOfWeek, addDays, addWeeks } from "date-fns";
 import { es } from "date-fns/locale";
@@ -19,9 +17,12 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
   const [schedules, setSchedules] = useState<any[]>([]);
   const [vacations, setVacations] = useState<any[]>([]);
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
-  const [selectedSchedule, setSelectedSchedule] = useState<any>(null);
-  const [changeReason, setChangeReason] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Helper function to format time without seconds
+  const formatTime = (timeString: string) => {
+    if (!timeString) return "";
+    return timeString.substring(0, 5); // Get only HH:MM
+  };
 
   useEffect(() => {
     loadSchedules();
@@ -66,35 +67,6 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
     } catch (error) {
       console.error("Error loading vacations:", error);
       toast.error("Error al cargar vacaciones");
-    }
-  };
-
-  const handleRequestChange = async () => {
-    if (!selectedSchedule || !changeReason.trim()) {
-      toast.error("Por favor, indica el motivo del cambio");
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from("shift_change_requests")
-        .insert({
-          employee_id: employeeId,
-          business_id: businessId,
-          schedule_id: selectedSchedule.id,
-          reason: changeReason,
-          status: "pending"
-        });
-
-      if (error) throw error;
-
-      toast.success("Solicitud de cambio enviada");
-      setIsDialogOpen(false);
-      setChangeReason("");
-      setSelectedSchedule(null);
-    } catch (error) {
-      console.error("Error requesting change:", error);
-      toast.error("Error al enviar solicitud");
     }
   };
 
@@ -165,71 +137,14 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
               {onVacation ? (
                 <div className="bg-yellow-100 dark:bg-yellow-900/20 rounded-lg p-3 text-center">
                   <p className="font-medium text-sm text-yellow-800 dark:text-yellow-200">
-                    🌴 Vacaciones
+                    Vacaciones
                   </p>
                 </div>
               ) : schedule && !schedule.is_day_off ? (
                 <div className="bg-primary/10 rounded-lg p-3 text-center">
                   <p className="font-medium text-sm">
-                    {schedule.start_time} - {schedule.end_time}
+                    {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
                   </p>
-                  
-                  <Dialog open={isDialogOpen && selectedSchedule?.id === schedule.id} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-2 w-full"
-                        onClick={() => setSelectedSchedule(schedule)}
-                      >
-                        Solicitar cambio
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Solicitar cambio de turno</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium mb-2">
-                            {format(new Date(schedule.date), "EEEE, d MMMM", { locale: es })}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {schedule.start_time} - {schedule.end_time}
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <label className="text-sm font-medium mb-2 block">
-                            Motivo del cambio
-                          </label>
-                          <Textarea
-                            value={changeReason}
-                            onChange={(e) => setChangeReason(e.target.value)}
-                            placeholder="Explica por qué necesitas cambiar este turno..."
-                            rows={4}
-                          />
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <Button onClick={handleRequestChange} className="flex-1">
-                            Enviar solicitud
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setIsDialogOpen(false);
-                              setChangeReason("");
-                              setSelectedSchedule(null);
-                            }}
-                            className="flex-1"
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
                 </div>
               ) : (
                 <div className="text-center py-6 text-muted-foreground">
