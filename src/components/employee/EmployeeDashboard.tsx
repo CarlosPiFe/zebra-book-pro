@@ -14,8 +14,6 @@ interface EmployeeDashboardProps {
 
 export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardProps) => {
   const [loading, setLoading] = useState(true);
-  const [clockedIn, setClockedIn] = useState(false);
-  const [currentTimesheet, setCurrentTimesheet] = useState<any>(null);
   const [todaySchedule, setTodaySchedule] = useState<any>(null);
   const [weekHours, setWeekHours] = useState(0);
   const [latestPayroll, setLatestPayroll] = useState<any>(null);
@@ -29,7 +27,6 @@ export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardP
     setLoading(true);
     try {
       await Promise.all([
-        loadCurrentTimesheet(),
         loadTodaySchedule(),
         loadWeekHours(),
         loadLatestPayroll(),
@@ -39,22 +36,6 @@ export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardP
       console.error("Error loading dashboard:", error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadCurrentTimesheet = async () => {
-    const { data } = await supabase
-      .from("timesheets")
-      .select("*")
-      .eq("employee_id", employeeId)
-      .is("clock_out", null)
-      .order("clock_in", { ascending: false })
-      .limit(1)
-      .single();
-
-    if (data) {
-      setClockedIn(true);
-      setCurrentTimesheet(data);
     }
   };
 
@@ -113,47 +94,6 @@ export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardP
     setUpcomingShifts(data || []);
   };
 
-  const handleClockIn = async () => {
-    try {
-      const { error } = await supabase
-        .from("timesheets")
-        .insert({
-          employee_id: employeeId,
-          business_id: businessId,
-          clock_in: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
-      toast.success("Fichaje de entrada registrado");
-      await loadDashboardData();
-    } catch (error) {
-      console.error("Error clocking in:", error);
-      toast.error("Error al fichar entrada");
-    }
-  };
-
-  const handleClockOut = async () => {
-    if (!currentTimesheet) return;
-
-    try {
-      const { error } = await supabase
-        .from("timesheets")
-        .update({
-          clock_out: new Date().toISOString()
-        })
-        .eq("id", currentTimesheet.id);
-
-      if (error) throw error;
-
-      toast.success("Fichaje de salida registrado");
-      await loadDashboardData();
-    } catch (error) {
-      console.error("Error clocking out:", error);
-      toast.error("Error al fichar salida");
-    }
-  };
-
   if (loading) {
     return <div className="animate-pulse space-y-4">
       <div className="h-32 bg-muted rounded" />
@@ -167,37 +107,6 @@ export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardP
 
   return (
     <div className="space-y-6">
-      {/* Clock In/Out Card */}
-      <Card className="p-6">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-              clockedIn ? "bg-green-100 text-green-600" : "bg-gray-100 text-gray-600"
-            }`}>
-              <Clock className="w-8 h-8" />
-            </div>
-            <div>
-              <h3 className="text-xl font-semibold">
-                {clockedIn ? "Fichado" : "No fichado"}
-              </h3>
-              {currentTimesheet && (
-                <p className="text-sm text-muted-foreground">
-                  Entrada: {format(new Date(currentTimesheet.clock_in), "HH:mm", { locale: es })}
-                </p>
-              )}
-            </div>
-          </div>
-          
-          <Button
-            size="lg"
-            onClick={clockedIn ? handleClockOut : handleClockIn}
-            className={clockedIn ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
-          >
-            {clockedIn ? "Fichar Salida" : "Fichar Entrada"}
-          </Button>
-        </div>
-      </Card>
-
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-6">
