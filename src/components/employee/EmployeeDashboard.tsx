@@ -19,6 +19,12 @@ export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardP
   const [latestPayroll, setLatestPayroll] = useState<any>(null);
   const [upcomingShifts, setUpcomingShifts] = useState<any[]>([]);
 
+  // Helper function to format time without seconds
+  const formatTime = (timeString: string) => {
+    if (!timeString) return "";
+    return timeString.substring(0, 5); // Get only HH:MM
+  };
+
   useEffect(() => {
     loadDashboardData();
   }, [employeeId, businessId]);
@@ -116,7 +122,7 @@ export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardP
               <p className="text-sm text-muted-foreground">Turno de hoy</p>
               <p className="text-xl font-semibold">
                 {todaySchedule 
-                  ? `${todaySchedule.start_time} - ${todaySchedule.end_time}`
+                  ? `${formatTime(todaySchedule.start_time)} - ${formatTime(todaySchedule.end_time)}`
                   : "Sin turno"}
               </p>
             </div>
@@ -163,7 +169,7 @@ export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardP
                     {format(new Date(shift.date), "EEEE, d MMMM", { locale: es })}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {shift.start_time} - {shift.end_time}
+                    {formatTime(shift.start_time)} - {formatTime(shift.end_time)}
                   </p>
                 </div>
               </div>
