@@ -10,7 +10,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -202,21 +201,18 @@ export const AddFixedScheduleDialog = ({
           {/* Days selection */}
           <div className="space-y-2">
             <Label>Días de la semana</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex gap-2">
               {DAYS_OF_WEEK.map((day) => (
-                <div key={day.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`day-${day.value}`}
-                    checked={selectedDays.includes(day.value)}
-                    onCheckedChange={() => toggleDay(day.value)}
-                  />
-                  <label
-                    htmlFor={`day-${day.value}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer capitalize"
-                  >
-                    {day.label}
-                  </label>
-                </div>
+                <Button
+                  key={day.value}
+                  type="button"
+                  variant={selectedDays.includes(day.value) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => toggleDay(day.value)}
+                  className="h-9 w-9 p-0"
+                >
+                  {day.short}
+                </Button>
               ))}
             </div>
           </div>
