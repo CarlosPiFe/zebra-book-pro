@@ -106,27 +106,75 @@ export const AddFixedScheduleDialog = ({
     setLoading(true);
     try {
       // First, delete existing regular schedules for these days
-      const { error: deleteError } = await supabase
+      const { error: deleteRegularError } = await supabase
         .from("employee_schedules")
         .delete()
         .eq("employee_id", selectedEmployeeId)
         .in("day_of_week", selectedDays);
 
-      if (deleteError) throw deleteError;
+      if (deleteRegularError) throw deleteRegularError;
 
       // Insert new regular schedules (applies to all weeks)
-      const schedulesToInsert = selectedDays.map((dayOfWeek) => ({
+      const regularSchedules = selectedDays.map((dayOfWeek) => ({
         employee_id: selectedEmployeeId,
         day_of_week: dayOfWeek,
         start_time: startTime,
         end_time: endTime,
       }));
 
-      const { error: insertError } = await supabase
+      const { error: insertRegularError } = await supabase
         .from("employee_schedules")
-        .insert(schedulesToInsert);
+        .insert(regularSchedules);
 
-      if (insertError) throw insertError;
+      if (insertRegularError) throw insertRegularError;
+
+      // Also populate the next 52 weeks in employee_weekly_schedules
+      const weeklySchedulesToCreate = [];
+      const today = new Date();
+      
+      // For each of the next 52 weeks
+      for (let weekOffset = 0; weekOffset < 52; weekOffset++) {
+        for (const dayOfWeek of selectedDays) {
+          // Calculate the actual date
+          // dayOfWeek: 0=Sunday, 1=Monday, etc.
+          const targetDate = new Date(today);
+          targetDate.setDate(today.getDate() + (weekOffset * 7));
+          
+          // Adjust to the correct day of week
+          const currentDayOfWeek = targetDate.getDay();
+          const daysToAdd = (dayOfWeek - currentDayOfWeek + 7) % 7;
+          targetDate.setDate(targetDate.getDate() + daysToAdd);
+          
+          weeklySchedulesToCreate.push({
+            employee_id: selectedEmployeeId,
+            date: format(targetDate, "yyyy-MM-dd"),
+            is_day_off: false,
+            start_time: startTime,
+            end_time: endTime,
+            slot_order: 1,
+          });
+        }
+      }
+
+      // Delete any existing schedules for these dates first
+      if (weeklySchedulesToCreate.length > 0) {
+        const datesToDelete = weeklySchedulesToCreate.map(s => s.date);
+        
+        const { error: deleteWeeklyError } = await supabase
+          .from("employee_weekly_schedules")
+          .delete()
+          .eq("employee_id", selectedEmployeeId)
+          .in("date", datesToDelete);
+
+        if (deleteWeeklyError) throw deleteWeeklyError;
+
+        // Insert all the weekly schedules
+        const { error: insertWeeklyError } = await supabase
+          .from("employee_weekly_schedules")
+          .insert(weeklySchedulesToCreate);
+
+        if (insertWeeklyError) throw insertWeeklyError;
+      }
 
       toast.success(
         `Horario fijo creado para ${selectedDays.length} día(s) - se aplicará todas las semanas`
