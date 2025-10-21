@@ -38,8 +38,8 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
         .from("employee_weekly_schedules")
         .select("*")
         .eq("employee_id", employeeId)
-        .gte("date", currentWeek.toISOString().split('T')[0])
-        .lte("date", weekEnd.toISOString().split('T')[0])
+        .gte("date", format(currentWeek, "yyyy-MM-dd"))
+        .lte("date", format(weekEnd, "yyyy-MM-dd"))
         .order("date");
 
       if (error) throw error;
@@ -60,7 +60,7 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
         .from("employee_vacations")
         .select("*")
         .eq("employee_id", employeeId)
-        .or(`and(start_date.lte.${weekEnd.toISOString().split('T')[0]},end_date.gte.${currentWeek.toISOString().split('T')[0]})`);
+        .or(`and(start_date.lte.${format(weekEnd, "yyyy-MM-dd")},end_date.gte.${format(currentWeek, "yyyy-MM-dd")})`);
 
       if (error) throw error;
       setVacations(data || []);
@@ -71,12 +71,12 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
   };
 
   const getScheduleForDay = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, "yyyy-MM-dd");
     return schedules.find(s => s.date === dateStr);
   };
 
   const isOnVacation = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = format(date, "yyyy-MM-dd");
     return vacations.some(v => 
       dateStr >= v.start_date && dateStr <= v.end_date
     );

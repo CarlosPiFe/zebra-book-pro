@@ -46,7 +46,7 @@ export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardP
   };
 
   const loadTodaySchedule = async () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = format(new Date(), "yyyy-MM-dd");
     const { data } = await supabase
       .from("employee_weekly_schedules")
       .select("*")
@@ -87,7 +87,7 @@ export const EmployeeDashboard = ({ employeeId, businessId }: EmployeeDashboardP
   };
 
   const loadUpcomingShifts = async () => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = format(new Date(), "yyyy-MM-dd");
     const { data } = await supabase
       .from("employee_weekly_schedules")
       .select("*")
