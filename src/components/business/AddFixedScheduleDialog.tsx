@@ -14,8 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, addDays, startOfWeek } from "date-fns";
-import { es } from "date-fns/locale";
+import { format, addDays } from "date-fns";
 
 interface AddFixedScheduleDialogProps {
   businessId: string;
@@ -23,15 +22,16 @@ interface AddFixedScheduleDialogProps {
   onScheduleAdded: () => void;
 }
 
-// Generate days of the week using date-fns to match the rest of the platform
-const DAYS_OF_WEEK = Array.from({ length: 7 }, (_, i) => {
-  const date = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), i);
-  return {
-    value: i,
-    label: format(date, "EEEE", { locale: es }), // Full day name
-    shortLabel: format(date, "EEE", { locale: es }), // Short day name (like in the schedule table)
-  };
-});
+// Days of the week matching the business hours format
+const DAYS_OF_WEEK = [
+  { value: 0, label: "Lunes", short: "L" },
+  { value: 1, label: "Martes", short: "M" },
+  { value: 2, label: "Miércoles", short: "X" },
+  { value: 3, label: "Jueves", short: "J" },
+  { value: 4, label: "Viernes", short: "V" },
+  { value: 5, label: "Sábado", short: "S" },
+  { value: 6, label: "Domingo", short: "D" },
+];
 
 export const AddFixedScheduleDialog = ({
   businessId,
