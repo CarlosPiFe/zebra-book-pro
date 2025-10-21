@@ -23,15 +23,15 @@ interface AddFixedScheduleDialogProps {
   onScheduleAdded: () => void;
 }
 
-const DAYS_OF_WEEK = [
-  { value: 0, label: "Lunes" },
-  { value: 1, label: "Martes" },
-  { value: 2, label: "Miércoles" },
-  { value: 3, label: "Jueves" },
-  { value: 4, label: "Viernes" },
-  { value: 5, label: "Sábado" },
-  { value: 6, label: "Domingo" },
-];
+// Generate days of the week using date-fns to match the rest of the platform
+const DAYS_OF_WEEK = Array.from({ length: 7 }, (_, i) => {
+  const date = addDays(startOfWeek(new Date(), { weekStartsOn: 1 }), i);
+  return {
+    value: i,
+    label: format(date, "EEEE", { locale: es }), // Full day name
+    shortLabel: format(date, "EEE", { locale: es }), // Short day name (like in the schedule table)
+  };
+});
 
 export const AddFixedScheduleDialog = ({
   businessId,
@@ -212,7 +212,7 @@ export const AddFixedScheduleDialog = ({
                   />
                   <label
                     htmlFor={`day-${day.value}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer capitalize"
                   >
                     {day.label}
                   </label>
