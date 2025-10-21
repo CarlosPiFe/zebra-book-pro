@@ -10,10 +10,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, addDays } from "date-fns";
+import { format, addDays, isAfter, isBefore, startOfDay } from "date-fns";
 
 interface AddFixedScheduleDialogProps {
   businessId: string;
@@ -41,6 +42,8 @@ export const AddFixedScheduleDialog = ({
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
+  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
+  const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 90));
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
   const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
@@ -70,6 +73,8 @@ export const AddFixedScheduleDialog = ({
       setSelectedDays([]);
       setStartTime("09:00");
       setEndTime("17:00");
+      setStartDate(new Date());
+      setEndDate(addDays(new Date(), 90));
       setSelectedEmployeeId("");
     }
   };
@@ -103,6 +108,16 @@ export const AddFixedScheduleDialog = ({
       return;
     }
 
+    if (!startDate || !endDate) {
+      toast.error("Selecciona las fechas de inicio y fin");
+      return;
+    }
+
+    if (isAfter(startDate, endDate)) {
+      toast.error("La fecha de inicio debe ser anterior o igual a la fecha de fin");
+      return;
+    }
+
     setLoading(true);
     try {
       // First, delete existing regular schedules for these days
@@ -128,32 +143,30 @@ export const AddFixedScheduleDialog = ({
 
       if (insertRegularError) throw insertRegularError;
 
-      // Also populate the next 52 weeks in employee_weekly_schedules
+      // Generate weekly schedules within the date range
       const weeklySchedulesToCreate = [];
-      const today = new Date();
+      const rangeStart = startOfDay(startDate);
+      const rangeEnd = startOfDay(endDate);
       
-      // For each of the next 52 weeks
-      for (let weekOffset = 0; weekOffset < 52; weekOffset++) {
-        for (const dayOfWeek of selectedDays) {
-          // Calculate the actual date
-          // dayOfWeek: 0=Sunday, 1=Monday, etc.
-          const targetDate = new Date(today);
-          targetDate.setDate(today.getDate() + (weekOffset * 7));
-          
-          // Adjust to the correct day of week
-          const currentDayOfWeek = targetDate.getDay();
-          const daysToAdd = (dayOfWeek - currentDayOfWeek + 7) % 7;
-          targetDate.setDate(targetDate.getDate() + daysToAdd);
-          
+      // Iterate through each day in the range
+      let currentDate = new Date(rangeStart);
+      while (!isAfter(currentDate, rangeEnd)) {
+        const currentDayOfWeek = currentDate.getDay();
+        
+        // If this day of week is selected, add a schedule
+        if (selectedDays.includes(currentDayOfWeek)) {
           weeklySchedulesToCreate.push({
             employee_id: selectedEmployeeId,
-            date: format(targetDate, "yyyy-MM-dd"),
+            date: format(currentDate, "yyyy-MM-dd"),
             is_day_off: false,
             start_time: startTime,
             end_time: endTime,
             slot_order: 1,
           });
         }
+        
+        // Move to next day
+        currentDate = addDays(currentDate, 1);
       }
 
       // Delete any existing schedules for these dates first
@@ -176,8 +189,9 @@ export const AddFixedScheduleDialog = ({
         if (insertWeeklyError) throw insertWeeklyError;
       }
 
+      const daysInRange = weeklySchedulesToCreate.length;
       toast.success(
-        `Horario fijo creado para ${selectedDays.length} día(s) - se aplicará todas las semanas`
+        `Horario repetido creado: ${daysInRange} día(s) desde ${format(startDate, "dd/MM/yyyy")} hasta ${format(endDate, "dd/MM/yyyy")}`
       );
       setOpen(false);
       onScheduleAdded();
@@ -194,15 +208,15 @@ export const AddFixedScheduleDialog = ({
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2" size="sm">
           <Clock className="w-4 h-4" />
-          Añadir horario fijo
+          Añadir horario repetido
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Añadir horario fijo</DialogTitle>
+          <DialogTitle>Añadir horario repetido</DialogTitle>
           <DialogDescription>
-            Crea un horario recurrente para varios días de la semana. Este horario se aplicará 
-            automáticamente todas las semanas. Los horarios fijos existentes para estos días serán reemplazados.
+            Crea un horario recurrente para varios días de la semana dentro de un rango de fechas específico. 
+            Los horarios existentes para estos días y fechas serán reemplazados.
           </DialogDescription>
         </DialogHeader>
 
@@ -241,6 +255,27 @@ export const AddFixedScheduleDialog = ({
                   {day.short}
                 </Button>
               ))}
+            </div>
+          </div>
+
+          {/* Date range selection */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Fecha de inicio</Label>
+              <DatePicker
+                date={startDate}
+                onDateChange={setStartDate}
+                placeholder="Fecha de inicio"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Fecha de fin</Label>
+              <DatePicker
+                date={endDate}
+                onDateChange={setEndDate}
+                placeholder="Fecha de fin"
+                disabled={(date) => startDate ? isBefore(date, startDate) : false}
+              />
             </div>
           </div>
 
