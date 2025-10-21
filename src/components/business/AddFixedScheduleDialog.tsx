@@ -21,15 +21,15 @@ interface AddFixedScheduleDialogProps {
   onScheduleAdded: () => void;
 }
 
-// Days of the week matching the business hours format
+// Days of the week matching the business hours format (0=Domingo, 1=Lunes, etc.)
 const DAYS_OF_WEEK = [
-  { value: 0, label: "Lunes", short: "L" },
-  { value: 1, label: "Martes", short: "M" },
-  { value: 2, label: "Miércoles", short: "X" },
-  { value: 3, label: "Jueves", short: "J" },
-  { value: 4, label: "Viernes", short: "V" },
-  { value: 5, label: "Sábado", short: "S" },
-  { value: 6, label: "Domingo", short: "D" },
+  { value: 1, label: "Lunes", short: "L" },
+  { value: 2, label: "Martes", short: "M" },
+  { value: 3, label: "Miércoles", short: "X" },
+  { value: 4, label: "Jueves", short: "J" },
+  { value: 5, label: "Viernes", short: "V" },
+  { value: 6, label: "Sábado", short: "S" },
+  { value: 0, label: "Domingo", short: "D" },
 ];
 
 export const AddFixedScheduleDialog = ({
@@ -105,52 +105,31 @@ export const AddFixedScheduleDialog = ({
 
     setLoading(true);
     try {
-      // Get the dates for the selected days in the current week
-      const datesToInsert = selectedDays.map((dayOffset) => {
-        const date = addDays(currentWeekStart, dayOffset);
-        return format(date, "yyyy-MM-dd");
-      });
-
-      // First, check if there are existing schedules for these dates
-      const { data: existingSchedules, error: checkError } = await supabase
-        .from("employee_weekly_schedules")
-        .select("id, date")
+      // First, delete existing regular schedules for these days
+      const { error: deleteError } = await supabase
+        .from("employee_schedules")
+        .delete()
         .eq("employee_id", selectedEmployeeId)
-        .in("date", datesToInsert);
+        .in("day_of_week", selectedDays);
 
-      if (checkError) throw checkError;
+      if (deleteError) throw deleteError;
 
-      // Delete existing schedules if any
-      if (existingSchedules && existingSchedules.length > 0) {
-        const { error: deleteError } = await supabase
-          .from("employee_weekly_schedules")
-          .delete()
-          .in(
-            "id",
-            existingSchedules.map((s) => s.id)
-          );
-
-        if (deleteError) throw deleteError;
-      }
-
-      // Insert new schedules
-      const schedulesToInsert = datesToInsert.map((date) => ({
+      // Insert new regular schedules (applies to all weeks)
+      const schedulesToInsert = selectedDays.map((dayOfWeek) => ({
         employee_id: selectedEmployeeId,
-        date,
-        is_day_off: false,
+        day_of_week: dayOfWeek,
         start_time: startTime,
         end_time: endTime,
-        slot_order: 1,
       }));
 
       const { error: insertError } = await supabase
-        .from("employee_weekly_schedules")
+        .from("employee_schedules")
         .insert(schedulesToInsert);
 
       if (insertError) throw insertError;
 
       toast.success(
-        `Horario fijo creado para ${selectedDays.length} día(s)`
+        `Horario fijo creado para ${selectedDays.length} día(s) - se aplicará todas las semanas`
       );
       setOpen(false);
       onScheduleAdded();
@@ -174,8 +153,8 @@ export const AddFixedScheduleDialog = ({
         <DialogHeader>
           <DialogTitle>Añadir horario fijo</DialogTitle>
           <DialogDescription>
-            Crea un horario para varios días a la vez. Los horarios existentes
-            serán reemplazados.
+            Crea un horario recurrente para varios días de la semana. Este horario se aplicará 
+            automáticamente todas las semanas. Los horarios fijos existentes para estos días serán reemplazados.
           </DialogDescription>
         </DialogHeader>
 
