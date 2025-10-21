@@ -20,6 +20,7 @@ import { es } from "date-fns/locale";
 import { ScheduleCell } from "./ScheduleCell";
 import { EmployeeWeeklyCalendar } from "./EmployeeWeeklyCalendar";
 import { ExportSchedulesDialog } from "./ExportSchedulesDialog";
+import { AddFixedScheduleDialog } from "./AddFixedScheduleDialog";
 import { cn } from "@/lib/utils";
 
 interface Employee {
@@ -366,15 +367,22 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
             </Button>
           )}
           {(scheduleViewMode === 'editable' || isEditMode) && (
-            <Button
-              variant="destructive"
-              onClick={() => setDeleteWeekDialogOpen(true)}
-              className="gap-2"
-              size="sm"
-            >
-              <Trash2 className="w-4 h-4" />
-              Eliminar Semana
-            </Button>
+            <>
+              <AddFixedScheduleDialog
+                businessId={businessId}
+                currentWeekStart={currentWeekStart}
+                onScheduleAdded={loadSchedules}
+              />
+              <Button
+                variant="destructive"
+                onClick={() => setDeleteWeekDialogOpen(true)}
+                className="gap-2"
+                size="sm"
+              >
+                <Trash2 className="w-4 h-4" />
+                Eliminar Semana
+              </Button>
+            </>
           )}
           <ExportSchedulesDialog 
             businessId={businessId} 
