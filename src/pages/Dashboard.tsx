@@ -65,6 +65,13 @@ const Dashboard = () => {
     loadUserData();
   }, []);
 
+  // Redirect to home if user is owner but has no businesses
+  useEffect(() => {
+    if (!loading && userRole === "owner" && businesses.length === 0) {
+      navigate("/");
+    }
+  }, [loading, userRole, businesses, navigate]);
+
   // Setup realtime subscription for bookings updates
   useEffect(() => {
     if (businesses.length === 0) return;
