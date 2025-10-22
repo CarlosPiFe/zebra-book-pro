@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, User, LogOut, Briefcase } from "lucide-react";
+import { Calendar, LogOut, Briefcase, Store, PlusCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { useEmployeeAccess } from "@/hooks/useEmployeeAccess";
+import { useBusinessOwner } from "@/hooks/useBusinessOwner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ export const Navbar = () => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { isEmployee, loading: employeeLoading } = useEmployeeAccess(user);
+  const { hasBusinesses, loading: businessLoading } = useBusinessOwner(user);
 
   useEffect(() => {
     // Get initial session
@@ -95,15 +97,26 @@ export const Navbar = () => {
                     Portal de Empleado
                   </Button>
                 )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/dashboard")}
-                  className="gap-2"
-                >
-                  <User className="h-4 w-4" />
-                  Panel
-                </Button>
+                {!businessLoading && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/dashboard")}
+                    className="gap-2"
+                  >
+                    {hasBusinesses ? (
+                      <>
+                        <Store className="h-4 w-4" />
+                        Mi negocio
+                      </>
+                    ) : (
+                      <>
+                        <PlusCircle className="h-4 w-4" />
+                        Registrar mi negocio
+                      </>
+                    )}
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
