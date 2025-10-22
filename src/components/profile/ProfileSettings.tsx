@@ -56,6 +56,12 @@ export const ProfileSettings = ({ userId, profile, onUpdate }: ProfileSettingsPr
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="p-4 bg-muted/50 rounded-lg border border-border">
+          <p className="text-sm text-muted-foreground">
+            Este nombre solo se usa para tus reservas personales y no afecta a tu perfil de empleado.
+          </p>
+        </div>
+        
         <div className="space-y-2">
           <Label htmlFor="email">Correo electrónico</Label>
           <Input

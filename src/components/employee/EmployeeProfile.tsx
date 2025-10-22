@@ -13,12 +13,7 @@ interface EmployeeProfileProps {
 
 export const EmployeeProfile = ({ employeeId }: EmployeeProfileProps) => {
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [employee, setEmployee] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    name: "",
-    position: ""
-  });
 
   useEffect(() => {
     loadEmployee();
@@ -36,37 +31,11 @@ export const EmployeeProfile = ({ employeeId }: EmployeeProfileProps) => {
       if (error) throw error;
       
       setEmployee(data);
-      setFormData({
-        name: data.name || "",
-        position: data.position || ""
-      });
     } catch (error) {
       console.error("Error loading employee:", error);
       toast.error("Error al cargar perfil");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from("waiters")
-        .update({
-          name: formData.name
-        })
-        .eq("id", employeeId);
-
-      if (error) throw error;
-      
-      toast.success("Perfil actualizado");
-      await loadEmployee();
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("Error al actualizar perfil");
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -88,21 +57,30 @@ export const EmployeeProfile = ({ employeeId }: EmployeeProfileProps) => {
         </div>
 
         <div className="space-y-4">
+          <div className="p-4 bg-muted/50 rounded-lg border border-border mb-4">
+            <p className="text-sm text-muted-foreground">
+              Tu información de empleado es gestionada por el negocio. Para cambios en tu perfil personal (reservas), accede a tu perfil de usuario.
+            </p>
+          </div>
+
           <div>
             <Label htmlFor="name">Nombre completo</Label>
             <Input
               id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Tu nombre"
+              value={employee?.name || ""}
+              disabled
+              className="bg-muted"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Solo tu administrador puede cambiar tu nombre
+            </p>
           </div>
 
           <div>
             <Label htmlFor="position">Puesto</Label>
             <Input
               id="position"
-              value={formData.position}
+              value={employee?.position || "Empleado"}
               disabled
               className="bg-muted"
             />
@@ -111,9 +89,15 @@ export const EmployeeProfile = ({ employeeId }: EmployeeProfileProps) => {
             </p>
           </div>
 
-          <Button onClick={handleSave} disabled={saving} className="w-full">
-            {saving ? "Guardando..." : "Guardar cambios"}
-          </Button>
+          <div>
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              value={employee?.email || ""}
+              disabled
+              className="bg-muted"
+            />
+          </div>
         </div>
       </Card>
     </div>
