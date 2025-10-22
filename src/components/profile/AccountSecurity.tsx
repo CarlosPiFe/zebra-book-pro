@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, LogOut, Key } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -92,11 +91,6 @@ export const AccountSecurity = ({ userEmail }: AccountSecurityProps) => {
         </CardContent>
       </Card>
 
-      <Alert>
-        <AlertDescription>
-          Tu cuenta está vinculada a tu correo electrónico. Si deseas eliminar tu cuenta, contacta con soporte.
-        </AlertDescription>
-      </Alert>
     </div>
   );
 };
