@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, LogOut, Briefcase, Store, PlusCircle } from "lucide-react";
+import { Calendar, LogOut, Briefcase, Store, PlusCircle, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -115,6 +115,17 @@ export const Navbar = () => {
                         Registrar mi negocio
                       </>
                     )}
+                  </Button>
+                )}
+                {(!hasBusinesses || isEmployee) && !employeeLoading && !businessLoading && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/profile")}
+                    className="gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    Perfil
                   </Button>
                 )}
                 <Button
