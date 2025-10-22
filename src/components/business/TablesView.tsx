@@ -975,7 +975,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                 return (
                   <div key={roomId} className="space-y-2">
                     <h3 className="text-lg font-semibold text-foreground">{roomName}</h3>
-                    <div className={`grid gap-2 ${roomTables.length >= 8 ? 'grid-cols-[repeat(auto-fit,minmax(80px,1fr))]' : 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8'}`}>
+                    <div className="grid gap-3 grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
                       {roomTables.map((table) => (
                         <button
                           key={table.id}
@@ -1026,7 +1026,7 @@ export function TablesView({ businessId }: TablesViewProps) {
               })}
             </div>
           ) : (
-            <div className={`grid gap-2 ${filteredTables.length >= 8 ? 'grid-cols-[repeat(auto-fit,minmax(80px,1fr))]' : 'grid-cols-4 md:grid-cols-6 lg:grid-cols-8'}`}>
+            <div className="grid gap-3 grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
               {filteredTables.map((table) => (
               <button
                 key={table.id}
