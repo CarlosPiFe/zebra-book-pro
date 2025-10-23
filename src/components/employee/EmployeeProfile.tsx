@@ -44,58 +44,58 @@ export const EmployeeProfile = ({ employeeId }: EmployeeProfileProps) => {
   }
 
   return (
-    <div className="space-y-3 md:space-y-4">
-      <Card className="p-4 md:p-6">
-        <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-6">
-          <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-            <User className="w-8 h-8 md:w-10 md:h-10 text-primary" />
+    <div className="space-y-4">
+      <Card className="p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+            <User className="w-10 h-10 text-primary" />
           </div>
-          <div className="min-w-0">
-            <h2 className="text-lg md:text-2xl font-bold truncate">{employee?.name}</h2>
-            <p className="text-xs md:text-sm text-muted-foreground">{employee?.position || "Empleado"}</p>
+          <div>
+            <h2 className="text-2xl font-bold">{employee?.name}</h2>
+            <p className="text-muted-foreground">{employee?.position || "Empleado"}</p>
           </div>
         </div>
 
-        <div className="space-y-3 md:space-y-4">
-          <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-border">
-            <p className="text-xs md:text-sm text-muted-foreground">
+        <div className="space-y-4">
+          <div className="p-4 bg-muted/50 rounded-lg border border-border mb-4">
+            <p className="text-sm text-muted-foreground">
               Tu información de empleado es gestionada por el negocio. Para cambios en tu perfil personal (reservas), accede a tu perfil de usuario.
             </p>
           </div>
 
           <div>
-            <Label htmlFor="name" className="text-xs md:text-sm">Nombre completo</Label>
+            <Label htmlFor="name">Nombre completo</Label>
             <Input
               id="name"
               value={employee?.name || ""}
               disabled
-              className="bg-muted text-xs md:text-sm h-9 md:h-10"
+              className="bg-muted"
             />
-            <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Solo tu administrador puede cambiar tu nombre
             </p>
           </div>
 
           <div>
-            <Label htmlFor="position" className="text-xs md:text-sm">Puesto</Label>
+            <Label htmlFor="position">Puesto</Label>
             <Input
               id="position"
               value={employee?.position || "Empleado"}
               disabled
-              className="bg-muted text-xs md:text-sm h-9 md:h-10"
+              className="bg-muted"
             />
-            <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               Solo tu administrador puede cambiar tu puesto
             </p>
           </div>
 
           <div>
-            <Label htmlFor="email" className="text-xs md:text-sm">Email</Label>
+            <Label htmlFor="email">Email</Label>
             <Input
               id="email"
               value={employee?.email || ""}
               disabled
-              className="bg-muted text-xs md:text-sm h-9 md:h-10"
+              className="bg-muted"
             />
           </div>
         </div>

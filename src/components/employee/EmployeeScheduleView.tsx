@@ -149,33 +149,30 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
   }
 
   return (
-    <div className="space-y-3 md:space-y-4">
-      {/* Navigation and View Toggle - Más compacto en móvil */}
-      <Card className="p-2.5 md:p-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 md:gap-4">
+    <div className="space-y-4">
+      {/* Navigation and View Toggle */}
+      <Card className="p-4">
+        <div className="flex items-center justify-between gap-4">
           <Button
             variant="outline"
             size="sm"
             onClick={handlePrevious}
-            className="text-xs md:text-sm w-full sm:w-auto"
           >
-            <ChevronLeft className="w-3.5 h-3.5 md:w-4 md:h-4" />
-            <span className="hidden sm:inline">{viewMode === "weekly" ? "Anterior" : "Mes ant."}</span>
-            <span className="sm:hidden">←</span>
+            <ChevronLeft className="w-4 h-4" />
+            {viewMode === "weekly" ? "Semana anterior" : "Mes anterior"}
           </Button>
           
-          <div className="flex items-center gap-2 md:gap-3 flex-1 justify-center">
-            <h3 className="font-semibold text-xs md:text-base text-center">
+          <div className="flex items-center gap-3">
+            <h3 className="font-semibold">
               {getDateRangeText()}
             </h3>
             <Button
               variant="secondary"
               size="sm"
               onClick={() => setViewMode(viewMode === "weekly" ? "monthly" : "weekly")}
-              className="text-xs md:text-sm"
             >
-              <Calendar className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1" />
-              {viewMode === "weekly" ? "Mes" : "Sem"}
+              <Calendar className="w-4 h-4 mr-1" />
+              {viewMode === "weekly" ? "Mensual" : "Semanal"}
             </Button>
           </div>
           
@@ -183,30 +180,28 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
             variant="outline"
             size="sm"
             onClick={handleNext}
-            className="text-xs md:text-sm w-full sm:w-auto"
           >
-            <span className="hidden sm:inline">{viewMode === "weekly" ? "Siguiente" : "Mes sig."}</span>
-            <span className="sm:hidden">→</span>
-            <ChevronRight className="w-3.5 h-3.5 md:w-4 md:h-4" />
+            {viewMode === "weekly" ? "Semana siguiente" : "Mes siguiente"}
+            <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
       </Card>
 
-      {/* Day of Week Headers - Más compactos en móvil */}
-      <div className="grid grid-cols-7 gap-1 md:gap-2 px-1">
+      {/* Day of Week Headers */}
+      <div className="grid grid-cols-7 gap-2 px-1">
         {["L", "M", "X", "J", "V", "S", "D"].map((day, index) => (
-          <div key={index} className="text-center font-semibold text-xs md:text-sm text-muted-foreground">
+          <div key={index} className="text-center font-semibold text-sm text-muted-foreground">
             {day}
           </div>
         ))}
       </div>
 
-      {/* Schedule Grid - Más compacto en móvil */}
-      <div className="grid grid-cols-7 gap-1 md:gap-2">
+      {/* Schedule Grid */}
+      <div className="grid grid-cols-7 gap-2">
         {displayDays.map((day, index) => {
           // Si day es null (espacio vacío), renderizar celda vacía
           if (!day) {
-            return <div key={`empty-${index}`} className="min-h-[60px] md:min-h-[100px]" />;
+            return <div key={`empty-${index}`} className="min-h-[100px]" />;
           }
 
           const schedule = getScheduleForDay(day);
@@ -215,28 +210,28 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
 
           return (
             <Card
-              key={`day-${format(day, "yyyy-MM-dd")}`}
-              className={`p-1.5 md:p-3 min-h-[60px] md:min-h-[100px] ${
-                isToday ? "ring-2 ring-primary" : ""
-              }`}
+              key={day.toISOString()}
+              className={`p-3 ${isToday ? "border-primary border-2" : ""} min-h-[100px]`}
             >
-              <p className="text-xs md:text-sm font-semibold mb-1 md:mb-2">
-                {format(day, "d")}
-              </p>
-              
+              <div className="text-center mb-2">
+                <p className="font-bold text-lg">{format(day, "d")}</p>
+              </div>
+
               {onVacation ? (
-                <div className="bg-yellow-100 dark:bg-yellow-900/30 rounded px-1 py-0.5 md:px-2 md:py-1 text-center">
-                  <p className="text-[10px] md:text-xs font-medium text-yellow-800 dark:text-yellow-200">Vacaciones</p>
+                <div className="bg-yellow-100 dark:bg-yellow-900/20 rounded px-2 py-1 text-center">
+                  <p className="font-medium text-xs text-yellow-800 dark:text-yellow-200">
+                    Vacaciones
+                  </p>
                 </div>
               ) : schedule && !schedule.is_day_off ? (
-                <div className="bg-primary/10 rounded px-1 py-0.5 md:px-2 md:py-1 text-center">
-                  <p className="font-medium text-[9px] md:text-xs leading-tight">
+                <div className="bg-primary/10 rounded px-2 py-1 text-center">
+                  <p className="font-medium text-xs">
                     {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
                   </p>
                 </div>
               ) : (
-                <div className="bg-muted rounded px-1 py-0.5 md:px-2 md:py-1 text-center">
-                  <p className="text-[10px] md:text-xs text-muted-foreground">Libre</p>
+                <div className="text-center text-muted-foreground">
+                  <p className="text-xs">Día libre</p>
                 </div>
               )}
             </Card>
