@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar } from "lucide-react";
 import { toast } from "sonner";
-import { format, startOfWeek, addDays, addWeeks } from "date-fns";
+import { format, startOfWeek, addDays, addWeeks, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface EmployeeScheduleViewProps {
@@ -16,7 +16,9 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
   const [loading, setLoading] = useState(true);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [vacations, setVacations] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<"weekly" | "monthly">("weekly");
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
 
   // Helper function to format time without seconds
   const formatTime = (timeString: string) => {
@@ -27,19 +29,27 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
   useEffect(() => {
     loadSchedules();
     loadVacations();
-  }, [currentWeek, employeeId]);
+  }, [currentWeek, currentMonth, employeeId, viewMode]);
 
   const loadSchedules = async () => {
     setLoading(true);
     try {
-      const weekEnd = addDays(currentWeek, 6);
+      let startDate, endDate;
+      
+      if (viewMode === "weekly") {
+        startDate = currentWeek;
+        endDate = addDays(currentWeek, 6);
+      } else {
+        startDate = currentMonth;
+        endDate = endOfMonth(currentMonth);
+      }
       
       const { data, error } = await supabase
         .from("employee_weekly_schedules")
         .select("*")
         .eq("employee_id", employeeId)
-        .gte("date", format(currentWeek, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"))
+        .gte("date", format(startDate, "yyyy-MM-dd"))
+        .lte("date", format(endDate, "yyyy-MM-dd"))
         .order("date");
 
       if (error) throw error;
@@ -54,13 +64,21 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
 
   const loadVacations = async () => {
     try {
-      const weekEnd = addDays(currentWeek, 6);
+      let startDate, endDate;
+      
+      if (viewMode === "weekly") {
+        startDate = currentWeek;
+        endDate = addDays(currentWeek, 6);
+      } else {
+        startDate = currentMonth;
+        endDate = endOfMonth(currentMonth);
+      }
       
       const { data, error } = await supabase
         .from("employee_vacations")
         .select("*")
         .eq("employee_id", employeeId)
-        .or(`and(start_date.lte.${format(weekEnd, "yyyy-MM-dd")},end_date.gte.${format(currentWeek, "yyyy-MM-dd")})`);
+        .or(`and(start_date.lte.${format(endDate, "yyyy-MM-dd")},end_date.gte.${format(startDate, "yyyy-MM-dd")})`);
 
       if (error) throw error;
       setVacations(data || []);
@@ -82,7 +100,42 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
     );
   };
 
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i));
+  const getDaysToDisplay = () => {
+    if (viewMode === "weekly") {
+      return Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i));
+    } else {
+      const monthStart = currentMonth;
+      const monthEnd = endOfMonth(currentMonth);
+      const daysInMonth = monthEnd.getDate();
+      return Array.from({ length: daysInMonth }, (_, i) => addDays(monthStart, i));
+    }
+  };
+
+  const displayDays = getDaysToDisplay();
+
+  const handlePrevious = () => {
+    if (viewMode === "weekly") {
+      setCurrentWeek(addWeeks(currentWeek, -1));
+    } else {
+      setCurrentMonth(addMonths(currentMonth, -1));
+    }
+  };
+
+  const handleNext = () => {
+    if (viewMode === "weekly") {
+      setCurrentWeek(addWeeks(currentWeek, 1));
+    } else {
+      setCurrentMonth(addMonths(currentMonth, 1));
+    }
+  };
+
+  const getDateRangeText = () => {
+    if (viewMode === "weekly") {
+      return `${format(currentWeek, "d MMM", { locale: es })} - ${format(addDays(currentWeek, 6), "d MMM yyyy", { locale: es })}`;
+    } else {
+      return format(currentMonth, "MMMM yyyy", { locale: es });
+    }
+  };
 
   if (loading) {
     return <div className="animate-pulse h-96 bg-muted rounded" />;
@@ -90,36 +143,46 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
 
   return (
     <div className="space-y-4">
-      {/* Week Navigation */}
+      {/* Navigation and View Toggle */}
       <Card className="p-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-4">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentWeek(addWeeks(currentWeek, -1))}
+            onClick={handlePrevious}
           >
             <ChevronLeft className="w-4 h-4" />
-            Semana anterior
+            {viewMode === "weekly" ? "Semana anterior" : "Mes anterior"}
           </Button>
           
-          <h3 className="font-semibold">
-            {format(currentWeek, "d MMM", { locale: es })} - {format(addDays(currentWeek, 6), "d MMM yyyy", { locale: es })}
-          </h3>
+          <div className="flex items-center gap-3">
+            <h3 className="font-semibold">
+              {getDateRangeText()}
+            </h3>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setViewMode(viewMode === "weekly" ? "monthly" : "weekly")}
+            >
+              <Calendar className="w-4 h-4 mr-1" />
+              {viewMode === "weekly" ? "Mensual" : "Semanal"}
+            </Button>
+          </div>
           
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setCurrentWeek(addWeeks(currentWeek, 1))}
+            onClick={handleNext}
           >
-            Semana siguiente
+            {viewMode === "weekly" ? "Semana siguiente" : "Mes siguiente"}
             <ChevronRight className="w-4 h-4" />
           </Button>
         </div>
       </Card>
 
       {/* Schedule Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
-        {weekDays.map((day) => {
+      <div className={`grid grid-cols-1 gap-2 ${viewMode === "weekly" ? "md:grid-cols-7" : "md:grid-cols-7"}`}>
+        {displayDays.map((day) => {
           const schedule = getScheduleForDay(day);
           const onVacation = isOnVacation(day);
           const isToday = format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
