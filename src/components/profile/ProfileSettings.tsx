@@ -78,7 +78,14 @@ export const ProfileSettings = ({ userId, profile, onUpdate }: ProfileSettingsPr
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="fullName">Nombre *</Label>
+          <div className="flex items-baseline gap-2">
+            <Label htmlFor="fullName">Nombre *</Label>
+            {isEmployee && (
+              <span className="text-xs text-muted-foreground">
+                (Este nombre solo se usa para tus reservas personales y no afecta a tu perfil de empleado)
+              </span>
+            )}
+          </div>
           <Input
             id="fullName"
             type="text"
@@ -87,14 +94,6 @@ export const ProfileSettings = ({ userId, profile, onUpdate }: ProfileSettingsPr
             placeholder="Tu nombre"
           />
         </div>
-
-        {isEmployee && (
-          <div className="p-4 bg-muted/50 rounded-lg border border-border">
-            <p className="text-sm text-muted-foreground">
-              Este nombre solo se usa para tus reservas personales y no afecta a tu perfil de empleado.
-            </p>
-          </div>
-        )}
 
         <div className="space-y-2">
           <div className="flex items-baseline gap-2">
