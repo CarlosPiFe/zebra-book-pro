@@ -107,7 +107,14 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
       const monthStart = currentMonth;
       const monthEnd = endOfMonth(currentMonth);
       const daysInMonth = monthEnd.getDate();
-      return Array.from({ length: daysInMonth }, (_, i) => addDays(monthStart, i));
+      const firstDayOfWeek = monthStart.getDay(); // 0 = domingo, 1 = lunes, etc.
+      const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1; // ajustar para que lunes sea 0
+      
+      // Crear array con nulls para los días antes del inicio del mes
+      const emptyDays = Array(startOffset).fill(null);
+      const monthDays = Array.from({ length: daysInMonth }, (_, i) => addDays(monthStart, i));
+      
+      return [...emptyDays, ...monthDays];
     }
   };
 
@@ -191,7 +198,12 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
 
       {/* Schedule Grid */}
       <div className="grid grid-cols-7 gap-2">
-        {displayDays.map((day) => {
+        {displayDays.map((day, index) => {
+          // Si day es null (espacio vacío), renderizar celda vacía
+          if (!day) {
+            return <div key={`empty-${index}`} className="min-h-[100px]" />;
+          }
+
           const schedule = getScheduleForDay(day);
           const onVacation = isOnVacation(day);
           const isToday = format(day, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd");
@@ -214,10 +226,7 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
               ) : schedule && !schedule.is_day_off ? (
                 <div className="bg-primary/10 rounded px-2 py-1 text-center">
                   <p className="font-medium text-xs">
-                    {formatTime(schedule.start_time)}
-                  </p>
-                  <p className="font-medium text-xs">
-                    {formatTime(schedule.end_time)}
+                    {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
                   </p>
                 </div>
               ) : (
