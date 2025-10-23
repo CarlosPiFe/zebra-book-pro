@@ -180,8 +180,17 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
         </div>
       </Card>
 
+      {/* Day of Week Headers */}
+      <div className="grid grid-cols-7 gap-2 px-1">
+        {["L", "M", "X", "J", "V", "S", "D"].map((day, index) => (
+          <div key={index} className="text-center font-semibold text-sm text-muted-foreground">
+            {day}
+          </div>
+        ))}
+      </div>
+
       {/* Schedule Grid */}
-      <div className={`grid grid-cols-1 gap-2 ${viewMode === "weekly" ? "md:grid-cols-7" : "md:grid-cols-7"}`}>
+      <div className="grid grid-cols-7 gap-2">
         {displayDays.map((day) => {
           const schedule = getScheduleForDay(day);
           const onVacation = isOnVacation(day);
@@ -190,28 +199,30 @@ export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeSchedul
           return (
             <Card
               key={day.toISOString()}
-              className={`p-4 ${isToday ? "border-primary border-2" : ""}`}
+              className={`p-3 ${isToday ? "border-primary border-2" : ""} min-h-[100px]`}
             >
               <div className="text-center mb-2">
-                <p className="font-semibold">{format(day, "EEE", { locale: es })}</p>
-                <p className="text-sm text-muted-foreground">{format(day, "d MMM", { locale: es })}</p>
+                <p className="font-bold text-lg">{format(day, "d")}</p>
               </div>
 
               {onVacation ? (
-                <div className="bg-yellow-100 dark:bg-yellow-900/20 rounded-lg p-3 text-center">
-                  <p className="font-medium text-sm text-yellow-800 dark:text-yellow-200">
+                <div className="bg-yellow-100 dark:bg-yellow-900/20 rounded px-2 py-1 text-center">
+                  <p className="font-medium text-xs text-yellow-800 dark:text-yellow-200">
                     Vacaciones
                   </p>
                 </div>
               ) : schedule && !schedule.is_day_off ? (
-                <div className="bg-primary/10 rounded-lg p-3 text-center">
-                  <p className="font-medium text-sm">
-                    {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+                <div className="bg-primary/10 rounded px-2 py-1 text-center">
+                  <p className="font-medium text-xs">
+                    {formatTime(schedule.start_time)}
+                  </p>
+                  <p className="font-medium text-xs">
+                    {formatTime(schedule.end_time)}
                   </p>
                 </div>
               ) : (
-                <div className="text-center py-6 text-muted-foreground">
-                  <p className="text-sm">Día libre</p>
+                <div className="text-center text-muted-foreground">
+                  <p className="text-xs">Día libre</p>
                 </div>
               )}
             </Card>
