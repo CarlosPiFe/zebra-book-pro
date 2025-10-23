@@ -4,19 +4,22 @@ import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users } from "lucide-react";
+import { es } from "date-fns/locale";
+import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { getTimeSlotId } from "@/lib/timeSlots";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
+import jsPDF from "jspdf";
 interface Business {
   id: string;
   name: string;
@@ -48,6 +51,10 @@ export default function BusinessDetails() {
   const [submitting, setSubmitting] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  
+  // Estados para el modal de confirmación
+  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
+  const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
 
   // Booking form state (sin clientEmail porque se obtiene del usuario autenticado)
   const [bookingForm, setBookingForm] = useState({
@@ -268,24 +275,23 @@ export default function BusinessDetails() {
         throw new Error(data.error || "Error al crear la reserva");
       }
 
-      // Mostrar el mensaje que viene del edge function
-      if (data.booking?.status === 'pending_confirmation') {
-        toast.info(data.message || "Tu reserva ha sido registrada. El negocio confirmará tu cita en breve.");
-      } else {
-        toast.success(data.message || "¡Reserva confirmada correctamente!");
+      // Mostrar modal de confirmación en lugar de toast
+      if (data.booking) {
+        setConfirmedBooking(data.booking);
+        setShowConfirmationModal(true);
+        
+        // Resetear formulario
+        setBookingForm({
+          clientName: "",
+          clientPhone: "",
+          partySize: "2",
+          roomId: undefined,
+          bookingDate: undefined,
+          startTime: undefined,
+          notes: ""
+        });
+        await refreshAvailability();
       }
-
-      // Resetear formulario
-      setBookingForm({
-        clientName: "",
-        clientPhone: "",
-        partySize: "2",
-        roomId: undefined,
-        bookingDate: undefined,
-        startTime: undefined,
-        notes: ""
-      });
-      await refreshAvailability();
     } catch (error: any) {
       console.error("Error creando reserva:", error);
 
@@ -306,6 +312,142 @@ export default function BusinessDetails() {
       const encoded = encodeURIComponent(business.address);
       window.open(`https://www.google.com/maps?q=${encoded}`, "_blank", "noopener,noreferrer");
     }
+  };
+
+  // Función para generar y descargar PDF de la reserva
+  const handleDownloadPDF = () => {
+    if (!confirmedBooking || !business) return;
+
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let yPos = 20;
+
+    // Título
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("Confirmación de Reserva", pageWidth / 2, yPos, { align: "center" });
+    yPos += 15;
+
+    // Nombre del negocio
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "normal");
+    doc.text(business.name, pageWidth / 2, yPos, { align: "center" });
+    yPos += 10;
+
+    // Estado de la reserva
+    doc.setFontSize(12);
+    const statusText = confirmedBooking.status === 'reserved' 
+      ? "✓ CONFIRMADA AUTOMÁTICAMENTE" 
+      : "⏰ PENDIENTE DE CONFIRMACIÓN";
+    doc.text(statusText, pageWidth / 2, yPos, { align: "center" });
+    yPos += 15;
+
+    // Línea separadora
+    doc.setLineWidth(0.5);
+    doc.line(20, yPos, pageWidth - 20, yPos);
+    yPos += 10;
+
+    // Información de la reserva
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("Información del Cliente:", 20, yPos);
+    yPos += 7;
+
+    doc.setFont("helvetica", "normal");
+    doc.text(`Nombre: ${confirmedBooking.client_name}`, 25, yPos);
+    yPos += 6;
+    doc.text(`Teléfono: ${confirmedBooking.client_phone}`, 25, yPos);
+    yPos += 6;
+    if (confirmedBooking.client_email) {
+      doc.text(`Email: ${confirmedBooking.client_email}`, 25, yPos);
+      yPos += 6;
+    }
+    yPos += 5;
+
+    // Detalles de la reserva
+    doc.setFont("helvetica", "bold");
+    doc.text("Detalles de la Reserva:", 20, yPos);
+    yPos += 7;
+
+    doc.setFont("helvetica", "normal");
+    const formattedDate = format(new Date(confirmedBooking.booking_date), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
+    doc.text(`Fecha: ${formattedDate}`, 25, yPos);
+    yPos += 6;
+    doc.text(`Hora: ${confirmedBooking.start_time} - ${confirmedBooking.end_time}`, 25, yPos);
+    yPos += 6;
+    doc.text(`Número de personas: ${confirmedBooking.party_size}`, 25, yPos);
+    yPos += 6;
+
+    // Sala
+    if (confirmedBooking.room_id) {
+      const room = rooms.find(r => r.id === confirmedBooking.room_id);
+      if (room) {
+        doc.text(`Sala: ${room.name}`, 25, yPos);
+        yPos += 6;
+      }
+    }
+
+    // Notas
+    if (confirmedBooking.notes) {
+      yPos += 3;
+      doc.setFont("helvetica", "bold");
+      doc.text("Notas adicionales:", 20, yPos);
+      yPos += 7;
+      doc.setFont("helvetica", "normal");
+      
+      // Dividir las notas en líneas si son muy largas
+      const notesLines = doc.splitTextToSize(confirmedBooking.notes, pageWidth - 50);
+      notesLines.forEach((line: string) => {
+        doc.text(line, 25, yPos);
+        yPos += 6;
+      });
+    }
+
+    yPos += 10;
+
+    // Información de contacto del negocio
+    doc.setLineWidth(0.5);
+    doc.line(20, yPos, pageWidth - 20, yPos);
+    yPos += 10;
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Información de Contacto:", 20, yPos);
+    yPos += 7;
+
+    doc.setFont("helvetica", "normal");
+    if (business.phone) {
+      doc.text(`Teléfono: ${business.phone}`, 25, yPos);
+      yPos += 6;
+    }
+    if (business.email) {
+      doc.text(`Email: ${business.email}`, 25, yPos);
+      yPos += 6;
+    }
+    if (business.address) {
+      doc.text(`Dirección: ${business.address}`, 25, yPos);
+      yPos += 6;
+    }
+
+    // Mensaje final según el estado
+    yPos += 10;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "italic");
+    if (confirmedBooking.status === 'reserved') {
+      doc.text(`Tu mesa ha sido asignada. ¡Te esperamos en ${business.name}!`, pageWidth / 2, yPos, { align: "center" });
+    } else {
+      doc.text(`El negocio revisará tu solicitud y te contactará pronto para confirmar.`, pageWidth / 2, yPos, { align: "center" });
+    }
+
+    // Pie de página con fecha de generación
+    yPos = doc.internal.pageSize.getHeight() - 15;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    const generatedDate = format(new Date(), "dd/MM/yyyy HH:mm");
+    doc.text(`Documento generado el ${generatedDate}`, pageWidth / 2, yPos, { align: "center" });
+
+    // Guardar PDF
+    const fileName = `reserva-${business.name.replace(/\s+/g, '-')}-${format(new Date(confirmedBooking.booking_date), 'yyyy-MM-dd')}.pdf`;
+    doc.save(fileName);
   };
 
   // 🔍 Calcular horarios disponibles en tiempo real
@@ -342,7 +484,135 @@ export default function BusinessDetails() {
         </div>
       </div>;
   }
-  return <div className="min-h-screen bg-background">
+  return <>
+    {/* Modal de confirmación de reserva */}
+    <Dialog open={showConfirmationModal} onOpenChange={setShowConfirmationModal}>
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+        {confirmedBooking && (
+          <>
+            {/* Icono circular de estado */}
+            <div className="flex justify-center mb-6 mt-4">
+              <div className={`w-24 h-24 rounded-full flex items-center justify-center ${
+                confirmedBooking.status === 'reserved' 
+                  ? 'bg-green-100 dark:bg-green-900/30' 
+                  : 'bg-orange-100 dark:bg-orange-900/30'
+              }`}>
+                {confirmedBooking.status === 'reserved' ? (
+                  <CheckCircle2 className="w-14 h-14 text-green-600 dark:text-green-400" />
+                ) : (
+                  <Clock className="w-14 h-14 text-orange-600 dark:text-orange-400" />
+                )}
+              </div>
+            </div>
+
+            {/* Título dinámico */}
+            <DialogHeader>
+              <DialogTitle className="text-center text-2xl">
+                {confirmedBooking.status === 'reserved' 
+                  ? '¡Reserva Confirmada!' 
+                  : 'Reserva Recibida'}
+              </DialogTitle>
+            </DialogHeader>
+
+            {/* Información de la reserva */}
+            <div className="space-y-4 mt-4">
+              {/* Mensaje según el estado */}
+              <div className={`p-4 rounded-lg border ${
+                confirmedBooking.status === 'reserved'
+                  ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                  : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+              }`}>
+                <p className="text-sm text-center">
+                  {confirmedBooking.status === 'reserved'
+                    ? `Tu mesa ha sido asignada. ¡Te esperamos en ${business.name}!`
+                    : 'El negocio revisará tu solicitud y te contactará pronto para confirmar.'}
+                </p>
+              </div>
+
+              {/* Información del cliente */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Información del Cliente</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Nombre:</span>
+                    <span className="font-medium">{confirmedBooking.client_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Teléfono:</span>
+                    <span className="font-medium">{confirmedBooking.client_phone}</span>
+                  </div>
+                  {confirmedBooking.client_email && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Email:</span>
+                      <span className="font-medium text-xs">{confirmedBooking.client_email}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Detalles de la reserva */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Detalles de la Reserva</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm">
+                  <div className="flex items-start justify-between">
+                    <span className="text-muted-foreground">Fecha:</span>
+                    <span className="font-medium text-right">
+                      {format(new Date(confirmedBooking.booking_date), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Hora:</span>
+                    <span className="font-medium">{confirmedBooking.start_time} - {confirmedBooking.end_time}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Personas:</span>
+                    <span className="font-medium">{confirmedBooking.party_size}</span>
+                  </div>
+                  {confirmedBooking.room_id && rooms.find(r => r.id === confirmedBooking.room_id) && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Sala:</span>
+                      <span className="font-medium">
+                        {rooms.find(r => r.id === confirmedBooking.room_id)?.name}
+                      </span>
+                    </div>
+                  )}
+                  {confirmedBooking.notes && (
+                    <div className="pt-2 border-t">
+                      <span className="text-muted-foreground block mb-1">Notas:</span>
+                      <p className="text-sm">{confirmedBooking.notes}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Botón de descarga PDF */}
+              <Button 
+                onClick={handleDownloadPDF} 
+                className="w-full"
+                variant="outline"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Descargar Reserva (PDF)
+              </Button>
+
+              {/* Botón cerrar */}
+              <Button 
+                onClick={() => setShowConfirmationModal(false)} 
+                className="w-full"
+              >
+                Cerrar
+              </Button>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+
+    <div className="min-h-screen bg-background">
       {/* Botón Volver - FUERA del banner */}
       <div className="border-b border-border bg-background">
         <div className="container mx-auto px-4 py-4">
@@ -595,5 +865,6 @@ export default function BusinessDetails() {
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  </>;
 }
