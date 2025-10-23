@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,25 @@ export const ProfileSettings = ({ userId, profile, onUpdate }: ProfileSettingsPr
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [phone, setPhone] = useState(profile?.phone || "");
   const [saving, setSaving] = useState(false);
+  const [isEmployee, setIsEmployee] = useState(false);
+
+  // Verificar si el usuario es empleado
+  useEffect(() => {
+    const checkIfEmployee = async () => {
+      if (!profile?.email) return;
+      
+      const { data } = await supabase
+        .from("waiters")
+        .select("id")
+        .eq("email", profile.email)
+        .eq("is_active", true)
+        .limit(1);
+      
+      setIsEmployee(data && data.length > 0);
+    };
+    
+    checkIfEmployee();
+  }, [profile?.email]);
 
   const handleSave = async () => {
     if (!fullName.trim()) {
@@ -58,11 +77,13 @@ export const ProfileSettings = ({ userId, profile, onUpdate }: ProfileSettingsPr
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="p-4 bg-muted/50 rounded-lg border border-border">
-          <p className="text-sm text-muted-foreground">
-            Este nombre solo se usa para tus reservas personales y no afecta a tu perfil de empleado.
-          </p>
-        </div>
+        {isEmployee && (
+          <div className="p-4 bg-muted/50 rounded-lg border border-border">
+            <p className="text-sm text-muted-foreground">
+              Este nombre solo se usa para tus reservas personales y no afecta a tu perfil de empleado.
+            </p>
+          </div>
+        )}
         
         <div className="space-y-2">
           <Label htmlFor="email">Correo electrónico</Label>

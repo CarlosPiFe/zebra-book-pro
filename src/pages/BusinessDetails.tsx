@@ -89,12 +89,20 @@ export default function BusinessDetails() {
         
         setUserProfile(profile);
         
-        // Autocompletar teléfono del perfil si existe
-        if (profile?.phone) {
-          setBookingForm(prev => ({
-            ...prev,
-            clientPhone: profile.phone
-          }));
+        // Autocompletar nombre y teléfono del perfil si existen
+        if (profile) {
+          if (profile.full_name) {
+            setBookingForm(prev => ({
+              ...prev,
+              clientName: profile.full_name
+            }));
+          }
+          if (profile.phone) {
+            setBookingForm(prev => ({
+              ...prev,
+              clientPhone: profile.phone
+            }));
+          }
         }
       }
     };
@@ -104,9 +112,10 @@ export default function BusinessDetails() {
       setUser(session?.user ?? null);
       if (!session?.user) {
         setUserProfile(null);
-        // Limpiar teléfono si se cierra sesión
+        // Limpiar formulario si se cierra sesión
         setBookingForm(prev => ({
           ...prev,
+          clientName: "",
           clientPhone: ""
         }));
       }
