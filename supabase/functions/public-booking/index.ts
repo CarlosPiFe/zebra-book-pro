@@ -383,6 +383,21 @@ serve(async (req) => {
       confirmationMode: confirmationMode
     });
 
+    // Send confirmation email (non-blocking)
+    if (booking?.id && clientEmail) {
+      supabase.functions.invoke('send-booking-email', {
+        body: { bookingId: booking.id }
+      }).then(({ error: emailError }: { error: any }) => {
+        if (emailError) {
+          console.error('⚠️ Email notification failed:', emailError);
+        } else {
+          console.log('✅ Confirmation email sent to:', clientEmail);
+        }
+      }).catch((err: any) => {
+        console.error('⚠️ Email service error:', err);
+      });
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 

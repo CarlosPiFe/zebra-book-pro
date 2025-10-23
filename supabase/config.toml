@@ -12,5 +12,5 @@ verify_jwt = false
 [functions.public-booking]
 verify_jwt = false
 
-[functions.gmail-oauth-callback]
+[functions.send-booking-email]
 verify_jwt = false

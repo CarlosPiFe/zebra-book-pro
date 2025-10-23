@@ -223,6 +223,21 @@ async function createBooking(supabase: any, data: z.infer<typeof CreateBookingSc
 
   console.log('Booking created:', booking)
 
+  // Send confirmation email (non-blocking)
+  if (booking?.id && data.client_email) {
+    supabase.functions.invoke('send-booking-email', {
+      body: { bookingId: booking.id }
+    }).then(({ error: emailError }: { error: any }) => {
+      if (emailError) {
+        console.error('⚠️ Email notification failed:', emailError);
+      } else {
+        console.log('✅ Confirmation email sent to:', data.client_email);
+      }
+    }).catch((err: any) => {
+      console.error('⚠️ Email service error:', err);
+    });
+  }
+
   return {
     success: true,
     message: `Reserva confirmada para ${data.client_name}`,
