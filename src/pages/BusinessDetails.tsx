@@ -47,6 +47,7 @@ export default function BusinessDetails() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   // Booking form state (sin clientEmail porque se obtiene del usuario autenticado)
   const [bookingForm, setBookingForm] = useState({
@@ -72,16 +73,43 @@ export default function BusinessDetails() {
   } = useBookingAvailability(businessId, bookingForm.roomId);
   const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map(t => t.max_capacity)) : 20;
 
-  // 🔐 Verificar autenticación
+  // 🔐 Verificar autenticación y cargar perfil
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
+      
+      // Cargar perfil del usuario si está autenticado
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        
+        setUserProfile(profile);
+        
+        // Autocompletar teléfono del perfil si existe
+        if (profile?.phone) {
+          setBookingForm(prev => ({
+            ...prev,
+            clientPhone: profile.phone
+          }));
+        }
+      }
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (!session?.user) {
+        setUserProfile(null);
+        // Limpiar teléfono si se cierra sesión
+        setBookingForm(prev => ({
+          ...prev,
+          clientPhone: ""
+        }));
+      }
     });
 
     return () => subscription.unsubscribe();

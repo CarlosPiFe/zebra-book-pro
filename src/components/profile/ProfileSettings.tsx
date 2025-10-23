@@ -88,7 +88,12 @@ export const ProfileSettings = ({ userId, profile, onUpdate }: ProfileSettingsPr
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Teléfono</Label>
+          <div className="flex items-baseline gap-2">
+            <Label htmlFor="phone">Teléfono</Label>
+            <span className="text-xs text-muted-foreground">
+              (Se usará para autocompletar tus reservas, pero siempre podrás cambiarlo)
+            </span>
+          </div>
           <Input
             id="phone"
             type="tel"
