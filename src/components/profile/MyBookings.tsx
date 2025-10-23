@@ -47,13 +47,35 @@ export const MyBookings = ({ userId }: { userId: string }) => {
           )
         `)
         .eq("client_id", userId)
-        .order("booking_date", { ascending: false });
+        .order("booking_date", { ascending: true })
+        .order("start_time", { ascending: true });
 
       if (error) throw error;
 
-      const today = format(new Date(), "yyyy-MM-dd");
-      const upcoming = data?.filter(b => b.booking_date >= today) || [];
-      const past = data?.filter(b => b.booking_date < today) || [];
+      const now = new Date();
+      
+      // Separar reservas según si ya pasó su hora de finalización
+      const upcoming: Booking[] = [];
+      const past: Booking[] = [];
+
+      data?.forEach(booking => {
+        // Crear fecha completa con hora de finalización
+        const bookingEndDateTime = new Date(`${booking.booking_date}T${booking.end_time}`);
+        
+        if (bookingEndDateTime > now) {
+          upcoming.push(booking);
+        } else {
+          past.push(booking);
+        }
+      });
+
+      // Las próximas ya vienen ordenadas por fecha y hora ascendente
+      // Las pasadas ordenar por fecha descendente (más recientes primero)
+      past.sort((a, b) => {
+        const dateA = new Date(`${a.booking_date}T${a.start_time}`);
+        const dateB = new Date(`${b.booking_date}T${b.start_time}`);
+        return dateB.getTime() - dateA.getTime();
+      });
 
       setUpcomingBookings(upcoming);
       setPastBookings(past);
