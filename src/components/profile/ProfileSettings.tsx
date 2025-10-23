@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
 
 interface ProfileSettingsProps {
   userId: string;
@@ -94,12 +96,11 @@ export const ProfileSettings = ({ userId, profile, onUpdate }: ProfileSettingsPr
               (Se usará para autocompletar tus reservas, pero siempre podrás cambiarlo)
             </span>
           </div>
-          <Input
-            id="phone"
-            type="tel"
+          <PhoneInput
+            defaultCountry="es"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+34 600 000 000"
+            onChange={(phone) => setPhone(phone)}
+            className="phone-input-custom px-0 text-base mx-0"
           />
         </div>
 
