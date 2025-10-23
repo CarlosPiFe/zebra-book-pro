@@ -67,10 +67,14 @@ export const MyBookings = ({ userId }: { userId: string }) => {
   const getStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
       reserved: "default",
-      confirmed: "secondary",
+      confirmed: "default",
       completed: "outline",
       cancelled: "destructive",
-      no_show: "destructive"
+      no_show: "destructive",
+      pending_confirmation: "secondary",
+      pending: "secondary",
+      delayed: "destructive",
+      in_progress: "default"
     };
 
     const labels: Record<string, string> = {
@@ -78,7 +82,11 @@ export const MyBookings = ({ userId }: { userId: string }) => {
       confirmed: "Confirmada",
       completed: "Completada",
       cancelled: "Cancelada",
-      no_show: "No asistió"
+      no_show: "No asistido",
+      pending_confirmation: "No confirmada",
+      pending: "Pendiente",
+      delayed: "Retraso",
+      in_progress: "En curso"
     };
 
     return (

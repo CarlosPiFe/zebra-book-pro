@@ -212,6 +212,7 @@ export default function BusinessDetails() {
       } = await supabase.functions.invoke('public-booking', {
         body: {
           businessId: businessId,
+          clientId: user.id, // Incluir el ID del usuario autenticado
           clientName: bookingForm.clientName,
           clientEmail: user.email,
           clientPhone: bookingForm.clientPhone,

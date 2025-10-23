@@ -24,6 +24,7 @@ const getSupabaseAdmin = () => {
 // Input validation schema
 const PublicBookingSchema = z.object({
   businessId: z.string().uuid({ message: "Invalid business ID format" }),
+  clientId: z.string().uuid({ message: "Invalid client ID format" }).optional(), // ID del usuario autenticado
   clientName: z.string().trim().min(1, "Name is required").max(100, "Name is too long"),
   clientPhone: z.string().trim().min(1, "Phone number is required"),
   clientEmail: z.string().trim().email("Invalid email format").max(255, "Email is too long").optional(),
@@ -145,6 +146,7 @@ serve(async (req) => {
 
     const { 
       businessId, 
+      clientId,
       clientName, 
       clientEmail, 
       clientPhone, 
@@ -342,6 +344,7 @@ serve(async (req) => {
       .from("bookings")
       .insert({
         business_id: businessId,
+        client_id: clientId || null, // Incluir client_id si el usuario está autenticado
         client_name: clientName,
         client_email: clientEmail || null,
         client_phone: clientPhone,
