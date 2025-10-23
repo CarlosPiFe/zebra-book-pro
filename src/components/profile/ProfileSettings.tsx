@@ -100,7 +100,7 @@ export const ProfileSettings = ({ userId, profile, onUpdate }: ProfileSettingsPr
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="fullName">Nombre completo *</Label>
+          <Label htmlFor="fullName">Nombre *</Label>
           <Input
             id="fullName"
             type="text"
