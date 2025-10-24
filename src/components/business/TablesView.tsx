@@ -23,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { addMinutes } from "date-fns";
+import { getTimeSlotId } from "@/lib/timeSlots";
 
 interface Room {
   id: string;
@@ -350,6 +351,13 @@ export function TablesView({ businessId }: TablesViewProps) {
       const startTime = now.toTimeString().slice(0, 5);
       const endTime = new Date(now.getTime() + 2 * 60 * 60 * 1000).toTimeString().slice(0, 5);
 
+      // Obtener time_slot_id
+      const timeSlotId = await getTimeSlotId(startTime);
+      if (!timeSlotId) {
+        toast.error("No se pudo obtener la franja horaria");
+        return;
+      }
+
       const { error } = await supabase.from("bookings").insert({
         table_id: selectedTable.id,
         business_id: businessId,
@@ -358,7 +366,8 @@ export function TablesView({ businessId }: TablesViewProps) {
         end_time: endTime,
         client_name: "Cliente sin reserva",
         status: "occupied",
-      } as any);
+        time_slot_id: timeSlotId,
+      });
 
       if (error) throw error;
 
@@ -472,6 +481,13 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
 
     try {
+      // Obtener time_slot_id
+      const timeSlotId = await getTimeSlotId(startTime || "00:00");
+      if (!timeSlotId) {
+        toast.error("No se pudo obtener la franja horaria");
+        return;
+      }
+
       const bookingData = {
         table_id: selectedTable.id,
         business_id: businessId,
@@ -484,13 +500,14 @@ export function TablesView({ businessId }: TablesViewProps) {
         notes: notes || null,
         status: bookingStatus,
         party_size: parseInt(partySize),
+        time_slot_id: timeSlotId,
       };
 
       if (selectedTable.current_booking) {
         // Update existing booking
         const { error } = await supabase
           .from("bookings")
-          .update(bookingData as any)
+          .update(bookingData)
           .eq("id", selectedTable.current_booking.id);
 
         if (error) throw error;
@@ -499,7 +516,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         // Create new booking
         const { error } = await supabase
           .from("bookings")
-          .insert(bookingData as any);
+          .insert(bookingData);
 
         if (error) throw error;
         toast.success("Reserva creada correctamente");
