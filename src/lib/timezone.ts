@@ -1,9 +1,9 @@
 // src/lib/timezone.ts
 import {
-  formatInTimeZone,
-  toDate,
-  fromZonedTime,
-  toZonedTime,
+  formatInTimeZone,
+  toDate,
+  zonedTimeToUtc,
+  utcToZonedTime,
 } from 'date-fns-tz';
 import { startOfDay, format, getDay, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -16,7 +16,7 @@ export const MADRID_TZ = 'Europe/Madrid';
  * Úsalo SIEMPRE en lugar de 'new Date()' para lógica de negocio.
  */
 export function getMadridNow(): Date {
-  return toZonedTime(new Date(), MADRID_TZ);
+  return utcToZonedTime(new Date(), MADRID_TZ);
 }
 
 /**
@@ -25,10 +25,10 @@ export function getMadridNow(): Date {
  * esto nos dará "25 de Oct, 00:00:00" en Madrid.
  */
 export function startOfDayInMadrid(date: Date | number): Date {
-  // 1. Interpreta la fecha en la zona horaria de Madrid
-  const zonedDate = toZonedTime(date, MADRID_TZ);
-  // 2. Obtiene el inicio de ESE día en Madrid
-  return startOfDay(zonedDate);
+  // 1. Interpreta la fecha en la zona horaria de Madrid
+  const zonedDate = utcToZonedTime(date, MADRID_TZ);
+  // 2. Obtiene el inicio de ESE día en Madrid
+  return startOfDay(zonedDate);
 }
 
 /**
@@ -52,14 +52,14 @@ export function getMadridDateString(date: Date): string {
  * Ej: "2025-10-25" y "01:30" (de madrugada) -> objeto Date que representa la 1:30 AM del día 25 EN MADRID.
  */
 export function parseDateTimeInMadrid(
-  dateString: string,
-  timeString: string,
+  dateString: string,
+  timeString: string,
 ): Date {
-  // Crea el string ISO '2025-10-25T01:30:00'
-  const isoString = `${dateString}T${timeString}:00`;
-  // 1. Interpreta ese string como si YA estuviera en Madrid
-  // 2. Devuelve el objeto Date UTC correspondiente
-  return fromZonedTime(isoString, MADRID_TZ);
+  // Crea el string ISO '2025-10-25T01:30:00'
+  const isoString = `${dateString}T${timeString}:00`;
+  // 1. Interpreta ese string como si YA estuviera en Madrid
+  // 2. Devuelve el objeto Date UTC correspondiente
+  return zonedTimeToUtc(isoString, MADRID_TZ);
 }
 
 /**
@@ -68,8 +68,8 @@ export function parseDateTimeInMadrid(
  * no 5 (Viernes, que sería su hora local).
  */
 export function getDayOfWeekInMadrid(date: Date): number {
-  const zonedDate = toZonedTime(date, MADRID_TZ);
-  return getDay(zonedDate);
+  const zonedDate = utcToZonedTime(date, MADRID_TZ);
+  return getDay(zonedDate);
 }
 
 /**
@@ -77,12 +77,12 @@ export function getDayOfWeekInMadrid(date: Date): number {
  * Ej: "EEEE, d 'de' MMMM" -> "sábado, 25 de octubre"
  */
 export function formatForDisplay(
-  date: Date | string,
-  formatStr: string,
+  date: Date | string,
+  formatStr: string,
 ): string {
-  const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  const zonedDate = toZonedTime(dateObj, MADRID_TZ);
-  return format(zonedDate, formatStr, {
-    locale: es,
-  });
+  const dateObj = typeof date === 'string' ? parseISO(date) : date;
+  const zonedDate = utcToZonedTime(dateObj, MADRID_TZ);
+  return format(zonedDate, formatStr, {
+    locale: es,
+  });
 }
