@@ -1,7 +1,7 @@
 // src/hooks/useBookingAvailability.ts
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { getMadridDateString } from '@/lib/timezone';
+import { getMadridDateString, getDayOfWeekInMadrid } from '@/lib/timezone';
 import { toast } from 'sonner';
 
 // El objeto que nuestra nueva función SQL devolverá
@@ -110,7 +110,7 @@ export function useBookingAvailability(businessId: string | undefined) {
   );
 
   return {
-    loading,
+    loading: loading,
     slots, // Los slots con su disponibilidad (ej: {time: "12:00", available: true})
     fetchAvailability, // La función para buscar slots
     isDateAvailable, // La función para saber si el día está abierto
