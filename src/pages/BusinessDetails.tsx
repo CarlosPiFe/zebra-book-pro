@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
+import { getTimeSlotId } from "@/lib/timeSlots";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import jsPDF from "jspdf";
