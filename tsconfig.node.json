@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    // Target environment
     "target": "ES2022",
     "lib": ["ES2023"],
     "module": "ESNext",
@@ -12,11 +13,24 @@
     "moduleDetection": "force",
     "noEmit": true,
 
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": true
+    /* Linting - YA ESTABA BIEN, PEQUEÑOS AJUSTES */
+    "strict": true, // ✅ Ya estaba activado
+    "noUnusedLocals": true, // ✅ CAMBIADO: false → true
+    "noUnusedParameters": true, // ✅ CAMBIADO: false → true
+    "noFallthroughCasesInSwitch": true, // ✅ Ya estaba activado
+
+    /* Additional strict checks - NUEVOS */
+    "noImplicitReturns": true, // ✅ NUEVO: Todas las rutas deben retornar
+    "noUncheckedIndexedAccess": true, // ✅ NUEVO: Acceso seguro a arrays/objetos
+
+    /* Code quality - NUEVOS */
+    "allowUnreachableCode": false, // ✅ NUEVO: Error en código inalcanzable
+    "allowUnusedLabels": false, // ✅ NUEVO: Error en labels no usadas
+
+    /* Module resolution - NUEVOS */
+    "resolveJsonModule": true, // ✅ NUEVO: Permite importar JSON
+    "esModuleInterop": true, // ✅ NUEVO: Mejor interop con CommonJS
+    "forceConsistentCasingInFileNames": true // ✅ NUEVO: Consistencia en nombres
   },
   "include": ["vite.config.ts"]
 }

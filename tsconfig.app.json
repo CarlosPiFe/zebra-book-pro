@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    // Target environment
     "target": "ES2020",
     "useDefineForClassFields": true,
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
@@ -14,13 +15,34 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting */
-    "strict": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noImplicitAny": false,
-    "noFallthroughCasesInSwitch": false,
+    /* Linting - OPTIMIZADO PARA PRODUCCIÓN */
+    "strict": true, // ✅ CAMBIADO: false → true
+    "noUnusedLocals": true, // ✅ CAMBIADO: false → true
+    "noUnusedParameters": true, // ✅ CAMBIADO: false → true
+    "noImplicitAny": true, // ✅ CAMBIADO: false → true
+    "noFallthroughCasesInSwitch": true, // ✅ CAMBIADO: false → true
 
+    /* Additional strict checks - NUEVOS */
+    "strictNullChecks": true, // ✅ NUEVO: Validación null/undefined
+    "strictFunctionTypes": true, // ✅ NUEVO: Tipos de función estrictos
+    "strictBindCallApply": true, // ✅ NUEVO: Validación bind/call/apply
+    "strictPropertyInitialization": true, // ✅ NUEVO: Inicialización de propiedades
+    "noImplicitThis": true, // ✅ NUEVO: 'this' con tipo explícito
+    "noImplicitReturns": true, // ✅ NUEVO: Todas las rutas deben retornar
+    "noUncheckedIndexedAccess": true, // ✅ NUEVO: Acceso seguro a arrays/objetos
+
+    /* Code quality - NUEVOS */
+    "noPropertyAccessFromIndexSignature": false, // ⚠️ Dejamos false para flexibilidad
+    "allowUnreachableCode": false, // ✅ NUEVO: Error en código inalcanzable
+    "allowUnusedLabels": false, // ✅ NUEVO: Error en labels no usadas
+    "exactOptionalPropertyTypes": false, // ⚠️ Dejamos false para evitar breaking changes severos
+
+    /* Module resolution */
+    "resolveJsonModule": true, // ✅ NUEVO: Permite importar JSON
+    "esModuleInterop": true, // ✅ NUEVO: Mejor interop con CommonJS
+    "forceConsistentCasingInFileNames": true, // ✅ NUEVO: Consistencia en nombres
+
+    /* Path aliases */
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]

@@ -2,15 +2,33 @@
   "files": [],
   "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
   "compilerOptions": {
+    // Path aliases
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
     },
-    "noImplicitAny": false,
-    "noUnusedParameters": false,
-    "skipLibCheck": true,
-    "allowJs": true,
-    "noUnusedLocals": false,
-    "strictNullChecks": false
+
+    // Type checking - OPTIMIZADO PARA PRODUCCIÓN
+    "strict": true, // ✅ Activado: Habilita todas las validaciones strict
+    "noImplicitAny": true, // ✅ Activado: No permite 'any' implícito
+    "strictNullChecks": true, // ✅ Activado: Validación estricta de null/undefined
+    "strictFunctionTypes": true, // ✅ Activado: Validación estricta de tipos de función
+    "strictBindCallApply": true, // ✅ Activado: Validación de bind/call/apply
+    "strictPropertyInitialization": true, // ✅ Activado: Props de clase deben inicializarse
+    "noImplicitThis": true, // ✅ Activado: 'this' debe tener tipo explícito
+    "alwaysStrict": true, // ✅ Activado: Modo strict de JavaScript
+
+    // Code quality
+    "noUnusedLocals": true, // ✅ Activado: Error si hay variables no usadas
+    "noUnusedParameters": true, // ✅ Activado: Error si hay parámetros no usados
+    "noFallthroughCasesInSwitch": true, // ✅ Activado: Error en switch sin break
+    "noImplicitReturns": true, // ✅ NUEVO: Todas las rutas deben retornar
+    "noUncheckedIndexedAccess": true, // ✅ NUEVO: Acceso a arrays/objetos más seguro
+
+    // Additional checks
+    "skipLibCheck": true, // ⚡ Optimización: Skip checking de .d.ts
+    "allowJs": true, // ✅ Mantiene compatibilidad con JS
+    "esModuleInterop": true, // ✅ NUEVO: Mejor interop con CommonJS
+    "forceConsistentCasingInFileNames": true // ✅ NUEVO: Evita problemas de case
   }
 }
