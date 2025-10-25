@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.send-booking-email]
 verify_jwt = false
+
+[functions.openai-chat]
+verify_jwt = false
