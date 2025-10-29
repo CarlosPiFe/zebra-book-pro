@@ -188,7 +188,7 @@ export const ScheduleCell = ({
             const startTime = slot.start.substring(0, 5);
             const endTime = slot.end.substring(0, 5);
             return (
-              <div key={index} className="font-medium">
+              <div key={index} className="font-medium text-center">
                 {startTime} - {endTime}
               </div>
             );
