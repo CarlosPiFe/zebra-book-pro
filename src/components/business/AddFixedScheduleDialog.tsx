@@ -512,7 +512,6 @@ export const AddFixedScheduleDialog = ({
                     selected={dateRange}
                     onSelect={setDateRange}
                     initialFocus
-                    numberOfMonths={2}
                     className={cn("p-3 pointer-events-auto")}
                   />
                 ) : (
@@ -521,7 +520,6 @@ export const AddFixedScheduleDialog = ({
                     selected={multipleDates}
                     onSelect={(dates) => setMultipleDates(dates || [])}
                     initialFocus
-                    numberOfMonths={2}
                     className={cn("p-3 pointer-events-auto")}
                   />
                 )}
