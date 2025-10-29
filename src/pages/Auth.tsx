@@ -14,7 +14,16 @@ import { cn } from "@/lib/utils";
 const authSchema = z.object({
   email: z.string().email({ message: "Email inválido" }),
   password: z.string().min(6, { message: "La contraseña debe tener al menos 6 caracteres" }),
+  confirmPassword: z.string().optional(),
   fullName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres" }).optional(),
+}).refine((data) => {
+  if (data.confirmPassword !== undefined && data.password !== data.confirmPassword) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Las contraseñas no coinciden",
+  path: ["confirmPassword"],
 });
 
 const Auth = () => {
@@ -24,6 +33,7 @@ const Auth = () => {
   const [isBusiness, setIsBusiness] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [businessId, setBusinessId] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState<"client" | "owner">("client");
@@ -45,7 +55,7 @@ const Auth = () => {
     try {
       // Validate input
       const validationData = isSignUp 
-        ? { email, password, fullName }
+        ? { email, password, confirmPassword, fullName }
         : { email, password };
       
       authSchema.parse(validationData);
@@ -240,6 +250,19 @@ const Auth = () => {
                 required
               />
             </div>
+
+            {isSignUp && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+                <PasswordInput
+                  id="confirmPassword"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                />
+              </div>
+            )}
 
             <Button
               type="submit"
