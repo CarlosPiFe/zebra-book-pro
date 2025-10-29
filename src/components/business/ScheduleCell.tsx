@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { TimePicker } from "@/components/ui/time-picker";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Plus, Trash2, Copy, X, Info } from "lucide-react";
+import { Plus, Trash2, Copy, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Schedule {
@@ -275,26 +275,12 @@ export const ScheduleCell = ({
 
             {!isDayOff && (
               <div className="space-y-4">
-                {/* Info message for overnight shifts */}
-                <div className="flex items-start gap-2 p-3 bg-accent/10 border border-accent/30 rounded-lg text-sm">
-                  <Info className="w-4 h-4 text-accent mt-0.5 shrink-0" />
-                  <p className="text-muted-foreground">
-                    <strong className="text-foreground">Turnos de madrugada:</strong> Si la hora de fin es menor que la de inicio (ej: 20:00 - 03:00), el turno se extenderá hasta el día siguiente.
-                  </p>
-                </div>
-
                 {slots.map((slot, index) => {
-                  const crossesMidnight = slot.start && slot.end && slot.end < slot.start;
                   return (
                     <div key={index} className="p-4 bg-muted/50 rounded-lg">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold flex items-center gap-2">
+                        <h4 className="font-semibold">
                           Tramo {index + 1}
-                          {crossesMidnight && (
-                            <span className="text-[10px] px-2 py-0.5 bg-accent/20 text-accent rounded-full font-normal">
-                              Madrugada
-                            </span>
-                          )}
                         </h4>
                         {slots.length > 1 && (
                           <Button
@@ -316,7 +302,7 @@ export const ScheduleCell = ({
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Fin {crossesMidnight && <span className="text-accent text-xs">(día siguiente)</span>}</Label>
+                          <Label>Fin</Label>
                           <TimePicker
                             time={slot.end}
                             onTimeChange={(value) => handleSlotChange(index, "end", value)}

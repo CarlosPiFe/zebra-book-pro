@@ -137,13 +137,6 @@ export const AddFixedScheduleDialog = ({
 
     setLoading(true);
     try {
-      // Detectar si el turno cruza medianoche
-      const crossesMidnight = endTime < startTime;
-      
-      if (crossesMidnight) {
-        toast.info(`Turno de madrugada detectado: ${startTime} - ${endTime} (día siguiente)`);
-      }
-
       // Process each selected employee
       for (const employeeId of selectedEmployeeIds) {
         // First, delete existing regular schedules for these days
