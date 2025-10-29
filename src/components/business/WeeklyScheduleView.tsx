@@ -381,10 +381,6 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
               </Button>
             </>
           )}
-          <ExportSchedulesDialog 
-            businessId={businessId} 
-            disabled={scheduleViewMode === 'visual' && !isEditMode}
-          />
         </div>
       </div>
       
@@ -530,6 +526,16 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
             </tbody>
           </table>
         </Card>
+      )}
+
+      {/* Botón de exportar debajo del cuadrante */}
+      {employees.length > 0 && (
+        <div className="flex justify-end mt-4">
+          <ExportSchedulesDialog 
+            businessId={businessId} 
+            disabled={scheduleViewMode === 'visual' && !isEditMode}
+          />
+        </div>
       )}
     </div>
   );
