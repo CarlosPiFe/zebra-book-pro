@@ -254,33 +254,36 @@ export const AddFixedScheduleDialog = ({
                   variant="outline"
                   role="combobox"
                   aria-expanded={comboboxOpen}
-                  className="w-full justify-between"
+                  className="w-full h-10 justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  {selectedEmployeeIds.length === 0
-                    ? "Selecciona empleados..."
-                    : `${selectedEmployeeIds.length} empleado(s) seleccionado(s)`}
+                  <span className="line-clamp-1 text-left">
+                    {selectedEmployeeIds.length === 0
+                      ? "Selecciona empleados..."
+                      : `${selectedEmployeeIds.length} empleado(s) seleccionado(s)`}
+                  </span>
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0">
-                <Command>
-                  <CommandInput placeholder="Buscar empleado..." />
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 z-[999]" align="start">
+                <Command className="rounded-md border bg-popover">
+                  <CommandInput placeholder="Buscar empleado..." className="h-10" />
                   <CommandEmpty>No se encontró empleado.</CommandEmpty>
                   <CommandGroup className="max-h-64 overflow-auto">
                     {employees.map((employee) => (
                       <CommandItem
                         key={employee.id}
                         onSelect={() => toggleEmployee(employee.id)}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 cursor-pointer"
                       >
                         <Checkbox
                           checked={selectedEmployeeIds.includes(employee.id)}
                           onCheckedChange={() => toggleEmployee(employee.id)}
+                          className="pointer-events-none"
                         />
-                        <span>{employee.name}</span>
+                        <span className="flex-1">{employee.name}</span>
                         <Check
                           className={cn(
-                            "ml-auto h-4 w-4",
+                            "ml-auto h-4 w-4 shrink-0",
                             selectedEmployeeIds.includes(employee.id)
                               ? "opacity-100"
                               : "opacity-0"
