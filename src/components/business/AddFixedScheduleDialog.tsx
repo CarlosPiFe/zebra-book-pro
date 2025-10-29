@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
-import { Clock, Check, ChevronsUpDown, CalendarIcon } from "lucide-react";
+import { Clock, Check, ChevronsUpDown, CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -54,8 +54,12 @@ export const AddFixedScheduleDialog = ({
 }: AddFixedScheduleDialogProps) => {
   const [open, setOpen] = useState(false);
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("17:00");
+  
+  // Time slots state
+  const [timeSlots, setTimeSlots] = useState<Array<{ id: number; start: string; end: string }>>([
+    { id: 1, start: "09:00", end: "17:00" }
+  ]);
+  const [nextSlotId, setNextSlotId] = useState(2);
   
   // Date selection state
   const [dateSelectionMode, setDateSelectionMode] = useState<"range" | "multiple">("range");
@@ -94,8 +98,8 @@ export const AddFixedScheduleDialog = ({
       loadEmployees();
       // Reset form
       setSelectedDays([]);
-      setStartTime("09:00");
-      setEndTime("17:00");
+      setTimeSlots([{ id: 1, start: "09:00", end: "17:00" }]);
+      setNextSlotId(2);
       setDateSelectionMode("range");
       setDateRange({ from: new Date(), to: addDays(new Date(), 90) });
       setMultipleDates([]);
@@ -117,6 +121,23 @@ export const AddFixedScheduleDialog = ({
         ? prev.filter((id) => id !== employeeId)
         : [...prev, employeeId]
     );
+  };
+
+  const addTimeSlot = () => {
+    setTimeSlots([...timeSlots, { id: nextSlotId, start: "", end: "" }]);
+    setNextSlotId(nextSlotId + 1);
+  };
+
+  const removeTimeSlot = (id: number) => {
+    if (timeSlots.length > 1) {
+      setTimeSlots(timeSlots.filter(slot => slot.id !== id));
+    }
+  };
+
+  const updateTimeSlot = (id: number, field: "start" | "end", value: string) => {
+    setTimeSlots(timeSlots.map(slot => 
+      slot.id === id ? { ...slot, [field]: value } : slot
+    ));
   };
 
   const toggleDateSelectionMode = (checked: boolean) => {
@@ -163,8 +184,10 @@ export const AddFixedScheduleDialog = ({
       return;
     }
 
-    if (!startTime || !endTime) {
-      toast.error("Completa las horas de inicio y fin");
+    // Validate time slots
+    const invalidSlots = timeSlots.filter(slot => !slot.start || !slot.end);
+    if (invalidSlots.length > 0) {
+      toast.error("Completa todos los tramos horarios");
       return;
     }
 
@@ -284,13 +307,18 @@ export const AddFixedScheduleDialog = ({
 
         if (deleteRegularError) throw deleteRegularError;
 
-        // Insert new regular schedules (applies to all weeks)
-        const regularSchedules = selectedDays.map((dayOfWeek) => ({
-          employee_id: employeeId,
-          day_of_week: dayOfWeek,
-          start_time: startTime,
-          end_time: endTime,
-        }));
+        // Insert new regular schedules (applies to all weeks) - one per time slot
+        const regularSchedules: any[] = [];
+        selectedDays.forEach((dayOfWeek) => {
+          timeSlots.forEach((slot) => {
+            regularSchedules.push({
+              employee_id: employeeId,
+              day_of_week: dayOfWeek,
+              start_time: slot.start,
+              end_time: slot.end,
+            });
+          });
+        });
 
         const { error: insertRegularError } = await supabase
           .from("employee_schedules")
@@ -299,7 +327,14 @@ export const AddFixedScheduleDialog = ({
         if (insertRegularError) throw insertRegularError;
 
         // Generate weekly schedules based on selection mode
-        const weeklySchedulesToCreate = [];
+        const weeklySchedulesToCreate: Array<{
+          employee_id: string;
+          date: string;
+          is_day_off: boolean;
+          start_time: string;
+          end_time: string;
+          slot_order: number;
+        }> = [];
         
         if (dateSelectionMode === "range" && dateRange?.from && dateRange?.to) {
           // Range mode: iterate through each day in the range
@@ -310,15 +345,17 @@ export const AddFixedScheduleDialog = ({
           while (!isAfter(currentDate, rangeEnd)) {
             const currentDayOfWeek = currentDate.getDay();
             
-            // If this day of week is selected, add a schedule
+            // If this day of week is selected, add schedules for each time slot
             if (selectedDays.includes(currentDayOfWeek)) {
-              weeklySchedulesToCreate.push({
-                employee_id: employeeId,
-                date: format(currentDate, "yyyy-MM-dd"),
-                is_day_off: false,
-                start_time: startTime,
-                end_time: endTime,
-                slot_order: 1,
+              timeSlots.forEach((slot, slotIndex) => {
+                weeklySchedulesToCreate.push({
+                  employee_id: employeeId,
+                  date: format(currentDate, "yyyy-MM-dd"),
+                  is_day_off: false,
+                  start_time: slot.start,
+                  end_time: slot.end,
+                  slot_order: slotIndex + 1,
+                });
               });
             }
             
@@ -330,15 +367,17 @@ export const AddFixedScheduleDialog = ({
           multipleDates.forEach(selectedDate => {
             const currentDayOfWeek = selectedDate.getDay();
             
-            // If this day of week is selected, add a schedule
+            // If this day of week is selected, add schedules for each time slot
             if (selectedDays.includes(currentDayOfWeek)) {
-              weeklySchedulesToCreate.push({
-                employee_id: employeeId,
-                date: format(selectedDate, "yyyy-MM-dd"),
-                is_day_off: false,
-                start_time: startTime,
-                end_time: endTime,
-                slot_order: 1,
+              timeSlots.forEach((slot, slotIndex) => {
+                weeklySchedulesToCreate.push({
+                  employee_id: employeeId,
+                  date: format(selectedDate, "yyyy-MM-dd"),
+                  is_day_off: false,
+                  start_time: slot.start,
+                  end_time: slot.end,
+                  slot_order: slotIndex + 1,
+                });
               });
             }
           });
@@ -527,28 +566,57 @@ export const AddFixedScheduleDialog = ({
             </Popover>
           </div>
 
-          {/* Time selection */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start-time">Hora de inicio</Label>
-              <input
-                id="start-time"
-                type="time"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end-time">Hora de fin</Label>
-              <input
-                id="end-time"
-                type="time"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-              />
-            </div>
+          {/* Time slots selection */}
+          <div className="space-y-4">
+            <Label>Tramos horarios</Label>
+            {timeSlots.map((slot, index) => (
+              <div key={slot.id} className="p-4 bg-muted/50 rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-sm">Tramo {index + 1}</h4>
+                  {timeSlots.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeTimeSlot(slot.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor={`start-time-${slot.id}`}>Hora de inicio</Label>
+                    <input
+                      id={`start-time-${slot.id}`}
+                      type="time"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={slot.start}
+                      onChange={(e) => updateTimeSlot(slot.id, "start", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`end-time-${slot.id}`}>Hora de fin</Label>
+                    <input
+                      id={`end-time-${slot.id}`}
+                      type="time"
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={slot.end}
+                      onChange={(e) => updateTimeSlot(slot.id, "end", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addTimeSlot}
+              className="w-full"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Añadir tramo
+            </Button>
           </div>
         </div>
 
