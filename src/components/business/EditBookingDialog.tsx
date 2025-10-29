@@ -26,10 +26,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { z } from "zod";
-import { format, parse, addMinutes } from "date-fns";
+import { format, parse, addMinutes, startOfDay, isBefore } from "date-fns";
 import { Info, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getTimeSlotId } from "@/lib/timeSlots";
+import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
 
 const bookingSchema = z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -252,6 +253,32 @@ export function EditBookingDialog({
       toast.error("Selecciona una fecha");
       return;
     }
+
+    // --- NUEVA VALIDACIÓN DE HORA PASADA ---
+    if (!startTime) {
+      toast.error("Selecciona una hora de inicio");
+      return;
+    }
+
+    try {
+      const selectedDateTime = parseDateTimeInMadrid(
+        formatDateInMadrid(bookingDate),
+        startTime
+      );
+      const now = new Date();
+
+      if (isBefore(selectedDateTime, now)) {
+        toast.error('La hora seleccionada ya ha pasado. Por favor, elige una hora futura.');
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.error("Error validando fecha/hora:", e);
+      toast.error("Error al validar la hora seleccionada.");
+      setLoading(false);
+      return;
+    }
+    // --- FIN NUEVA VALIDACIÓN ---
 
     try {
       setLoading(true);
@@ -565,6 +592,10 @@ export function EditBookingDialog({
                 date={bookingDate}
                 onDateChange={setBookingDate}
                 placeholder="Seleccionar fecha"
+                disabled={(date) => {
+                  const todayStart = startOfDay(new Date());
+                  return date < todayStart;
+                }}
               />
             </div>
 

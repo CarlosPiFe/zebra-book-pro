@@ -3,8 +3,9 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, startOfDay, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
+import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
 import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -220,6 +221,34 @@ export default function BusinessDetails() {
   // 💾 Enviar reserva - Usando el edge function public-booking
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!bookingForm.bookingDate || !bookingForm.startTime) {
+      toast.error("Por favor, completa todos los campos requeridos");
+      return;
+    }
+
+    // --- NUEVA VALIDACIÓN DE HORA PASADA ---
+    try {
+      // Usar fecha local del navegador para comparar
+      const selectedDateTime = parseDateTimeInMadrid(
+        formatDateInMadrid(bookingForm.bookingDate),
+        bookingForm.startTime
+      );
+      const now = new Date(); // Hora actual del navegador
+
+      // Compara si la hora seleccionada es anterior a la hora actual
+      if (isBefore(selectedDateTime, now)) {
+        toast.error('La hora seleccionada ya ha pasado. Por favor, elige una hora futura.');
+        setSubmitting(false);
+        return;
+      }
+    } catch (e) {
+      console.error("Error validando fecha/hora:", e);
+      toast.error("Error al validar la hora seleccionada.");
+      setSubmitting(false);
+      return;
+    }
+    // --- FIN NUEVA VALIDACIÓN ---
 
     // Verificar autenticación
     if (!user?.email) {
@@ -789,7 +818,12 @@ export default function BusinessDetails() {
                       date={bookingForm.bookingDate} 
                       onDateChange={handleDateChange} 
                       placeholder="Seleccionar fecha" 
-                      disabled={!user ? () => true : (d => !isDateAvailable(d))} 
+                      disabled={!user ? () => true : (date => {
+                        const todayStart = startOfDay(new Date());
+                        const isBeforeToday = date < todayStart;
+                        const isClosedDay = !isDateAvailable(date);
+                        return isBeforeToday || isClosedDay;
+                      })} 
                     />
                   </div>
 

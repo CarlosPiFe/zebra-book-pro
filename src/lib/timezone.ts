@@ -35,3 +35,13 @@ export function toMadridTime(date: Date): Date {
 export function formatInMadridTz(date: Date, formatStr: string): string {
   return formatTz(date, formatStr, { timeZone: MADRID_TZ });
 }
+
+/**
+ * Combina una fecha (yyyy-MM-dd) y hora (HH:mm) en un objeto Date
+ * Interpreta la fecha/hora como si estuvieran en hora local del navegador
+ */
+export function parseDateTimeInMadrid(dateString: string, timeString: string): Date {
+  const [year = 2024, month = 1, day = 1] = dateString.split('-').map(Number);
+  const [hour = 0, minute = 0] = timeString.split(':').map(Number);
+  return new Date(year, month - 1, day, hour, minute, 0, 0);
+}

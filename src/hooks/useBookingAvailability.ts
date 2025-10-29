@@ -377,6 +377,31 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
       return hasAvailableTables(localDateStr, timeSlot, partySize);
     });
 
+    // --- NUEVO FILTRO PARA HORAS PASADAS ---
+    const now = new Date(); // Hora actual del navegador
+    const todayString = now.toISOString().split('T')[0];
+    const isToday = localDateStr === todayString; // Comparar con la fecha local que ya calculabas
+
+    if (isToday) {
+      console.log('Filtrando horas pasadas para hoy...');
+      const filteredSlotsForToday = availableSlots.filter((timeSlot) => {
+        const [hour = 0, minute = 0] = timeSlot.split(':').map(Number);
+        const slotStartDateTime = new Date(date); // Usar la fecha local del navegador
+        slotStartDateTime.setHours(hour, minute, 0, 0);
+
+        // Calcular hora de fin (necesitamos slotDuration que ya cargas en el hook)
+        const slotEndDateTime = new Date(slotStartDateTime.getTime() + slotDuration * 60000);
+
+        // Mantener el slot SOLO si su hora de fin es DESPUÉS de ahora
+        const isFuture = slotEndDateTime > now;
+        // Debug: console.log(`Slot ${timeSlot}: Fin=${slotEndDateTime.toLocaleTimeString()}, Ahora=${now.toLocaleTimeString()}, EsFuturo=${isFuture}`);
+        return isFuture;
+      });
+      console.log('Slots después de filtrar horas pasadas:', filteredSlotsForToday);
+      return filteredSlotsForToday; // Devolver los slots filtrados si es hoy
+    }
+    // --- FIN NUEVO FILTRO ---
+
     return availableSlots;
   };
 

@@ -18,9 +18,10 @@ import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Plus, Info, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { addMinutes } from "date-fns";
+import { addMinutes, startOfDay, isBefore } from "date-fns";
 import { z } from "zod";
 import { format } from "date-fns";
+import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AvailabilityTableDialog } from "./AvailabilityTableDialog";
@@ -305,6 +306,32 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
       return;
     }
 
+    // --- NUEVA VALIDACIÓN DE HORA PASADA ---
+    if (!startTime) {
+      toast.error("Selecciona una hora de inicio");
+      return;
+    }
+
+    try {
+      const selectedDateTime = parseDateTimeInMadrid(
+        formatDateInMadrid(bookingDate),
+        startTime
+      );
+      const now = new Date();
+
+      if (isBefore(selectedDateTime, now)) {
+        toast.error('La hora seleccionada ya ha pasado. Por favor, elige una hora futura.');
+        setLoading(false);
+        return;
+      }
+    } catch (e) {
+      console.error("Error validando fecha/hora:", e);
+      toast.error("Error al validar la hora seleccionada.");
+      setLoading(false);
+      return;
+    }
+    // --- FIN NUEVA VALIDACIÓN ---
+
     try {
       setLoading(true);
 
@@ -489,8 +516,13 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               <DatePicker
                 date={bookingDate}
                 onDateChange={setBookingDate}
+                disabled={(date) => {
+                  const todayStart = startOfDay(new Date());
+                  const isBeforeToday = date < todayStart;
+                  const isClosedDay = !isDateAvailable(date);
+                  return isBeforeToday || isClosedDay;
+                }}
                 placeholder="Seleccionar fecha"
-                disabled={(date) => !isDateAvailable(date)}
               />
               {isClosedDay && bookingDate && (
                 <Alert variant="destructive" className="mt-2">
