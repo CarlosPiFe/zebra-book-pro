@@ -185,7 +185,7 @@ export const AddFixedScheduleDialog = ({
         // Check for existing schedules
         const { data: existingSchedules, error: schedulesError } = await supabase
           .from("employee_weekly_schedules")
-          .select("employee_id, waiters!inner(name)")
+          .select("employee_id, date, waiters!inner(name)")
           .in("employee_id", selectedEmployeeIds)
           .gte("date", format(checkStartDate, "yyyy-MM-dd"))
           .lte("date", format(checkEndDate, "yyyy-MM-dd"));
