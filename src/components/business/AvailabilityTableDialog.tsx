@@ -8,13 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { Users } from "lucide-react";
 
 interface AvailabilityTableDialogProps {
   open: boolean;
@@ -25,17 +20,11 @@ interface AvailabilityTableDialogProps {
   onTimeSlotSelect: (startTime: string, endTime: string, tableId: string) => void;
 }
 
-interface Room {
-  id: string;
-  name: string;
-}
-
 interface Table {
   id: string;
   table_number: number;
   max_capacity: number;
   min_capacity: number;
-  room_id: string | null;
 }
 
 interface Booking {
@@ -58,28 +47,19 @@ export function AvailabilityTableDialog({
   onOpenChange,
   businessId,
   selectedDate,
-  partySize: initialPartySize,
+  partySize,
   onTimeSlotSelect,
 }: AvailabilityTableDialogProps) {
   const [tables, setTables] = useState<Table[]>([]);
-  const [rooms, setRooms] = useState<Room[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
   const [loading, setLoading] = useState(true);
-  const [partySize, setPartySize] = useState(initialPartySize || 2);
-  const [selectedRoom, setSelectedRoom] = useState<string>("all");
 
   useEffect(() => {
     if (open) {
       loadData();
     }
-  }, [open, selectedDate, businessId]);
-
-  useEffect(() => {
-    if (initialPartySize) {
-      setPartySize(initialPartySize);
-    }
-  }, [initialPartySize]);
+  }, [open, selectedDate, businessId, partySize]);
 
   const loadData = async () => {
     try {
@@ -96,26 +76,23 @@ export function AvailabilityTableDialog({
 
       if (businessError) throw businessError;
 
-      // 2. Cargar todas las mesas
-      const { data: tablesData, error: tablesError } = await supabase
+      // 2. Cargar mesas (filtradas por capacidad si se especifica)
+      let tablesQuery = supabase
         .from("tables")
         .select("*")
         .eq("business_id", businessId)
         .order("table_number", { ascending: true });
 
+      if (partySize && partySize > 0) {
+        tablesQuery = tablesQuery
+          .gte("max_capacity", partySize)
+          .lte("min_capacity", partySize);
+      }
+
+      const { data: tablesData, error: tablesError } = await tablesQuery;
       if (tablesError) throw tablesError;
 
-      // 3. Cargar salas
-      const { data: roomsData, error: roomsError } = await supabase
-        .from("business_rooms")
-        .select("id, name")
-        .eq("business_id", businessId)
-        .eq("is_active", true)
-        .order("name");
-
-      if (roomsError) throw roomsError;
-
-      // 4. Cargar reservas del día (solo activas)
+      // 3. Cargar reservas del día (solo activas)
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
         .select("*")
@@ -126,7 +103,7 @@ export function AvailabilityTableDialog({
 
       if (bookingsError) throw bookingsError;
 
-      // 5. Cargar horarios de apertura para el día
+      // 4. Cargar horarios de apertura para el día
       const { data: availability, error: availabilityError } = await supabase
         .from("availability_slots")
         .select("start_time, end_time")
@@ -136,26 +113,29 @@ export function AvailabilityTableDialog({
 
       if (availabilityError) throw availabilityError;
 
-      // 6. Generar franjas horarias
+      // 5. Generar franjas horarias
       let slots = generateTimeSlots(availability, business.booking_slot_duration_minutes);
 
-      // 7. Filtrar horas pasadas si es hoy
+      // 6. Filtrar horas pasadas si es hoy
       const now = new Date();
       const todayString = now.toISOString().split('T')[0];
       const selectedDateString = format(selectedDate, "yyyy-MM-dd");
       const isToday = selectedDateString === todayString;
 
       if (isToday) {
+        console.log('Filtrando horas pasadas para hoy en cuadrante de disponibilidad...');
         slots = slots.filter((slot) => {
           const [hour = 0, minute = 0] = slot.endTime.split(':').map(Number);
           const slotEndDateTime = new Date(selectedDate);
           slotEndDateTime.setHours(hour, minute, 0, 0);
-          return slotEndDateTime > now;
+
+          const isFuture = slotEndDateTime > now;
+          return isFuture;
         });
+        console.log('Slots después de filtrar horas pasadas:', slots);
       }
 
       setTables(tablesData || []);
-      setRooms(roomsData || []);
       setBookings((bookingsData || []) as any);
       setTimeSlots(slots);
     } catch (error) {
@@ -179,10 +159,12 @@ export function AvailabilityTableDialog({
       let currentMinutes = startHour * 60 + startMin;
       let endMinutes = endHour * 60 + endMin;
 
+      // Detectar cruce de medianoche
       if (endMinutes <= currentMinutes) {
         endMinutes += 24 * 60;
       }
 
+      // Generar slots
       while (currentMinutes < endMinutes) {
         const nextMinutes = currentMinutes + slotDuration;
         
@@ -212,6 +194,7 @@ export function AvailabilityTableDialog({
     const slotStartMin = parseTime(slotStart);
     let slotEndMin = parseTime(slotEnd);
 
+    // Si el slot cruza medianoche
     if (slotEndMin <= slotStartMin) {
       slotEndMin += 24 * 60;
     }
@@ -222,44 +205,28 @@ export function AvailabilityTableDialog({
       const bookingStartMin = parseTime(booking.start_time);
       let bookingEndMin = parseTime(booking.end_time);
 
+      // Si la reserva cruza medianoche
       if (bookingEndMin <= bookingStartMin) {
         bookingEndMin += 24 * 60;
       }
 
+      // Verificar solapamiento
       return bookingStartMin < slotEndMin && slotStartMin < bookingEndMin;
     }) || null;
   };
 
-  const getCellStatus = (table: Table, slot: TimeSlot): 'available' | 'occupied' | 'insufficient' => {
-    // Check capacity
-    if (table.max_capacity < partySize || table.min_capacity > partySize) {
-      return 'insufficient';
-    }
-
-    // Check if occupied
-    const booking = isSlotOccupied(table.id, slot.startTime, slot.endTime);
-    if (booking) {
-      return 'occupied';
-    }
-
-    return 'available';
-  };
-
-  const handleSlotClick = (tableId: string, startTime: string, endTime: string, status: string) => {
-    if (status === 'available') {
+  const handleSlotClick = (tableId: string, startTime: string, endTime: string) => {
+    const occupied = isSlotOccupied(tableId, startTime, endTime);
+    if (!occupied) {
       onTimeSlotSelect(startTime, endTime, tableId);
       onOpenChange(false);
     }
   };
 
-  const filteredTables = selectedRoom === "all" 
-    ? tables 
-    : tables.filter(table => table.room_id === selectedRoom);
-
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-6xl max-h-[90vh]">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle>Cargando disponibilidad...</DialogTitle>
           </DialogHeader>
@@ -273,117 +240,102 @@ export function AvailabilityTableDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>
             Disponibilidad - {format(selectedDate, "dd/MM/yyyy")}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
-          {/* Party Size Filter */}
-          <div className="flex items-end gap-4">
-            <div className="flex-1 max-w-xs">
-              <Label htmlFor="party-size">Número de Comensales</Label>
-              <Input
-                id="party-size"
-                type="number"
-                min="1"
-                value={partySize}
-                onChange={(e) => setPartySize(parseInt(e.target.value) || 1)}
-                className="mt-1"
-              />
-            </div>
-          </div>
-
-          {/* Room Tabs */}
-          <Tabs value={selectedRoom} onValueChange={setSelectedRoom} className="flex-1 overflow-hidden flex flex-col">
-            <TabsList>
-              <TabsTrigger value="all">Todas</TabsTrigger>
-              {rooms.map((room) => (
-                <TabsTrigger key={room.id} value={room.id}>
-                  {room.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            <TabsContent value={selectedRoom} className="flex-1 overflow-hidden mt-4 flex flex-col">
-              {/* Fixed Header Row */}
-              <div className="grid gap-1 border-b pb-2 mb-2 bg-background" style={{
-                gridTemplateColumns: `80px repeat(${filteredTables.length}, minmax(64px, 1fr))`
-              }}>
-                <div className="font-semibold px-2 text-sm">
-                  Hora
-                </div>
-                {filteredTables.map((table) => (
-                  <div
-                    key={table.id}
-                    className="text-center px-1 w-16"
-                  >
-                    <div className="text-base font-bold">{table.table_number}</div>
-                    <div className="text-xs text-muted-foreground flex items-center justify-center gap-0.5">
-                      <Users size={14} />
-                      <span>{table.max_capacity}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Scrollable Time Slots */}
-              <ScrollArea className="flex-1">
-                <div className="grid gap-1" style={{
-                  gridTemplateColumns: `80px repeat(${filteredTables.length}, minmax(64px, 1fr))`
-                }}>
-                  {timeSlots.map((slot, slotIndex) => (
-                    <>
-                      <div key={`time-${slotIndex}`} className="py-1.5 text-sm font-medium px-2 flex items-center">
-                        {slot.startTime}
+        <div className="flex-1 overflow-auto">
+          <div className="min-w-max">
+            <table className="w-full border-collapse">
+              <thead className="sticky top-0 bg-background z-10">
+                <tr>
+                  <th className="border border-border p-2 bg-muted font-semibold text-left min-w-[100px]">
+                    Hora
+                  </th>
+                  {tables.map((table) => (
+                    <th
+                      key={table.id}
+                      className="border border-border p-2 bg-muted font-semibold text-center min-w-[120px]"
+                    >
+                      <div>Mesa {table.table_number}</div>
+                      <div className="text-xs font-normal text-muted-foreground">
+                        ({table.max_capacity} personas)
                       </div>
-                      {filteredTables.map((table) => {
-                        const status = getCellStatus(table, slot);
-                        const booking = isSlotOccupied(table.id, slot.startTime, slot.endTime);
-
-                        return (
-                          <Card
-                            key={`${slot.startTime}-${table.id}`}
-                            className={cn(
-                              "p-1.5 text-center text-xs transition-colors flex items-center justify-center min-h-[48px]",
-                              status === 'available' && "bg-green-500/20 hover:bg-green-500/30 cursor-pointer border-green-500/30",
-                              status === 'occupied' && "bg-destructive/20 cursor-not-allowed border-destructive/30",
-                              status === 'insufficient' && "bg-muted/50 cursor-not-allowed border-muted"
-                            )}
-                            onClick={() => handleSlotClick(table.id, slot.startTime, slot.endTime, status)}
-                          >
-                            {status === 'available' && (
-                              <div className="font-medium text-green-700 dark:text-green-300">
-                                Libre
-                              </div>
-                            )}
-                            {status === 'occupied' && booking && (
-                              <div className="space-y-0.5">
-                                <div className="font-medium text-destructive text-[10px]">Ocupada</div>
-                                <div className="text-[9px] text-muted-foreground">
-                                  {booking.client_name}
-                                </div>
-                                <div className="text-[9px] text-muted-foreground">
-                                  {booking.party_size}p
-                                </div>
-                              </div>
-                            )}
-                            {status === 'insufficient' && (
-                              <div className="text-[10px] text-muted-foreground">
-                                No apta
-                              </div>
-                            )}
-                          </Card>
-                        );
-                      })}
-                    </>
+                    </th>
                   ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
+                </tr>
+              </thead>
+              <tbody>
+                {timeSlots.map((slot, index) => (
+                  <tr key={index}>
+                    <td className="border border-border p-2 bg-muted/50 font-medium text-sm">
+                      {slot.startTime} - {slot.endTime}
+                    </td>
+                    {tables.map((table) => {
+                      const booking = isSlotOccupied(table.id, slot.startTime, slot.endTime);
+                      const isOccupied = !!booking;
+
+                      return (
+                        <TooltipProvider key={table.id}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <td
+                                className={cn(
+                                  "border border-border p-3 text-center transition-colors",
+                                  isOccupied
+                                    ? "bg-destructive/20 cursor-not-allowed"
+                                    : "bg-green-500/10 hover:bg-green-500/20 cursor-pointer"
+                                )}
+                                onClick={() => {
+                                  if (!isOccupied) {
+                                    handleSlotClick(table.id, slot.startTime, slot.endTime);
+                                  }
+                                }}
+                              >
+                                {isOccupied ? (
+                                  <span className="text-xs font-medium text-destructive">
+                                    Ocupado
+                                  </span>
+                                ) : (
+                                  <span className="text-xs font-medium text-green-700">
+                                    Disponible
+                                  </span>
+                                )}
+                              </td>
+                            </TooltipTrigger>
+                            {isOccupied && booking && (
+                              <TooltipContent side="top" className="max-w-xs">
+                                <div className="space-y-1">
+                                  <p className="font-semibold">{booking.client_name}</p>
+                                  <p className="text-xs">
+                                    {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
+                                  </p>
+                                  <p className="text-xs">{booking.party_size} personas</p>
+                                  {booking.status && (
+                                    <p className="text-xs capitalize">Estado: {booking.status}</p>
+                                  )}
+                                </div>
+                              </TooltipContent>
+                            )}
+                            {!isOccupied && (
+                              <TooltipContent side="top">
+                                <p className="text-xs">
+                                  Click para crear reserva en esta franja horaria
+                                </p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
