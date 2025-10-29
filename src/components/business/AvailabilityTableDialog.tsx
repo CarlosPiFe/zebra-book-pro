@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { Users } from "lucide-react";
 
 interface AvailabilityTableDialogProps {
   open: boolean;
@@ -306,31 +307,36 @@ export function AvailabilityTableDialog({
               ))}
             </TabsList>
 
-            <TabsContent value={selectedRoom} className="flex-1 overflow-hidden mt-4">
-              <ScrollArea className="h-full">
-                <div className="grid gap-1" style={{
-                  gridTemplateColumns: `100px repeat(${filteredTables.length}, minmax(110px, 1fr))`
-                }}>
-                  {/* Header Row */}
-                  <div className="sticky top-0 bg-background z-10 font-semibold border-b pb-2 px-2">
-                    Hora
-                  </div>
-                  {filteredTables.map((table) => (
-                    <div
-                      key={table.id}
-                      className="sticky top-0 bg-background z-10 text-center font-semibold border-b pb-2 px-1"
-                    >
-                      <div className="text-sm">Mesa {table.table_number}</div>
-                      <div className="text-xs text-muted-foreground font-normal">
-                        {table.min_capacity}-{table.max_capacity}p
-                      </div>
+            <TabsContent value={selectedRoom} className="flex-1 overflow-hidden mt-4 flex flex-col">
+              {/* Fixed Header Row */}
+              <div className="grid gap-1 border-b pb-2 mb-2 bg-background" style={{
+                gridTemplateColumns: `80px repeat(${filteredTables.length}, minmax(64px, 1fr))`
+              }}>
+                <div className="font-semibold px-2 text-sm">
+                  Hora
+                </div>
+                {filteredTables.map((table) => (
+                  <div
+                    key={table.id}
+                    className="text-center px-1 w-16"
+                  >
+                    <div className="text-base font-bold">{table.table_number}</div>
+                    <div className="text-xs text-muted-foreground flex items-center justify-center gap-0.5">
+                      <Users size={14} />
+                      <span>{table.max_capacity}</span>
                     </div>
-                  ))}
+                  </div>
+                ))}
+              </div>
 
-                  {/* Time Slots */}
+              {/* Scrollable Time Slots */}
+              <ScrollArea className="flex-1">
+                <div className="grid gap-1" style={{
+                  gridTemplateColumns: `80px repeat(${filteredTables.length}, minmax(64px, 1fr))`
+                }}>
                   {timeSlots.map((slot, slotIndex) => (
                     <>
-                      <div key={`time-${slotIndex}`} className="py-3 text-sm font-medium px-2 flex items-center">
+                      <div key={`time-${slotIndex}`} className="py-1.5 text-sm font-medium px-2 flex items-center">
                         {slot.startTime}
                       </div>
                       {filteredTables.map((table) => {
@@ -341,7 +347,7 @@ export function AvailabilityTableDialog({
                           <Card
                             key={`${slot.startTime}-${table.id}`}
                             className={cn(
-                              "p-2 text-center text-xs transition-colors flex items-center justify-center min-h-[60px]",
+                              "p-1.5 text-center text-xs transition-colors flex items-center justify-center min-h-[48px]",
                               status === 'available' && "bg-green-500/20 hover:bg-green-500/30 cursor-pointer border-green-500/30",
                               status === 'occupied' && "bg-destructive/20 cursor-not-allowed border-destructive/30",
                               status === 'insufficient' && "bg-muted/50 cursor-not-allowed border-muted"
@@ -355,11 +361,11 @@ export function AvailabilityTableDialog({
                             )}
                             {status === 'occupied' && booking && (
                               <div className="space-y-0.5">
-                                <div className="font-medium text-destructive">Ocupada</div>
-                                <div className="text-[10px] text-muted-foreground">
+                                <div className="font-medium text-destructive text-[10px]">Ocupada</div>
+                                <div className="text-[9px] text-muted-foreground">
                                   {booking.client_name}
                                 </div>
-                                <div className="text-[10px] text-muted-foreground">
+                                <div className="text-[9px] text-muted-foreground">
                                   {booking.party_size}p
                                 </div>
                               </div>
