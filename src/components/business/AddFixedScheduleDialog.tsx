@@ -11,10 +11,24 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Clock } from "lucide-react";
+import { Clock, Check, ChevronsUpDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format, addDays, isAfter, isBefore, startOfDay } from "date-fns";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AddFixedScheduleDialogProps {
   businessId: string;
@@ -43,9 +57,10 @@ export const AddFixedScheduleDialog = ({
   const [endTime, setEndTime] = useState("17:00");
   const [startDate, setStartDate] = useState<Date | undefined>(new Date());
   const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 90));
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState<string>("");
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
+  const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const loadEmployees = async () => {
     try {
@@ -74,7 +89,7 @@ export const AddFixedScheduleDialog = ({
       setEndTime("17:00");
       setStartDate(new Date());
       setEndDate(addDays(new Date(), 90));
-      setSelectedEmployeeId("");
+      setSelectedEmployeeIds([]);
     }
   };
 
@@ -86,14 +101,22 @@ export const AddFixedScheduleDialog = ({
     );
   };
 
+  const toggleEmployee = (employeeId: string) => {
+    setSelectedEmployeeIds((prev) =>
+      prev.includes(employeeId)
+        ? prev.filter((id) => id !== employeeId)
+        : [...prev, employeeId]
+    );
+  };
+
   const handleSave = async () => {
     if (selectedDays.length === 0) {
       toast.error("Selecciona al menos un día");
       return;
     }
 
-    if (!selectedEmployeeId) {
-      toast.error("Selecciona un empleado");
+    if (selectedEmployeeIds.length === 0) {
+      toast.error("Selecciona al menos un empleado");
       return;
     }
 
@@ -119,78 +142,80 @@ export const AddFixedScheduleDialog = ({
 
     setLoading(true);
     try {
-      // First, delete existing regular schedules for these days
-      const { error: deleteRegularError } = await supabase
-        .from("employee_schedules")
-        .delete()
-        .eq("employee_id", selectedEmployeeId)
-        .in("day_of_week", selectedDays);
-
-      if (deleteRegularError) throw deleteRegularError;
-
-      // Insert new regular schedules (applies to all weeks)
-      const regularSchedules = selectedDays.map((dayOfWeek) => ({
-        employee_id: selectedEmployeeId,
-        day_of_week: dayOfWeek,
-        start_time: startTime,
-        end_time: endTime,
-      }));
-
-      const { error: insertRegularError } = await supabase
-        .from("employee_schedules")
-        .insert(regularSchedules);
-
-      if (insertRegularError) throw insertRegularError;
-
-      // Generate weekly schedules within the date range
-      const weeklySchedulesToCreate = [];
-      const rangeStart = startOfDay(startDate);
-      const rangeEnd = startOfDay(endDate);
-      
-      // Iterate through each day in the range
-      let currentDate = new Date(rangeStart);
-      while (!isAfter(currentDate, rangeEnd)) {
-        const currentDayOfWeek = currentDate.getDay();
-        
-        // If this day of week is selected, add a schedule
-        if (selectedDays.includes(currentDayOfWeek)) {
-          weeklySchedulesToCreate.push({
-            employee_id: selectedEmployeeId,
-            date: format(currentDate, "yyyy-MM-dd"),
-            is_day_off: false,
-            start_time: startTime,
-            end_time: endTime,
-            slot_order: 1,
-          });
-        }
-        
-        // Move to next day
-        currentDate = addDays(currentDate, 1);
-      }
-
-      // Delete any existing schedules for these dates first
-      if (weeklySchedulesToCreate.length > 0) {
-        const datesToDelete = weeklySchedulesToCreate.map(s => s.date);
-        
-        const { error: deleteWeeklyError } = await supabase
-          .from("employee_weekly_schedules")
+      // Process each selected employee
+      for (const employeeId of selectedEmployeeIds) {
+        // First, delete existing regular schedules for these days
+        const { error: deleteRegularError } = await supabase
+          .from("employee_schedules")
           .delete()
-          .eq("employee_id", selectedEmployeeId)
-          .in("date", datesToDelete);
+          .eq("employee_id", employeeId)
+          .in("day_of_week", selectedDays);
 
-        if (deleteWeeklyError) throw deleteWeeklyError;
+        if (deleteRegularError) throw deleteRegularError;
 
-        // Insert all the weekly schedules
-        const { error: insertWeeklyError } = await supabase
-          .from("employee_weekly_schedules")
-          .insert(weeklySchedulesToCreate);
+        // Insert new regular schedules (applies to all weeks)
+        const regularSchedules = selectedDays.map((dayOfWeek) => ({
+          employee_id: employeeId,
+          day_of_week: dayOfWeek,
+          start_time: startTime,
+          end_time: endTime,
+        }));
 
-        if (insertWeeklyError) throw insertWeeklyError;
+        const { error: insertRegularError } = await supabase
+          .from("employee_schedules")
+          .insert(regularSchedules);
+
+        if (insertRegularError) throw insertRegularError;
+
+        // Generate weekly schedules within the date range
+        const weeklySchedulesToCreate = [];
+        const rangeStart = startOfDay(startDate);
+        const rangeEnd = startOfDay(endDate);
+        
+        // Iterate through each day in the range
+        let currentDate = new Date(rangeStart);
+        while (!isAfter(currentDate, rangeEnd)) {
+          const currentDayOfWeek = currentDate.getDay();
+          
+          // If this day of week is selected, add a schedule
+          if (selectedDays.includes(currentDayOfWeek)) {
+            weeklySchedulesToCreate.push({
+              employee_id: employeeId,
+              date: format(currentDate, "yyyy-MM-dd"),
+              is_day_off: false,
+              start_time: startTime,
+              end_time: endTime,
+              slot_order: 1,
+            });
+          }
+          
+          // Move to next day
+          currentDate = addDays(currentDate, 1);
+        }
+
+        // Delete any existing schedules for these dates first
+        if (weeklySchedulesToCreate.length > 0) {
+          const datesToDelete = weeklySchedulesToCreate.map(s => s.date);
+          
+          const { error: deleteWeeklyError } = await supabase
+            .from("employee_weekly_schedules")
+            .delete()
+            .eq("employee_id", employeeId)
+            .in("date", datesToDelete);
+
+          if (deleteWeeklyError) throw deleteWeeklyError;
+
+          // Insert all the weekly schedules
+          const { error: insertWeeklyError } = await supabase
+            .from("employee_weekly_schedules")
+            .insert(weeklySchedulesToCreate);
+
+          if (insertWeeklyError) throw insertWeeklyError;
+        }
       }
 
-      const daysInRange = weeklySchedulesToCreate.length;
       toast.success(
-        `Horario repetido creado: ${daysInRange} día(s) desde ${format(startDate, "dd/MM/yyyy")} hasta ${format(endDate, "dd/MM/yyyy")}`
+        `Horario repetido creado para ${selectedEmployeeIds.length} empleado(s) desde ${format(startDate, "dd/MM/yyyy")} hasta ${format(endDate, "dd/MM/yyyy")}`
       );
       setOpen(false);
       onScheduleAdded();
@@ -222,20 +247,51 @@ export const AddFixedScheduleDialog = ({
         <div className="space-y-4 py-4">
           {/* Employee selection */}
           <div className="space-y-2">
-            <Label htmlFor="employee">Empleado</Label>
-            <select
-              id="employee"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-              value={selectedEmployeeId}
-              onChange={(e) => setSelectedEmployeeId(e.target.value)}
-            >
-              <option value="">Selecciona un empleado</option>
-              {employees.map((employee) => (
-                <option key={employee.id} value={employee.id}>
-                  {employee.name}
-                </option>
-              ))}
-            </select>
+            <Label>Empleados</Label>
+            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={comboboxOpen}
+                  className="w-full justify-between"
+                >
+                  {selectedEmployeeIds.length === 0
+                    ? "Selecciona empleados..."
+                    : `${selectedEmployeeIds.length} empleado(s) seleccionado(s)`}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0">
+                <Command>
+                  <CommandInput placeholder="Buscar empleado..." />
+                  <CommandEmpty>No se encontró empleado.</CommandEmpty>
+                  <CommandGroup className="max-h-64 overflow-auto">
+                    {employees.map((employee) => (
+                      <CommandItem
+                        key={employee.id}
+                        onSelect={() => toggleEmployee(employee.id)}
+                        className="flex items-center gap-2"
+                      >
+                        <Checkbox
+                          checked={selectedEmployeeIds.includes(employee.id)}
+                          onCheckedChange={() => toggleEmployee(employee.id)}
+                        />
+                        <span>{employee.name}</span>
+                        <Check
+                          className={cn(
+                            "ml-auto h-4 w-4",
+                            selectedEmployeeIds.includes(employee.id)
+                              ? "opacity-100"
+                              : "opacity-0"
+                          )}
+                        />
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Days selection */}

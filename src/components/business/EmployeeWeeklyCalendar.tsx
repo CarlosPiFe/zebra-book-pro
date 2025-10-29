@@ -144,12 +144,6 @@ export function EmployeeWeeklyCalendar({
   const getBusinessHoursForDay = (dayOfWeek: number): AvailabilitySlot[] => {
     return businessHours.filter((slot) => slot.day_of_week === dayOfWeek);
   };
-        end = timeToDecimal(slot.end_time, true);
-      }
-      
-      return hour >= start && hour < end;
-    });
-  };
 
   // Get schedules for a specific date
   const getSchedulesForDate = (date: Date): Schedule[] => {
