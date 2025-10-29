@@ -187,6 +187,92 @@ export const AddFixedScheduleDialog = ({
 
     setLoading(true);
     try {
+      // Check for vacation conflicts before proceeding
+      const { data: vacations, error: vacationsError } = await supabase
+        .from("employee_vacations")
+        .select("*, waiters!inner(name)")
+        .in("employee_id", selectedEmployeeIds);
+
+      if (vacationsError) throw vacationsError;
+
+      // Determine the date range to check
+      let checkStartDate: Date;
+      let checkEndDate: Date;
+
+      if (dateSelectionMode === "range" && dateRange?.from && dateRange?.to) {
+        checkStartDate = dateRange.from;
+        checkEndDate = dateRange.to;
+      } else if (dateSelectionMode === "multiple" && multipleDates.length > 0) {
+        // For multiple dates, check from earliest to latest
+        const sortedDates = [...multipleDates].sort((a, b) => a.getTime() - b.getTime());
+        checkStartDate = sortedDates[0]!;
+        checkEndDate = sortedDates[sortedDates.length - 1]!;
+      } else {
+        // This shouldn't happen due to earlier validation, but handle it
+        checkStartDate = new Date();
+        checkEndDate = new Date();
+      }
+
+      // Check for overlapping vacations
+      const conflicts: Array<{ employeeName: string; vacationStart: string; vacationEnd: string }> = [];
+
+      vacations?.forEach((vacation) => {
+        const vacationStart = new Date(vacation.start_date);
+        const vacationEnd = new Date(vacation.end_date);
+
+        // Check if vacation overlaps with the schedule date range
+        if (vacationStart <= checkEndDate && vacationEnd >= checkStartDate) {
+          // Check if any of the selected days of week fall within this vacation period
+          let hasConflict = false;
+
+          if (dateSelectionMode === "range" && dateRange?.from && dateRange?.to) {
+            // For range mode: check each day in the range
+            let currentDate = new Date(Math.max(vacationStart.getTime(), dateRange.from.getTime()));
+            const rangeEnd = new Date(Math.min(vacationEnd.getTime(), dateRange.to.getTime()));
+
+            while (!isAfter(currentDate, rangeEnd)) {
+              const dayOfWeek = currentDate.getDay();
+              if (selectedDays.includes(dayOfWeek)) {
+                hasConflict = true;
+                break;
+              }
+              currentDate = addDays(currentDate, 1);
+            }
+          } else if (dateSelectionMode === "multiple") {
+            // For multiple mode: check if any selected date falls within vacation
+            hasConflict = multipleDates.some((selectedDate) => {
+              const dayOfWeek = selectedDate.getDay();
+              return (
+                selectedDays.includes(dayOfWeek) &&
+                selectedDate >= vacationStart &&
+                selectedDate <= vacationEnd
+              );
+            });
+          }
+
+          if (hasConflict) {
+            conflicts.push({
+              employeeName: (vacation.waiters as any)?.name || "Empleado",
+              vacationStart: format(vacationStart, "dd/MM/yyyy"),
+              vacationEnd: format(vacationEnd, "dd/MM/yyyy"),
+            });
+          }
+        }
+      });
+
+      // If there are conflicts, show error and cancel
+      if (conflicts.length > 0) {
+        setLoading(false);
+        const conflictMessages = conflicts
+          .map((c) => `${c.employeeName}: ${c.vacationStart} - ${c.vacationEnd}`)
+          .join("\n");
+        toast.error(
+          `El horario choca con vacaciones existentes:\n${conflictMessages}`,
+          { duration: 6000 }
+        );
+        return;
+      }
+
       // Process each selected employee
       for (const employeeId of selectedEmployeeIds) {
         // First, delete existing regular schedules for these days
