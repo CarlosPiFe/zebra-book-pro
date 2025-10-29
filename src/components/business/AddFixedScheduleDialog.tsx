@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
+import { TimePicker } from "@/components/ui/time-picker";
 import { Clock, Check, ChevronsUpDown, CalendarIcon, Plus, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
@@ -587,22 +588,18 @@ export const AddFixedScheduleDialog = ({
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor={`start-time-${slot.id}`}>Hora de inicio</Label>
-                    <input
-                      id={`start-time-${slot.id}`}
-                      type="time"
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                      value={slot.start}
-                      onChange={(e) => updateTimeSlot(slot.id, "start", e.target.value)}
+                    <TimePicker
+                      time={slot.start}
+                      onTimeChange={(value) => updateTimeSlot(slot.id, "start", value)}
+                      allowClear
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor={`end-time-${slot.id}`}>Hora de fin</Label>
-                    <input
-                      id={`end-time-${slot.id}`}
-                      type="time"
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                      value={slot.end}
-                      onChange={(e) => updateTimeSlot(slot.id, "end", e.target.value)}
+                    <TimePicker
+                      time={slot.end}
+                      onTimeChange={(value) => updateTimeSlot(slot.id, "end", value)}
+                      allowClear
                     />
                   </div>
                 </div>
