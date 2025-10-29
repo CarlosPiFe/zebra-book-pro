@@ -481,27 +481,27 @@ export default function BusinessDetails() {
   return <>
     {/* Modal de confirmación de reserva */}
     <Dialog open={showConfirmationModal} onOpenChange={setShowConfirmationModal}>
-      <DialogContent className="max-w-md max-h-[90vh] p-0 gap-0">
+      <DialogContent className="max-w-md max-h-[95vh] p-0 gap-0">
         {confirmedBooking && (
           <>
             {/* Icono circular de estado - Fijo en la parte superior */}
-            <div className="flex justify-center pt-6 pb-4 px-6">
-              <div className={`w-24 h-24 rounded-full flex items-center justify-center ${
+            <div className="flex justify-center pt-4 pb-2 px-4">
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
                 confirmedBooking.status === 'reserved' 
                   ? 'bg-green-100 dark:bg-green-900/30' 
                   : 'bg-orange-100 dark:bg-orange-900/30'
               }`}>
                 {confirmedBooking.status === 'reserved' ? (
-                  <CheckCircle2 className="w-14 h-14 text-green-600 dark:text-green-400" />
+                  <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />
                 ) : (
-                  <Clock className="w-14 h-14 text-orange-600 dark:text-orange-400" />
+                  <Clock className="w-12 h-12 text-orange-600 dark:text-orange-400" />
                 )}
               </div>
             </div>
 
             {/* Título dinámico - Fijo en la parte superior */}
-            <DialogHeader className="px-6 pb-4">
-              <DialogTitle className="text-center text-2xl">
+            <DialogHeader className="px-4 pb-2">
+              <DialogTitle className="text-center text-xl">
                 {confirmedBooking.status === 'reserved' 
                   ? '¡Reserva Confirmada!' 
                   : 'Reserva Recibida'}
@@ -509,10 +509,10 @@ export default function BusinessDetails() {
             </DialogHeader>
 
             {/* Contenido scrolleable */}
-            <ScrollArea className="max-h-[calc(90vh-220px)] px-6">
-              <div className="space-y-4 pb-6">
+            <ScrollArea className="max-h-[calc(95vh-160px)] px-4">
+              <div className="space-y-2.5 pb-4">
                 {/* Mensaje según el estado */}
-                <div className={`p-4 rounded-lg border ${
+                <div className={`p-3 rounded-lg border ${
                   confirmedBooking.status === 'reserved'
                     ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
                     : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
@@ -526,10 +526,10 @@ export default function BusinessDetails() {
 
                 {/* Información del cliente */}
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-base">Información del Cliente</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
+                  <CardContent className="space-y-1.5 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Nombre:</span>
                       <span className="font-medium">{confirmedBooking.client_name}</span>
@@ -549,10 +549,10 @@ export default function BusinessDetails() {
 
                 {/* Detalles de la reserva */}
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-base">Detalles de la Reserva</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-2 text-sm">
+                  <CardContent className="space-y-1.5 text-sm">
                     <div className="flex items-start justify-between">
                       <span className="text-muted-foreground">Fecha:</span>
                       <span className="font-medium text-right">
@@ -576,7 +576,7 @@ export default function BusinessDetails() {
                       </div>
                     )}
                     {confirmedBooking.notes && (
-                      <div className="pt-2 border-t">
+                      <div className="pt-1.5 border-t">
                         <span className="text-muted-foreground block mb-1">Notas:</span>
                         <p className="text-sm">{confirmedBooking.notes}</p>
                       </div>
