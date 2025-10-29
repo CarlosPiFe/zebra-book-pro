@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -9,10 +9,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Calendar } from "@/components/ui/calendar";
 import { TimePicker } from "@/components/ui/time-picker";
-import { Clock, Check, ChevronsUpDown, CalendarIcon, Plus, Trash2 } from "lucide-react";
+import { Clock, Check, ChevronsUpDown, CalendarIcon, Plus, Trash2, AlertCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -75,6 +76,17 @@ export const AddFixedScheduleDialog = ({
   const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
+  
+  // Conflict warnings
+  const [scheduleConflict, setScheduleConflict] = useState<{
+    hasConflict: boolean;
+    employeeNames: string[];
+  }>({ hasConflict: false, employeeNames: [] });
+  
+  const [vacationConflict, setVacationConflict] = useState<{
+    hasConflict: boolean;
+    details: Array<{ employeeName: string; vacationStart: string; vacationEnd: string }>;
+  }>({ hasConflict: false, details: [] });
 
   const loadEmployees = async () => {
     try {
@@ -140,6 +152,123 @@ export const AddFixedScheduleDialog = ({
       slot.id === id ? { ...slot, [field]: value } : slot
     ));
   };
+
+  // Check for conflicts whenever relevant data changes
+  useEffect(() => {
+    const checkConflicts = async () => {
+      if (selectedEmployeeIds.length === 0 || selectedDays.length === 0) {
+        setScheduleConflict({ hasConflict: false, employeeNames: [] });
+        setVacationConflict({ hasConflict: false, details: [] });
+        return;
+      }
+
+      // Determine date range to check
+      let checkStartDate: Date | null = null;
+      let checkEndDate: Date | null = null;
+
+      if (dateSelectionMode === "range" && dateRange?.from && dateRange?.to) {
+        checkStartDate = dateRange.from;
+        checkEndDate = dateRange.to;
+      } else if (dateSelectionMode === "multiple" && multipleDates.length > 0) {
+        const sortedDates = [...multipleDates].sort((a, b) => a.getTime() - b.getTime());
+        checkStartDate = sortedDates[0]!;
+        checkEndDate = sortedDates[sortedDates.length - 1]!;
+      }
+
+      if (!checkStartDate || !checkEndDate) {
+        setScheduleConflict({ hasConflict: false, employeeNames: [] });
+        setVacationConflict({ hasConflict: false, details: [] });
+        return;
+      }
+
+      try {
+        // Check for existing schedules
+        const { data: existingSchedules, error: schedulesError } = await supabase
+          .from("employee_weekly_schedules")
+          .select("employee_id, waiters!inner(name)")
+          .in("employee_id", selectedEmployeeIds)
+          .gte("date", format(checkStartDate, "yyyy-MM-dd"))
+          .lte("date", format(checkEndDate, "yyyy-MM-dd"));
+
+        if (schedulesError) throw schedulesError;
+
+        // Filter schedules that match selected days of week
+        const conflictingEmployees = new Set<string>();
+        existingSchedules?.forEach((schedule: any) => {
+          const scheduleDate = new Date(schedule.date);
+          const dayOfWeek = scheduleDate.getDay();
+          if (selectedDays.includes(dayOfWeek)) {
+            conflictingEmployees.add(schedule.waiters.name);
+          }
+        });
+
+        setScheduleConflict({
+          hasConflict: conflictingEmployees.size > 0,
+          employeeNames: Array.from(conflictingEmployees),
+        });
+
+        // Check for vacations
+        const { data: vacations, error: vacationsError } = await supabase
+          .from("employee_vacations")
+          .select("*, waiters!inner(name)")
+          .in("employee_id", selectedEmployeeIds)
+          .lte("start_date", format(checkEndDate, "yyyy-MM-dd"))
+          .gte("end_date", format(checkStartDate, "yyyy-MM-dd"));
+
+        if (vacationsError) throw vacationsError;
+
+        const vacationConflicts: Array<{ employeeName: string; vacationStart: string; vacationEnd: string }> = [];
+        
+        vacations?.forEach((vacation: any) => {
+          const vacationStart = new Date(vacation.start_date);
+          const vacationEnd = new Date(vacation.end_date);
+
+          // Check if any selected day falls within vacation
+          let hasVacationConflict = false;
+
+          if (dateSelectionMode === "range" && dateRange?.from && dateRange?.to) {
+            let currentDate = new Date(Math.max(vacationStart.getTime(), dateRange.from.getTime()));
+            const rangeEnd = new Date(Math.min(vacationEnd.getTime(), dateRange.to.getTime()));
+
+            while (!isAfter(currentDate, rangeEnd)) {
+              const dayOfWeek = currentDate.getDay();
+              if (selectedDays.includes(dayOfWeek)) {
+                hasVacationConflict = true;
+                break;
+              }
+              currentDate = addDays(currentDate, 1);
+            }
+          } else if (dateSelectionMode === "multiple") {
+            hasVacationConflict = multipleDates.some((selectedDate) => {
+              const dayOfWeek = selectedDate.getDay();
+              return (
+                selectedDays.includes(dayOfWeek) &&
+                selectedDate >= vacationStart &&
+                selectedDate <= vacationEnd
+              );
+            });
+          }
+
+          if (hasVacationConflict) {
+            vacationConflicts.push({
+              employeeName: vacation.waiters.name,
+              vacationStart: format(vacationStart, "dd/MM/yyyy"),
+              vacationEnd: format(vacationEnd, "dd/MM/yyyy"),
+            });
+          }
+        });
+
+        setVacationConflict({
+          hasConflict: vacationConflicts.length > 0,
+          details: vacationConflicts,
+        });
+      } catch (error) {
+        console.error("Error checking conflicts:", error);
+      }
+    };
+
+    checkConflicts();
+  }, [selectedEmployeeIds, selectedDays, dateSelectionMode, dateRange, multipleDates]);
 
   const toggleDateSelectionMode = (checked: boolean) => {
     if (checked) {
@@ -211,94 +340,25 @@ export const AddFixedScheduleDialog = ({
 
     setLoading(true);
     try {
-      // Check for vacation conflicts before proceeding
-      const { data: vacations, error: vacationsError } = await supabase
-        .from("employee_vacations")
-        .select("*, waiters!inner(name)")
-        .in("employee_id", selectedEmployeeIds);
-
-      if (vacationsError) throw vacationsError;
-
-      // Determine the date range to check
-      let checkStartDate: Date;
-      let checkEndDate: Date;
-
-      if (dateSelectionMode === "range" && dateRange?.from && dateRange?.to) {
-        checkStartDate = dateRange.from;
-        checkEndDate = dateRange.to;
-      } else if (dateSelectionMode === "multiple" && multipleDates.length > 0) {
-        // For multiple dates, check from earliest to latest
-        const sortedDates = [...multipleDates].sort((a, b) => a.getTime() - b.getTime());
-        checkStartDate = sortedDates[0]!;
-        checkEndDate = sortedDates[sortedDates.length - 1]!;
-      } else {
-        // This shouldn't happen due to earlier validation, but handle it
-        checkStartDate = new Date();
-        checkEndDate = new Date();
-      }
-
-      // Check for overlapping vacations
-      const conflicts: Array<{ employeeName: string; vacationStart: string; vacationEnd: string }> = [];
-
-      vacations?.forEach((vacation) => {
-        const vacationStart = new Date(vacation.start_date);
-        const vacationEnd = new Date(vacation.end_date);
-
-        // Check if vacation overlaps with the schedule date range
-        if (vacationStart <= checkEndDate && vacationEnd >= checkStartDate) {
-          // Check if any of the selected days of week fall within this vacation period
-          let hasConflict = false;
-
-          if (dateSelectionMode === "range" && dateRange?.from && dateRange?.to) {
-            // For range mode: check each day in the range
-            let currentDate = new Date(Math.max(vacationStart.getTime(), dateRange.from.getTime()));
-            const rangeEnd = new Date(Math.min(vacationEnd.getTime(), dateRange.to.getTime()));
-
-            while (!isAfter(currentDate, rangeEnd)) {
-              const dayOfWeek = currentDate.getDay();
-              if (selectedDays.includes(dayOfWeek)) {
-                hasConflict = true;
-                break;
-              }
-              currentDate = addDays(currentDate, 1);
-            }
-          } else if (dateSelectionMode === "multiple") {
-            // For multiple mode: check if any selected date falls within vacation
-            hasConflict = multipleDates.some((selectedDate) => {
-              const dayOfWeek = selectedDate.getDay();
-              return (
-                selectedDays.includes(dayOfWeek) &&
-                selectedDate >= vacationStart &&
-                selectedDate <= vacationEnd
-              );
-            });
-          }
-
-          if (hasConflict) {
-            conflicts.push({
-              employeeName: (vacation.waiters as any)?.name || "Empleado",
-              vacationStart: format(vacationStart, "dd/MM/yyyy"),
-              vacationEnd: format(vacationEnd, "dd/MM/yyyy"),
-            });
-          }
-        }
-      });
-
-      // If there are conflicts, show error and cancel
-      if (conflicts.length > 0) {
-        setLoading(false);
-        const conflictMessages = conflicts
-          .map((c) => `${c.employeeName}: ${c.vacationStart} - ${c.vacationEnd}`)
-          .join("\n");
-        toast.error(
-          `El horario choca con vacaciones existentes:\n${conflictMessages}`,
-          { duration: 6000 }
-        );
-        return;
-      }
-
       // Process each selected employee
       for (const employeeId of selectedEmployeeIds) {
+        // Get employee vacations to filter out vacation dates
+        const { data: employeeVacations, error: vacationsError } = await supabase
+          .from("employee_vacations")
+          .select("start_date, end_date")
+          .eq("employee_id", employeeId);
+
+        if (vacationsError) throw vacationsError;
+
+        // Helper function to check if a date is within vacation
+        const isDateInVacation = (dateToCheck: Date): boolean => {
+          return employeeVacations?.some((vacation) => {
+            const vacationStart = new Date(vacation.start_date);
+            const vacationEnd = new Date(vacation.end_date);
+            return dateToCheck >= vacationStart && dateToCheck <= vacationEnd;
+          }) || false;
+        };
+
         // First, delete existing regular schedules for these days
         const { error: deleteRegularError } = await supabase
           .from("employee_schedules")
@@ -346,8 +406,8 @@ export const AddFixedScheduleDialog = ({
           while (!isAfter(currentDate, rangeEnd)) {
             const currentDayOfWeek = currentDate.getDay();
             
-            // If this day of week is selected, add schedules for each time slot
-            if (selectedDays.includes(currentDayOfWeek)) {
+            // If this day of week is selected and NOT in vacation, add schedules for each time slot
+            if (selectedDays.includes(currentDayOfWeek) && !isDateInVacation(currentDate)) {
               timeSlots.forEach((slot, slotIndex) => {
                 weeklySchedulesToCreate.push({
                   employee_id: employeeId,
@@ -368,8 +428,8 @@ export const AddFixedScheduleDialog = ({
           multipleDates.forEach(selectedDate => {
             const currentDayOfWeek = selectedDate.getDay();
             
-            // If this day of week is selected, add schedules for each time slot
-            if (selectedDays.includes(currentDayOfWeek)) {
+            // If this day of week is selected and NOT in vacation, add schedules for each time slot
+            if (selectedDays.includes(currentDayOfWeek) && !isDateInVacation(selectedDate)) {
               timeSlots.forEach((slot, slotIndex) => {
                 weeklySchedulesToCreate.push({
                   employee_id: employeeId,
@@ -615,6 +675,41 @@ export const AddFixedScheduleDialog = ({
               Añadir tramo
             </Button>
           </div>
+
+          {/* Conflict warnings */}
+          {scheduleConflict.hasConflict && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Advertencia:</strong> En las fechas seleccionadas ya hay horarios para{" "}
+                {scheduleConflict.employeeNames.length === 1 ? (
+                  <>el empleado <strong>{scheduleConflict.employeeNames[0]}</strong></>
+                ) : scheduleConflict.employeeNames.length === selectedEmployeeIds.length ? (
+                  <>todos los empleados seleccionados</>
+                ) : (
+                  <>algunos empleados: <strong>{scheduleConflict.employeeNames.join(", ")}</strong></>
+                )}
+                . Si continúas, los horarios nuevos se sobreescribirán sobre los existentes.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {vacationConflict.hasConflict && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Advertencia:</strong> Hay vacaciones programadas que coinciden con las fechas seleccionadas:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  {vacationConflict.details.map((detail, index) => (
+                    <li key={index}>
+                      <strong>{detail.employeeName}</strong>: {detail.vacationStart} - {detail.vacationEnd}
+                    </li>
+                  ))}
+                </ul>
+                Las vacaciones prevalecerán y no se crearán horarios en esos días.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
 
         <DialogFooter>
