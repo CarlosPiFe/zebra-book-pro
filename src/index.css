@@ -129,11 +129,6 @@ All colors MUST be HSL.
   }
 }
 
-@keyframes subtle-pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1) translateY(0); }
-  50% { opacity: 1; transform: scale(1.1) translateY(2px); }
-}
-
 /* Custom styles for PhoneInput component */
 .phone-input-custom {
   @apply w-full;

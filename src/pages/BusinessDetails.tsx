@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download, ChevronDown } from "lucide-react";
+import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,11 +54,6 @@ export default function BusinessDetails() {
   // Estados para el modal de confirmación
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
-  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
-  
-  // Referencias para detectar scroll
-  const scrollViewportRef = useRef<HTMLDivElement>(null);
-  const scrollContentRef = useRef<HTMLDivElement>(null);
 
   // Booking form state (sin clientEmail porque se obtiene del usuario autenticado)
   const [bookingForm, setBookingForm] = useState({
@@ -81,54 +76,6 @@ export default function BusinessDetails() {
     tables
   } = useBookingAvailability(businessId, bookingForm.roomId);
   const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map(t => t.max_capacity)) : 20;
-
-  // 📜 Verificar si hay contenido scrolleable en el modal
-  useEffect(() => {
-    const checkScrollNeeded = () => {
-      const viewport = scrollViewportRef.current;
-      const content = scrollContentRef.current;
-      
-      if (viewport && content) {
-        const isScrollable = content.scrollHeight > viewport.clientHeight;
-        const isAtBottom = viewport.scrollTop + viewport.clientHeight >= content.scrollHeight - 5;
-        setShowScrollIndicator(isScrollable && !isAtBottom);
-      } else {
-        setShowScrollIndicator(false);
-      }
-    };
-
-    if (showConfirmationModal && confirmedBooking) {
-      // Pequeño retraso para asegurar que el DOM está renderizado
-      const timer = setTimeout(checkScrollNeeded, 100);
-      
-      // Listener para cambios de tamaño de ventana
-      window.addEventListener('resize', checkScrollNeeded);
-      
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('resize', checkScrollNeeded);
-      };
-    }
-    
-    return undefined;
-  }, [showConfirmationModal, confirmedBooking]);
-
-  // Manejador de scroll para ocultar el indicador
-  const handleScrollAreaScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const viewport = e.currentTarget;
-    const content = scrollContentRef.current;
-    
-    if (viewport && content) {
-      const isAtBottom = viewport.scrollTop + viewport.clientHeight >= content.scrollHeight - 5;
-      if (isAtBottom) {
-        setShowScrollIndicator(false);
-      } else {
-        // Mostrar de nuevo si se desplaza hacia arriba
-        const isScrollable = content.scrollHeight > viewport.clientHeight;
-        setShowScrollIndicator(isScrollable);
-      }
-    }
-  };
 
   // 🔐 Verificar autenticación y cargar perfil
   useEffect(() => {
@@ -562,13 +509,8 @@ export default function BusinessDetails() {
             </DialogHeader>
 
             {/* Contenido scrolleable */}
-            <div className="relative">
-              <ScrollArea 
-                className="max-h-[calc(90vh-220px)] px-6"
-                onScrollCapture={handleScrollAreaScroll}
-              >
-                <div ref={scrollViewportRef} className="h-full">
-                  <div ref={scrollContentRef} className="space-y-4 pb-6">
+            <ScrollArea className="max-h-[calc(90vh-220px)] px-6">
+              <div className="space-y-4 pb-6">
                 {/* Mensaje según el estado */}
                 <div className={`p-4 rounded-lg border ${
                   confirmedBooking.status === 'reserved'
@@ -659,19 +601,8 @@ export default function BusinessDetails() {
                 >
                   Cerrar
                 </Button>
-                  </div>
-                </div>
-              </ScrollArea>
-              
-              {/* Indicador de scroll animado */}
-              {showScrollIndicator && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
-                  <div className="p-2 rounded-full bg-muted/50 backdrop-blur-sm">
-                    <ChevronDown className="h-5 w-5 text-muted-foreground animate-subtle-pulse" />
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            </ScrollArea>
           </>
         )}
       </DialogContent>
