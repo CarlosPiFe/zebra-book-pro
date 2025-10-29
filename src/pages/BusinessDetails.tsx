@@ -1,11 +1,11 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download, ChevronDown } from "lucide-react";
+import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,9 +54,6 @@ export default function BusinessDetails() {
   // Estados para el modal de confirmación
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
-  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
-  const scrollContentRef = useRef<HTMLDivElement>(null);
-  const scrollViewportRef = useRef<HTMLDivElement>(null);
 
   // Booking form state (sin clientEmail porque se obtiene del usuario autenticado)
   const [bookingForm, setBookingForm] = useState({
@@ -127,25 +124,6 @@ export default function BusinessDetails() {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  // Detectar si el contenido del modal necesita scroll
-  useEffect(() => {
-    if (!showConfirmationModal || !confirmedBooking) return;
-
-    const checkScrollable = () => {
-      if (scrollContentRef.current && scrollViewportRef.current) {
-        const isScrollable = scrollContentRef.current.scrollHeight > scrollViewportRef.current.clientHeight;
-        setShowScrollIndicator(isScrollable);
-      }
-    };
-
-    // Verificar después de que el contenido se haya renderizado
-    setTimeout(checkScrollable, 100);
-
-    // Verificar al redimensionar
-    window.addEventListener('resize', checkScrollable);
-    return () => window.removeEventListener('resize', checkScrollable);
-  }, [showConfirmationModal, confirmedBooking]);
 
   // 🔹 Cargar negocio y salas desde Supabase
   useEffect(() => {
@@ -530,125 +508,101 @@ export default function BusinessDetails() {
               </DialogTitle>
             </DialogHeader>
 
-            {/* Contenido scrolleable con indicador */}
-            <div className="relative">
-              <ScrollArea 
-                className="max-h-[calc(90vh-220px)] px-6"
-                onScroll={(e: any) => {
-                  const target = e.target as HTMLElement;
-                  if (target) {
-                    const isAtBottom = target.scrollHeight - target.scrollTop - target.clientHeight < 10;
-                    if (isAtBottom) {
-                      setShowScrollIndicator(false);
-                    }
-                  }
-                }}
-              >
-                <div ref={scrollViewportRef} className="h-full">
-                  <div ref={scrollContentRef} className="space-y-4 pb-6">
-                    {/* Mensaje según el estado */}
-                    <div className={`p-4 rounded-lg border ${
-                      confirmedBooking.status === 'reserved'
-                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                        : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
-                    }`}>
-                      <p className="text-sm text-center">
-                        {confirmedBooking.status === 'reserved'
-                          ? `Tu mesa ha sido asignada. ¡Te esperamos en ${business.name}!`
-                          : 'El negocio revisará tu solicitud y te contactará pronto para confirmar.'}
-                      </p>
+            {/* Contenido scrolleable */}
+            <ScrollArea className="max-h-[calc(90vh-220px)] px-6">
+              <div className="space-y-4 pb-6">
+                {/* Mensaje según el estado */}
+                <div className={`p-4 rounded-lg border ${
+                  confirmedBooking.status === 'reserved'
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+                    : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
+                }`}>
+                  <p className="text-sm text-center">
+                    {confirmedBooking.status === 'reserved'
+                      ? `Tu mesa ha sido asignada. ¡Te esperamos en ${business.name}!`
+                      : 'El negocio revisará tu solicitud y te contactará pronto para confirmar.'}
+                  </p>
+                </div>
+
+                {/* Información del cliente */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Información del Cliente</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Nombre:</span>
+                      <span className="font-medium">{confirmedBooking.client_name}</span>
                     </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Teléfono:</span>
+                      <span className="font-medium">{confirmedBooking.client_phone}</span>
+                    </div>
+                    {confirmedBooking.client_email && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="font-medium text-xs">{confirmedBooking.client_email}</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                    {/* Información del cliente */}
-                    <Card>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base">Información del Cliente</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Nombre:</span>
-                          <span className="font-medium">{confirmedBooking.client_name}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Teléfono:</span>
-                          <span className="font-medium">{confirmedBooking.client_phone}</span>
-                        </div>
-                        {confirmedBooking.client_email && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Email:</span>
-                            <span className="font-medium text-xs">{confirmedBooking.client_email}</span>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                {/* Detalles de la reserva */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Detalles de la Reserva</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
+                    <div className="flex items-start justify-between">
+                      <span className="text-muted-foreground">Fecha:</span>
+                      <span className="font-medium text-right">
+                        {format(new Date(confirmedBooking.booking_date), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Hora:</span>
+                      <span className="font-medium">{confirmedBooking.start_time} - {confirmedBooking.end_time}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Personas:</span>
+                      <span className="font-medium">{confirmedBooking.party_size}</span>
+                    </div>
+                    {confirmedBooking.room_id && rooms.find(r => r.id === confirmedBooking.room_id) && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Sala:</span>
+                        <span className="font-medium">
+                          {rooms.find(r => r.id === confirmedBooking.room_id)?.name}
+                        </span>
+                      </div>
+                    )}
+                    {confirmedBooking.notes && (
+                      <div className="pt-2 border-t">
+                        <span className="text-muted-foreground block mb-1">Notas:</span>
+                        <p className="text-sm">{confirmedBooking.notes}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
 
-                    {/* Detalles de la reserva */}
-                    <Card>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base">Detalles de la Reserva</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2 text-sm">
-                        <div className="flex items-start justify-between">
-                          <span className="text-muted-foreground">Fecha:</span>
-                          <span className="font-medium text-right">
-                            {format(new Date(confirmedBooking.booking_date), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Hora:</span>
-                          <span className="font-medium">{confirmedBooking.start_time} - {confirmedBooking.end_time}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Personas:</span>
-                          <span className="font-medium">{confirmedBooking.party_size}</span>
-                        </div>
-                        {confirmedBooking.room_id && rooms.find(r => r.id === confirmedBooking.room_id) && (
-                          <div className="flex justify-between">
-                            <span className="text-muted-foreground">Sala:</span>
-                            <span className="font-medium">
-                              {rooms.find(r => r.id === confirmedBooking.room_id)?.name}
-                            </span>
-                          </div>
-                        )}
-                        {confirmedBooking.notes && (
-                          <div className="pt-2 border-t">
-                            <span className="text-muted-foreground block mb-1">Notas:</span>
-                            <p className="text-sm">{confirmedBooking.notes}</p>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
+                {/* Botón de descarga PDF */}
+                <Button 
+                  onClick={handleDownloadPDF} 
+                  className="w-full"
+                  variant="outline"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Descargar Reserva (PDF)
+                </Button>
 
-                    {/* Botón de descarga PDF */}
-                    <Button 
-                      onClick={handleDownloadPDF} 
-                      className="w-full"
-                      variant="outline"
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Descargar Reserva (PDF)
-                    </Button>
-
-                    {/* Botón cerrar */}
-                    <Button 
-                      onClick={() => setShowConfirmationModal(false)} 
-                      className="w-full"
-                    >
-                      Cerrar
-                    </Button>
-                  </div>
-                </div>
-              </ScrollArea>
-
-              {/* Indicador de scroll */}
-              {showScrollIndicator && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 pointer-events-none z-10">
-                  <div className="rounded-full bg-muted/50 p-2 animate-subtle-pulse">
-                    <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                </div>
-              )}
-            </div>
+                {/* Botón cerrar */}
+                <Button 
+                  onClick={() => setShowConfirmationModal(false)} 
+                  className="w-full"
+                >
+                  Cerrar
+                </Button>
+              </div>
+            </ScrollArea>
           </>
         )}
       </DialogContent>
