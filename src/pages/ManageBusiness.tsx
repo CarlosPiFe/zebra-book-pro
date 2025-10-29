@@ -62,9 +62,9 @@ const ManageBusiness = () => {
       const { data, error } = await supabase
         .from("businesses")
         .select("*")
-        .eq("id", businessId)
+        .eq("id", businessId ?? "")
         .eq("owner_id", session.user.id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       
@@ -74,7 +74,7 @@ const ManageBusiness = () => {
         return;
       }
 
-      setBusiness(data);
+      setBusiness(data as any);
     } catch (error) {
       console.error("Error loading business:", error);
       toast.error("Error al cargar el negocio");

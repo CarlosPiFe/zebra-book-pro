@@ -104,7 +104,7 @@ const Auth = () => {
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
+        toast.error(error.errors[0]?.message || "Error de validación");
       } else {
         toast.error("Ocurrió un error. Inténtalo de nuevo.");
       }

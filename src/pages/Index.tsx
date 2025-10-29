@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Calendar, Clock, MapPin, Star } from "lucide-react";
 import { Navbar } from "@/components/Navbar";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsMobile } from "@/hooks/use-mobile";
 import heroImage from "@/assets/zebra-pattern-bg.jpg";
 
 interface Business {
@@ -21,7 +20,6 @@ interface Business {
 
 const Index = () => {
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);

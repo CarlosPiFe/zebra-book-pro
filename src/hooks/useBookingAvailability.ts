@@ -149,7 +149,7 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
           console.log("💡 Para probar, crea una reserva para 21:30 con 9 personas");
         }
 
-        setBookings(bookingsData || []);
+        setBookings(bookingsData as any || []);
 
         // Load business slot duration
         const { data: businessData, error: businessError } = await supabase
@@ -305,8 +305,8 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
     const allTimeSlots: string[] = [];
 
     daySlots.forEach((slot) => {
-      const [startHour, startMinute] = slot.start_time.split(":").map(Number);
-      const [endHour, endMinute] = slot.end_time.split(":").map(Number);
+      const [startHour = 0, startMinute = 0] = slot.start_time.split(":").map(Number);
+      const [endHour = 0, endMinute = 0] = slot.end_time.split(":").map(Number);
 
       let currentTime = startHour * 60 + startMinute;
       let endTime = endHour * 60 + endMinute;
@@ -331,8 +331,8 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
 
     return allTimeSlots.sort((a, b) => {
       // Ordenar considerando que las horas de madrugada vienen después de las nocturnas
-      const [aHour] = a.split(":").map(Number);
-      const [bHour] = b.split(":").map(Number);
+      const [aHour = 0] = a.split(":").map(Number);
+      const [bHour = 0] = b.split(":").map(Number);
 
       // Si hay horas de madrugada (0-6), ponerlas al final
       const aTime = aHour < 6 ? aHour + 24 : aHour;
@@ -413,10 +413,10 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
       slotStart: string,
       slotEnd: string,
     ): boolean => {
-      const bookingStartMin = parseInt(bookingStart.split(":")[0]) * 60 + parseInt(bookingStart.split(":")[1]);
-      const bookingEndMin = parseInt(bookingEnd.split(":")[0]) * 60 + parseInt(bookingEnd.split(":")[1]);
-      const slotStartMin = parseInt(slotStart.split(":")[0]) * 60 + parseInt(slotStart.split(":")[1]);
-      const slotEndMin = parseInt(slotEnd.split(":")[0]) * 60 + parseInt(slotEnd.split(":")[1]);
+      const bookingStartMin = parseInt(bookingStart.split(":")[0] || "0") * 60 + parseInt(bookingStart.split(":")[1] || "0");
+      const bookingEndMin = parseInt(bookingEnd.split(":")[0] || "0") * 60 + parseInt(bookingEnd.split(":")[1] || "0");
+      const slotStartMin = parseInt(slotStart.split(":")[0] || "0") * 60 + parseInt(slotStart.split(":")[1] || "0");
+      const slotEndMin = parseInt(slotEnd.split(":")[0] || "0") * 60 + parseInt(slotEnd.split(":")[1] || "0");
 
       // Verificar si hay superposición
       const overlaps = !(bookingEndMin <= slotStartMin || bookingStartMin >= slotEndMin);
@@ -431,7 +431,7 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
     };
 
     // 4. Calcular hora de fin del slot
-    const [hour, minute] = startTime.split(":").map(Number);
+    const [hour = 0, minute = 0] = startTime.split(":").map(Number);
     const endMinutes = hour * 60 + minute + slotDuration;
     const endHour = Math.floor(endMinutes / 60) % 24;
     const endMinute = endMinutes % 60;
@@ -469,7 +469,7 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
   // Get next available time slot
   const getNextAvailableSlot = (date: Date, partySize: number): string | null => {
     const slots = getAvailableTimeSlots(date, partySize);
-    return slots.length > 0 ? slots[0] : null;
+    return slots.length > 0 ? (slots[0] ?? null) : null;
   };
 
   // Force refresh availability data
@@ -511,7 +511,7 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
         .neq("status", "completed");
 
       if (bookingsError) throw bookingsError;
-      setBookings(bookingsData || []);
+      setBookings(bookingsData as any || []);
 
       console.log("Availability data refreshed successfully");
     } catch (error) {

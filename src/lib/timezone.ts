@@ -18,7 +18,7 @@ export function formatDateInMadrid(date: Date): string {
  * Sin conversiones de zona horaria
  */
 export function parseDateInMadrid(dateString: string): Date {
-  const [year, month, day] = dateString.split('-').map(Number);
+  const [year = 2024, month = 1, day = 1] = dateString.split('-').map(Number);
   return new Date(year, month - 1, day);
 }
 

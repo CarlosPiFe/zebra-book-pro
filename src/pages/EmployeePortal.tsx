@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Navbar } from "@/components/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Clock, Calendar, DollarSign, FileText, Bell, User, Building2 } from "lucide-react";
+import { Clock, Calendar, DollarSign, Bell, User, Building2 } from "lucide-react";
 import { EmployeeDashboard } from "@/components/employee/EmployeeDashboard";
 import { EmployeeScheduleView } from "@/components/employee/EmployeeScheduleView";
 import { EmployeeTimesheets } from "@/components/employee/EmployeeTimesheets";
@@ -82,7 +82,7 @@ const EmployeePortal = () => {
       setWorkplaces(workplacesList);
       
       if (workplacesList.length > 0) {
-        setSelectedWorkplace(workplacesList[0]);
+        setSelectedWorkplace(workplacesList[0] ?? null);
       } else {
         toast.error("No tienes negocios asignados");
       }

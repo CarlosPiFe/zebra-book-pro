@@ -5,7 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { MapPin, Phone, Mail, Globe, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download } from "lucide-react";
+import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,7 +17,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
-import { getTimeSlotId } from "@/lib/timeSlots";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import jsPDF from "jspdf";
@@ -51,7 +50,6 @@ export default function BusinessDetails() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<any>(null);
   
   // Estados para el modal de confirmación
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -72,9 +70,7 @@ export default function BusinessDetails() {
   // Hook de disponibilidad
   const {
     isDateAvailable,
-    getTimeSlotsWithAvailability,
     getAvailableTimeSlots,
-    hasAvailableTables,
     refreshAvailability,
     loading: availabilityLoading,
     tables
@@ -95,20 +91,18 @@ export default function BusinessDetails() {
           .eq("id", user.id)
           .single();
         
-        setUserProfile(profile);
-        
         // Autocompletar nombre y teléfono del perfil si existen
         if (profile) {
           if (profile.full_name) {
             setBookingForm(prev => ({
               ...prev,
-              clientName: profile.full_name
+              clientName: profile.full_name || ""
             }));
           }
           if (profile.phone) {
             setBookingForm(prev => ({
               ...prev,
-              clientPhone: profile.phone
+              clientPhone: profile.phone || ""
             }));
           }
         }
@@ -119,7 +113,6 @@ export default function BusinessDetails() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (!session?.user) {
-        setUserProfile(null);
         // Limpiar formulario si se cierra sesión
         setBookingForm(prev => ({
           ...prev,

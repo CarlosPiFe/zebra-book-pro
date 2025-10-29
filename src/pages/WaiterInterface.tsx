@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
 
 interface Waiter {
@@ -50,6 +49,12 @@ const WaiterInterface = () => {
   }, [token]);
 
   const loadWaiter = async () => {
+    if (!token) {
+      toast.error("Token no encontrado");
+      navigate("/");
+      return;
+    }
+    
     try {
       const { data, error } = await supabase
         .rpc("get_waiter_by_token", { _token: token });
@@ -63,6 +68,12 @@ const WaiterInterface = () => {
       }
 
       const waiterData = data[0];
+      if (!waiterData) {
+        toast.error("No se encontró información del camarero");
+        navigate("/");
+        return;
+      }
+      
       setWaiter(waiterData);
       loadTables(waiterData.business_id);
       loadMenuItems(waiterData.business_id);
@@ -99,7 +110,7 @@ const WaiterInterface = () => {
         .order("category", { ascending: true });
 
       if (error) throw error;
-      setMenuItems(data || []);
+      setMenuItems(data as any || []);
     } catch (error) {
       console.error("Error loading menu:", error);
     }
@@ -167,10 +178,11 @@ const WaiterInterface = () => {
   };
 
   const groupedMenuItems = menuItems.reduce((acc, item) => {
-    if (!acc[item.category]) {
-      acc[item.category] = [];
+    const category = item?.category || "Sin categoría";
+    if (!acc[category]) {
+      acc[category] = [];
     }
-    acc[item.category].push(item);
+    acc[category].push(item);
     return acc;
   }, {} as Record<string, MenuItem[]>);
 

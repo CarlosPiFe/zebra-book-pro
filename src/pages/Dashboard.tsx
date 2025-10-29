@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Building2, Clock, Settings, Users, ChevronDown } from "lucide-react";
+import { Calendar, Building2, Clock, Users, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EditBookingDialog } from "@/components/business/EditBookingDialog";
@@ -14,10 +14,6 @@ interface Profile {
   id: string;
   email: string;
   full_name: string;
-}
-
-interface UserRole {
-  role: "owner" | "client";
 }
 
 interface Business {
@@ -114,7 +110,7 @@ const Dashboard = () => {
         .single();
 
       if (profileError) throw profileError;
-      setProfile(profileData);
+      setProfile(profileData as any);
 
       // Load user role from secure user_roles table
       const { data: roleData, error: roleError } = await supabase
@@ -134,7 +130,7 @@ const Dashboard = () => {
           .select("*")
           .eq("owner_id", session.user.id);
         
-        setBusinesses(businessData || []);
+        setBusinesses(businessData as any || []);
 
         // Load bookings for owner's businesses
         if (businessData && businessData.length > 0) {
@@ -143,7 +139,7 @@ const Dashboard = () => {
           // Get current date and time in local format
           const now = new Date();
           const currentDate = now.toISOString().split('T')[0];
-          const currentTime = now.toTimeString().split(' ')[0].substring(0, 8);
+          const currentTime = (now.toTimeString().split(' ')[0] || "00:00:00").substring(0, 8);
           
           // Load upcoming bookings (próximas reservas) - max 50
           const { data: upcomingBookings } = await supabase
@@ -166,8 +162,8 @@ const Dashboard = () => {
             .order("start_time", { ascending: false })
             .limit(25);
           
-          setBookings(upcomingBookings || []);
-          setPastBookings(pastBookingsData || []);
+          setBookings(upcomingBookings as any || []);
+          setPastBookings(pastBookingsData as any || []);
         }
       } else {
         // Load bookings for client
@@ -177,7 +173,7 @@ const Dashboard = () => {
           .eq("client_id", session.user.id)
           .order("booking_date", { ascending: true });
         
-        setBookings(bookingData || []);
+        setBookings(bookingData as any || []);
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -235,7 +231,7 @@ const Dashboard = () => {
             // Vista centrada en el negocio
             <div className="space-y-8">
               {/* Banner del negocio - idéntico a la vista pública */}
-              {mainBusiness.image_url ? (
+              {mainBusiness && mainBusiness.image_url ? (
                 <div className="relative h-96 w-full rounded-xl overflow-hidden mb-6">
                   <img
                     src={mainBusiness.image_url}
@@ -257,7 +253,7 @@ const Dashboard = () => {
                     </div>
                   )}
                 </div>
-              ) : (
+              ) : mainBusiness ? (
                 <div className="mb-6">
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-4xl font-bold">{mainBusiness.name}</h1>
@@ -269,18 +265,20 @@ const Dashboard = () => {
                   </div>
                   <p className="text-lg text-muted-foreground capitalize">{mainBusiness.category}</p>
                 </div>
-              )}
+              ) : null}
 
               {/* Botón principal de gestión */}
-              <div className="flex justify-center py-4">
-                <Button 
-                  size="lg" 
-                  className="bg-accent hover:bg-accent/90"
-                  onClick={() => navigate(`/business/${mainBusiness.id}/manage`)}
-                >
-                  Gestionar Negocio
-                </Button>
-              </div>
+              {mainBusiness && (
+                <div className="flex justify-center py-4">
+                  <Button 
+                    size="lg" 
+                    className="bg-accent hover:bg-accent/90"
+                    onClick={() => navigate(`/business/${mainBusiness.id}/manage`)}
+                  >
+                    Gestionar Negocio
+                  </Button>
+                </div>
+              )}
 
               {/* Selector de negocios si hay más de uno */}
               {businesses.length > 1 && (

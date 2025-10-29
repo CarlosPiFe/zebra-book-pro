@@ -358,10 +358,13 @@ export function TablesView({ businessId }: TablesViewProps) {
         return;
       }
 
+      const fallbackDate = new Date().toISOString().split('T')[0] || new Date().toISOString().substring(0, 10);
+      const bookingDate: string = today || fallbackDate;
+      
       const { error } = await supabase.from("bookings").insert([{
         table_id: selectedTable.id,
         business_id: businessId,
-        booking_date: today || new Date().toISOString().split('T')[0],
+        booking_date: bookingDate,
         start_time: startTime,
         end_time: endTime,
         client_name: "Cliente sin reserva",
