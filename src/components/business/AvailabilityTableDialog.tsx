@@ -114,7 +114,26 @@ export function AvailabilityTableDialog({
       if (availabilityError) throw availabilityError;
 
       // 5. Generar franjas horarias
-      const slots = generateTimeSlots(availability, business.booking_slot_duration_minutes);
+      let slots = generateTimeSlots(availability, business.booking_slot_duration_minutes);
+
+      // 6. Filtrar horas pasadas si es hoy
+      const now = new Date();
+      const todayString = now.toISOString().split('T')[0];
+      const selectedDateString = format(selectedDate, "yyyy-MM-dd");
+      const isToday = selectedDateString === todayString;
+
+      if (isToday) {
+        console.log('Filtrando horas pasadas para hoy en cuadrante de disponibilidad...');
+        slots = slots.filter((slot) => {
+          const [hour = 0, minute = 0] = slot.endTime.split(':').map(Number);
+          const slotEndDateTime = new Date(selectedDate);
+          slotEndDateTime.setHours(hour, minute, 0, 0);
+
+          const isFuture = slotEndDateTime > now;
+          return isFuture;
+        });
+        console.log('Slots después de filtrar horas pasadas:', slots);
+      }
 
       setTables(tablesData || []);
       setBookings((bookingsData || []) as any);
