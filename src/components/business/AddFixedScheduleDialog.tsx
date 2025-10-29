@@ -125,11 +125,6 @@ export const AddFixedScheduleDialog = ({
       return;
     }
 
-    if (startTime >= endTime) {
-      toast.error("La hora de inicio debe ser anterior a la hora de fin");
-      return;
-    }
-
     if (!startDate || !endDate) {
       toast.error("Selecciona las fechas de inicio y fin");
       return;
@@ -142,6 +137,13 @@ export const AddFixedScheduleDialog = ({
 
     setLoading(true);
     try {
+      // Detectar si el turno cruza medianoche
+      const crossesMidnight = endTime < startTime;
+      
+      if (crossesMidnight) {
+        toast.info(`Turno de madrugada detectado: ${startTime} - ${endTime} (día siguiente)`);
+      }
+
       // Process each selected employee
       for (const employeeId of selectedEmployeeIds) {
         // First, delete existing regular schedules for these days
