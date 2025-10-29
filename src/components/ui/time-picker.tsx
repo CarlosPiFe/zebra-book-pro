@@ -17,7 +17,7 @@ interface TimePickerProps {
   allowClear?: boolean;
 }
 
-export function TimePicker({ time, onTimeChange, placeholder = "Seleccionar hora", allowClear = false }: TimePickerProps) {
+export function TimePicker({ time, onTimeChange, allowClear = false }: TimePickerProps) {
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
   const minutes = ['00', '15', '30', '45'];
 
