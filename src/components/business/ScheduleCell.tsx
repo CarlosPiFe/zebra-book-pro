@@ -187,14 +187,9 @@ export const ScheduleCell = ({
             // Format times to show only HH:MM (remove seconds if present)
             const startTime = slot.start.substring(0, 5);
             const endTime = slot.end.substring(0, 5);
-            // Detect overnight shift (crosses midnight)
-            const crossesMidnight = endTime < startTime;
             return (
               <div key={index} className="font-medium">
                 {startTime} - {endTime}
-                {crossesMidnight && (
-                  <span className="text-accent ml-1 text-[9px]">(madrugada)</span>
-                )}
               </div>
             );
           })}
