@@ -10,11 +10,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Clock, Check, ChevronsUpDown } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Clock, Check, ChevronsUpDown, CalendarIcon } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, addDays, isAfter, isBefore, startOfDay } from "date-fns";
+import { format, addDays, isAfter, startOfDay } from "date-fns";
+import { DateRange } from "react-day-picker";
 import {
   Command,
   CommandEmpty,
@@ -28,7 +30,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface AddFixedScheduleDialogProps {
   businessId: string;
@@ -55,8 +56,16 @@ export const AddFixedScheduleDialog = ({
   const [selectedDays, setSelectedDays] = useState<number[]>([]);
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
-  const [startDate, setStartDate] = useState<Date | undefined>(new Date());
-  const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 90));
+  
+  // Date selection state
+  const [dateSelectionMode, setDateSelectionMode] = useState<"range" | "multiple">("range");
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: addDays(new Date(), 90),
+  });
+  const [multipleDates, setMultipleDates] = useState<Date[]>([]);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
   const [employees, setEmployees] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState(false);
@@ -87,8 +96,9 @@ export const AddFixedScheduleDialog = ({
       setSelectedDays([]);
       setStartTime("09:00");
       setEndTime("17:00");
-      setStartDate(new Date());
-      setEndDate(addDays(new Date(), 90));
+      setDateSelectionMode("range");
+      setDateRange({ from: new Date(), to: addDays(new Date(), 90) });
+      setMultipleDates([]);
       setSelectedEmployeeIds([]);
     }
   };
@@ -109,6 +119,39 @@ export const AddFixedScheduleDialog = ({
     );
   };
 
+  const toggleDateSelectionMode = (checked: boolean) => {
+    if (checked) {
+      // Switch to multiple mode
+      setDateSelectionMode("multiple");
+      setDateRange(undefined);
+      setMultipleDates([]);
+    } else {
+      // Switch to range mode
+      setDateSelectionMode("range");
+      setMultipleDates([]);
+      setDateRange({ from: new Date(), to: addDays(new Date(), 90) });
+    }
+  };
+
+  const getDateSelectionDisplay = () => {
+    if (dateSelectionMode === "range") {
+      if (dateRange?.from && dateRange?.to) {
+        return `${format(dateRange.from, "dd MMM yyyy")} - ${format(dateRange.to, "dd MMM yyyy")}`;
+      } else if (dateRange?.from) {
+        return format(dateRange.from, "dd MMM yyyy");
+      }
+      return "Selecciona un rango de fechas";
+    } else {
+      if (multipleDates.length === 0) {
+        return "Selecciona días sueltos";
+      } else if (multipleDates.length <= 3) {
+        return multipleDates.map(d => format(d, "dd MMM")).join(", ");
+      } else {
+        return `${multipleDates.length} días seleccionados`;
+      }
+    }
+  };
+
   const handleSave = async () => {
     if (selectedDays.length === 0) {
       toast.error("Selecciona al menos un día");
@@ -125,14 +168,21 @@ export const AddFixedScheduleDialog = ({
       return;
     }
 
-    if (!startDate || !endDate) {
-      toast.error("Selecciona las fechas de inicio y fin");
-      return;
-    }
-
-    if (isAfter(startDate, endDate)) {
-      toast.error("La fecha de inicio debe ser anterior o igual a la fecha de fin");
-      return;
+    // Validate date selection based on mode
+    if (dateSelectionMode === "range") {
+      if (!dateRange?.from || !dateRange?.to) {
+        toast.error("Selecciona un rango de fechas válido");
+        return;
+      }
+      if (isAfter(dateRange.from, dateRange.to)) {
+        toast.error("La fecha de inicio debe ser anterior o igual a la fecha de fin");
+        return;
+      }
+    } else {
+      if (multipleDates.length === 0) {
+        toast.error("Selecciona al menos un día");
+        return;
+      }
     }
 
     setLoading(true);
@@ -162,30 +212,50 @@ export const AddFixedScheduleDialog = ({
 
         if (insertRegularError) throw insertRegularError;
 
-        // Generate weekly schedules within the date range
+        // Generate weekly schedules based on selection mode
         const weeklySchedulesToCreate = [];
-        const rangeStart = startOfDay(startDate);
-        const rangeEnd = startOfDay(endDate);
         
-        // Iterate through each day in the range
-        let currentDate = new Date(rangeStart);
-        while (!isAfter(currentDate, rangeEnd)) {
-          const currentDayOfWeek = currentDate.getDay();
+        if (dateSelectionMode === "range" && dateRange?.from && dateRange?.to) {
+          // Range mode: iterate through each day in the range
+          const rangeStart = startOfDay(dateRange.from);
+          const rangeEnd = startOfDay(dateRange.to);
           
-          // If this day of week is selected, add a schedule
-          if (selectedDays.includes(currentDayOfWeek)) {
-            weeklySchedulesToCreate.push({
-              employee_id: employeeId,
-              date: format(currentDate, "yyyy-MM-dd"),
-              is_day_off: false,
-              start_time: startTime,
-              end_time: endTime,
-              slot_order: 1,
-            });
+          let currentDate = new Date(rangeStart);
+          while (!isAfter(currentDate, rangeEnd)) {
+            const currentDayOfWeek = currentDate.getDay();
+            
+            // If this day of week is selected, add a schedule
+            if (selectedDays.includes(currentDayOfWeek)) {
+              weeklySchedulesToCreate.push({
+                employee_id: employeeId,
+                date: format(currentDate, "yyyy-MM-dd"),
+                is_day_off: false,
+                start_time: startTime,
+                end_time: endTime,
+                slot_order: 1,
+              });
+            }
+            
+            // Move to next day
+            currentDate = addDays(currentDate, 1);
           }
-          
-          // Move to next day
-          currentDate = addDays(currentDate, 1);
+        } else if (dateSelectionMode === "multiple") {
+          // Multiple mode: only create schedules for selected dates
+          multipleDates.forEach(selectedDate => {
+            const currentDayOfWeek = selectedDate.getDay();
+            
+            // If this day of week is selected, add a schedule
+            if (selectedDays.includes(currentDayOfWeek)) {
+              weeklySchedulesToCreate.push({
+                employee_id: employeeId,
+                date: format(selectedDate, "yyyy-MM-dd"),
+                is_day_off: false,
+                start_time: startTime,
+                end_time: endTime,
+                slot_order: 1,
+              });
+            }
+          });
         }
 
         // Delete any existing schedules for these dates first
@@ -209,9 +279,11 @@ export const AddFixedScheduleDialog = ({
         }
       }
 
-      toast.success(
-        `Horario repetido creado para ${selectedEmployeeIds.length} empleado(s) desde ${format(startDate, "dd/MM/yyyy")} hasta ${format(endDate, "dd/MM/yyyy")}`
-      );
+      const successMessage = dateSelectionMode === "range" && dateRange?.from && dateRange?.to
+        ? `Horario repetido creado para ${selectedEmployeeIds.length} empleado(s) desde ${format(dateRange.from, "dd/MM/yyyy")} hasta ${format(dateRange.to, "dd/MM/yyyy")}`
+        : `Horario creado para ${selectedEmployeeIds.length} empleado(s) en ${multipleDates.length} día(s) seleccionado(s)`;
+      
+      toast.success(successMessage);
       setOpen(false);
       onScheduleAdded();
     } catch (error) {
@@ -311,25 +383,64 @@ export const AddFixedScheduleDialog = ({
             </div>
           </div>
 
-          {/* Date range selection */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Fecha de inicio</Label>
-              <DatePicker
-                date={startDate}
-                onDateChange={setStartDate}
-                placeholder="Fecha de inicio"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Fecha de fin</Label>
-              <DatePicker
-                date={endDate}
-                onDateChange={setEndDate}
-                placeholder="Fecha de fin"
-                disabled={(date) => startDate ? isBefore(date, startDate) : false}
-              />
-            </div>
+          {/* Date selection */}
+          <div className="space-y-2">
+            <Label>Fechas</Label>
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-start text-left font-normal h-auto min-h-10 px-3 py-2",
+                    (!dateRange?.from && multipleDates.length === 0) && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                  <span className="line-clamp-2">{getDateSelectionDisplay()}</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <div className="p-3 border-b space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="multiple-mode"
+                      checked={dateSelectionMode === "multiple"}
+                      onCheckedChange={toggleDateSelectionMode}
+                    />
+                    <label
+                      htmlFor="multiple-mode"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      Seleccionar días sueltos
+                    </label>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {dateSelectionMode === "range"
+                      ? "Selecciona un rango de fechas (inicio y fin)"
+                      : "Haz clic en días individuales para seleccionarlos"}
+                  </p>
+                </div>
+                {dateSelectionMode === "range" ? (
+                  <Calendar
+                    mode="range"
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    initialFocus
+                    numberOfMonths={2}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                ) : (
+                  <Calendar
+                    mode="multiple"
+                    selected={multipleDates}
+                    onSelect={(dates) => setMultipleDates(dates || [])}
+                    initialFocus
+                    numberOfMonths={2}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                )}
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Time selection */}
