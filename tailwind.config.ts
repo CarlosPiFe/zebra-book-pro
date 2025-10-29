@@ -80,10 +80,15 @@ export default {
             height: "0",
           },
         },
+        "subtle-pulse": {
+          "0%, 100%": { opacity: "0.6", transform: "scale(1) translateY(0)" },
+          "50%": { opacity: "1", transform: "scale(1.1) translateY(2px)" }
+        }
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "subtle-pulse": "subtle-pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
       },
     },
   },
