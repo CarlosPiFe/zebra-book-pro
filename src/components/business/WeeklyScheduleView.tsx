@@ -326,8 +326,36 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
             <h2 className="text-3xl font-bold">Horarios Semanales</h2>
             <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-2">
+        {/* Navegación de semana y botones de acción en la misma línea */}
+        <div className="flex items-center justify-between gap-4">
+          {/* Pasador de semana */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="text-center min-w-[200px]">
+              <p className="font-semibold text-sm">
+                {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
+                {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+
+          {/* Botones de acción */}
+          <div className="flex gap-2">
             {scheduleViewMode === 'visual' && (
               <Button
                 variant={isEditMode ? "outline" : "default"}
@@ -358,30 +386,6 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
               </>
             )}
           </div>
-        </div>
-
-        {/* Navegación de semana alineada a la izquierda */}
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <div className="text-center min-w-[200px]">
-            <p className="font-semibold text-sm">
-              {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
-              {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
         </div>
       </div>
       
