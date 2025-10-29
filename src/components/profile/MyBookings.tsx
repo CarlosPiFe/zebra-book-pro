@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Users, MapPin } from "lucide-react";
-import { format, isPast } from "date-fns";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 interface Booking {
@@ -63,9 +63,9 @@ export const MyBookings = ({ userId }: { userId: string }) => {
         const bookingEndDateTime = new Date(`${booking.booking_date}T${booking.end_time}`);
         
         if (bookingEndDateTime > now) {
-          upcoming.push(booking);
+          upcoming.push(booking as any);
         } else {
-          past.push(booking);
+          past.push(booking as any);
         }
       });
 

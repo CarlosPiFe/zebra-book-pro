@@ -12,7 +12,7 @@ interface EmployeeScheduleViewProps {
   businessId: string;
 }
 
-export const EmployeeScheduleView = ({ employeeId, businessId }: EmployeeScheduleViewProps) => {
+export const EmployeeScheduleView = ({ employeeId }: EmployeeScheduleViewProps) => {
   const [loading, setLoading] = useState(true);
   const [schedules, setSchedules] = useState<any[]>([]);
   const [vacations, setVacations] = useState<any[]>([]);

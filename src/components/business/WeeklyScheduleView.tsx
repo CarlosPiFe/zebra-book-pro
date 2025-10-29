@@ -87,10 +87,11 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
         const newParams = new URLSearchParams(searchParams);
         newParams.delete("highlightDate");
         setSearchParams(newParams, { replace: true });
-      }, 1000);
+      }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [highlightedDate]);
+    return undefined;
+  }, [highlightedDate, searchParams, setSearchParams]);
 
   const loadData = async () => {
     try {
@@ -111,7 +112,7 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
         .order("name");
 
       if (error) throw error;
-      setEmployees(data || []);
+      setEmployees((data || []) as any);
     } catch (error) {
       console.error("Error loading employees:", error);
       toast.error("Error al cargar empleados");
@@ -129,7 +130,7 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
         .order("slot_order", { ascending: true });
 
       if (error) throw error;
-      setSchedules(data || []);
+      setSchedules((data || []) as any);
     } catch (error) {
       console.error("Error loading schedules:", error);
       toast.error("Error al cargar horarios");
@@ -229,7 +230,7 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
     }
   };
 
-  const handleCopySchedule = (employeeId: string, date: Date, schedulesToCopy: Schedule[]) => {
+  const handleCopySchedule = (_scheduleEmployeeId: string, _scheduleDate: Date, schedulesToCopy: Schedule[]) => {
     setCopiedSchedule({
       schedules: schedulesToCopy,
       selectedCells: [],
@@ -241,7 +242,6 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
     if (!copiedSchedule) return;
     
     const dateStr = format(date, "yyyy-MM-dd");
-    const cellKey = `${employeeId}-${dateStr}`;
     const isSelected = copiedSchedule.selectedCells.some(
       cell => cell.employeeId === employeeId && cell.date === dateStr
     );

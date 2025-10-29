@@ -108,12 +108,12 @@ export function ExportSchedulesDialog({ businessId, disabled = false }: ExportSc
       const sortedDates = Array.from(dateSchedules.keys()).sort();
       
       sortedDates.forEach(date => {
-        const daySchedules = dateSchedules.get(date)!.sort((a, b) => a.slot_order - b.slot_order);
+        const daySchedules = (dateSchedules.get(date) || []).sort((a, b) => (a.slot_order || 0) - (b.slot_order || 0));
         
         xml += `      <dia>\n`;
         xml += `        <fecha>${date}</fecha>\n`;
         
-        if (daySchedules[0].is_day_off) {
+        if (daySchedules[0]?.is_day_off) {
           xml += `        <estado>dia_libre</estado>\n`;
         } else {
           xml += `        <turnos_horarios>\n`;
@@ -196,7 +196,7 @@ export function ExportSchedulesDialog({ businessId, disabled = false }: ExportSc
       }
 
       // Generar XML
-      const xml = generateXML(schedules, employeesToExport);
+      const xml = generateXML(schedules as any, employeesToExport);
 
       // Crear y descargar archivo
       const blob = new Blob([xml], { type: 'application/xml' });

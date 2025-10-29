@@ -36,7 +36,6 @@ interface EmployeeWeeklyCalendarProps {
   businessId: string;
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i); // 0-23 hours
 const DAYS_OF_WEEK = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 
 export function EmployeeWeeklyCalendar({
@@ -78,7 +77,7 @@ export function EmployeeWeeklyCalendar({
   // Convert time string "HH:MM" to decimal hours
   // If extendPastMidnight is true, treats early morning hours (0-6) as next day (24-30)
   const timeToDecimal = (time: string, extendPastMidnight: boolean = false): number => {
-    const [hours, minutes] = time.split(":").map(Number);
+    const [hours = 0, minutes = 0] = time.split(":").map(Number);
     const decimal = hours + minutes / 60;
     
     // If we're extending past midnight and hours are in early morning (0-6 AM)
@@ -145,18 +144,6 @@ export function EmployeeWeeklyCalendar({
   const getBusinessHoursForDay = (dayOfWeek: number): AvailabilitySlot[] => {
     return businessHours.filter((slot) => slot.day_of_week === dayOfWeek);
   };
-
-  // Check if a time is within business hours for a day
-  const isWithinBusinessHours = (dayOfWeek: number, hour: number): boolean => {
-    const daySlots = getBusinessHoursForDay(dayOfWeek);
-    if (daySlots.length === 0) return false;
-
-    return daySlots.some((slot) => {
-      const start = timeToDecimal(slot.start_time);
-      let end = timeToDecimal(slot.end_time);
-      
-      // If end is before or equal to start, it crosses midnight
-      if (end <= start) {
         end = timeToDecimal(slot.end_time, true);
       }
       
@@ -201,7 +188,7 @@ export function EmployeeWeeklyCalendar({
         merged.push(block);
       } else {
         const last = merged[merged.length - 1];
-        if (block.start <= last.end) {
+        if (last && block.start <= last.end) {
           // Overlapping, merge
           last.end = Math.max(last.end, block.end);
         } else {

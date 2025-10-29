@@ -33,7 +33,7 @@ export const ProfileSettings = ({ userId, profile, onUpdate }: ProfileSettingsPr
         .eq("is_active", true)
         .limit(1);
       
-      setIsEmployee(data && data.length > 0);
+      setIsEmployee((data && data.length > 0) || false);
     };
     
     checkIfEmployee();

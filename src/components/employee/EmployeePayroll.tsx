@@ -13,7 +13,7 @@ interface EmployeePayrollProps {
   businessId: string;
 }
 
-export const EmployeePayroll = ({ employeeId, businessId }: EmployeePayrollProps) => {
+export const EmployeePayroll = ({ employeeId }: EmployeePayrollProps) => {
   const [loading, setLoading] = useState(true);
   const [payrolls, setPayrolls] = useState<any[]>([]);
 

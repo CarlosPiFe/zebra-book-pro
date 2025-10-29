@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Check, Trash2 } from "lucide-react";
+import { Bell, Check } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -13,7 +13,7 @@ interface EmployeeNotificationsProps {
   businessId: string;
 }
 
-export const EmployeeNotifications = ({ employeeId, businessId }: EmployeeNotificationsProps) => {
+export const EmployeeNotifications = ({ employeeId }: EmployeeNotificationsProps) => {
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<any[]>([]);
 

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Clock, Calendar, DollarSign, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 

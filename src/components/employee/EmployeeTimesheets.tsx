@@ -13,7 +13,7 @@ interface EmployeeTimesheetsProps {
   businessId: string;
 }
 
-export const EmployeeTimesheets = ({ employeeId, businessId }: EmployeeTimesheetsProps) => {
+export const EmployeeTimesheets = ({ employeeId }: EmployeeTimesheetsProps) => {
   const [loading, setLoading] = useState(true);
   const [timesheets, setTimesheets] = useState<any[]>([]);
   const [weekTotal, setWeekTotal] = useState(0);

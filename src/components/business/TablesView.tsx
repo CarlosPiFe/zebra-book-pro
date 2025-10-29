@@ -145,7 +145,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   // Auto-calculate end time when start time changes
   useEffect(() => {
     if (startTime && businessId) {
-      const [hours, minutes] = startTime.split(":").map(Number);
+      const [hours = 0, minutes = 0] = startTime.split(":").map(Number);
       if (!isNaN(hours) && !isNaN(minutes)) {
         const startDate = new Date();
         startDate.setHours(hours, minutes, 0, 0);
@@ -217,7 +217,7 @@ export function TablesView({ businessId }: TablesViewProps) {
             *,
             menu_items!inner(price)
           `)
-          .in("table_id", occupiedTableIds)
+          .in("table_id", occupiedTableIds.filter((id): id is string => id !== null))
           .eq("status", "pending");
 
         if (ordersError) throw ordersError;
@@ -239,7 +239,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         total_spent: tableTotals[table.id] || 0
       }));
 
-      setTables(tablesWithBookings);
+      setTables(tablesWithBookings as any);
     } catch (error) {
       console.error("Error loading tables:", error);
       toast.error("Error al cargar las mesas");
@@ -358,16 +358,16 @@ export function TablesView({ businessId }: TablesViewProps) {
         return;
       }
 
-      const { error } = await supabase.from("bookings").insert({
+      const { error } = await supabase.from("bookings").insert([{
         table_id: selectedTable.id,
         business_id: businessId,
-        booking_date: today,
+        booking_date: today || new Date().toISOString().split('T')[0],
         start_time: startTime,
         end_time: endTime,
         client_name: "Cliente sin reserva",
         status: "occupied",
         time_slot_id: timeSlotId,
-      });
+      }]);
 
       if (error) throw error;
 
@@ -444,7 +444,7 @@ export function TablesView({ businessId }: TablesViewProps) {
     if (!selectedTable) return;
     
     const today = new Date().toISOString().split('T')[0];
-    setBookingDate(today);
+    setBookingDate(today || "");
     setStartTime("");
     setEndTime("");
     setClientName("");
@@ -516,7 +516,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         // Create new booking
         const { error } = await supabase
           .from("bookings")
-          .insert(bookingData);
+          .insert([bookingData] as any);
 
         if (error) throw error;
         toast.success("Reserva creada correctamente");

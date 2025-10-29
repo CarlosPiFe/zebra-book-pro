@@ -250,7 +250,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
       }
 
       console.log("Bookings loaded successfully:", data);
-      setBookings(data || []);
+      setBookings((data || []) as any);
     } catch (error: any) {
       console.error("Error loading bookings (catch):", {
         message: error?.message,
@@ -385,7 +385,6 @@ export function BookingsView({ businessId }: BookingsViewProps) {
         const now = new Date();
         const currentTime = format(now, "HH:mm:ss");
         const currentDate = format(now, "yyyy-MM-dd");
-        const selectedDateString = format(selectedDate, "yyyy-MM-dd");
 
         // Separar reservas pasadas y futuras/actuales
         const pastBookings: Booking[] = [];

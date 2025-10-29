@@ -63,7 +63,7 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
     title: "",
     description: "",
     time: "",
-    color: EVENT_COLORS[0].value,
+    color: EVENT_COLORS[0]?.value || "#3b82f6",
   });
 
   useEffect(() => {
@@ -118,7 +118,7 @@ export function DayDetailsDialog({ open, onOpenChange, date, businessId, isClose
       if (error) throw error;
 
       toast.success("Evento añadido");
-      setNewEvent({ title: "", description: "", time: "", color: EVENT_COLORS[0].value });
+      setNewEvent({ title: "", description: "", time: "", color: EVENT_COLORS[0]?.value || "#3b82f6" });
       loadEvents();
       onEventChange?.();
     } catch (error) {

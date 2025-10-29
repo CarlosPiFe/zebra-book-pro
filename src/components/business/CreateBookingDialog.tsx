@@ -44,11 +44,6 @@ interface CreateBookingDialogProps {
   onBookingCreated: () => void;
 }
 
-interface Business {
-  booking_slot_duration_minutes: number;
-  category: string;
-}
-
 export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBookingDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -113,8 +108,8 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
 
   // Auto-calculate end time when start time changes (only if not custom)
   useEffect(() => {
-    if (startTime && !customEndTime) {
-      const [hours, minutes] = startTime.split(":").map(Number);
+    if (startTime && !customEndTime && slotDuration) {
+      const [hours = 0, minutes = 0] = startTime.split(":").map(Number);
       const startDate = new Date();
       startDate.setHours(hours, minutes, 0, 0);
       const endDate = addMinutes(startDate, slotDuration);
@@ -379,11 +374,11 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
       }
 
       // Create booking
-      const { error: bookingError } = await supabase.from("bookings").insert({
+      const { error: bookingError } = await supabase.from("bookings").insert([{
         business_id: businessId,
         client_name: formData.client_name,
-        client_email: formData.client_email || null,
-        client_phone: formData.client_phone || null,
+        client_email: formData.client_email || undefined,
+        client_phone: formData.client_phone || undefined,
         booking_date: dateString,
         start_time: formData.start_time,
         end_time: formData.end_time,
@@ -392,7 +387,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         table_id: tableId,
         status: status,
         time_slot_id: timeSlotId,
-      });
+      }]);
 
       if (bookingError) throw bookingError;
 
@@ -410,7 +405,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     } catch (error: any) {
       console.error("Error creating booking:", error);
       if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
+        toast.error(error.errors?.[0]?.message || "Error de validación");
       } else {
         toast.error("Error al crear la reserva");
       }

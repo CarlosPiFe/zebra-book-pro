@@ -84,7 +84,7 @@ export const ScheduleCell = ({
 
   const handleRemoveSlot = (index: number) => {
     const slot = slots[index];
-    if (slot.id) {
+    if (slot?.id) {
       onDelete(slot.id);
     }
     setSlots(slots.filter((_, i) => i !== index));
@@ -92,8 +92,10 @@ export const ScheduleCell = ({
 
   const handleSlotChange = (index: number, field: "start" | "end", value: string) => {
     const newSlots = [...slots];
-    newSlots[index][field] = value;
-    setSlots(newSlots);
+    if (newSlots[index]) {
+      newSlots[index][field] = value;
+      setSlots(newSlots);
+    }
   };
 
   const handleSave = () => {

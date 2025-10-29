@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Settings, Upload, X, ImagePlus, Clock, CheckCircle2, CalendarCheck, DoorOpen, Trash2, Plus, Calendar, Edit } from "lucide-react";
+import { Settings, X, ImagePlus, Clock, CheckCircle2, CalendarCheck, DoorOpen, Trash2, Plus, Calendar, Edit } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";

@@ -35,7 +35,6 @@ const DAYS_OF_WEEK = [
 
 export const AddFixedScheduleDialog = ({
   businessId,
-  currentWeekStart,
   onScheduleAdded,
 }: AddFixedScheduleDialogProps) => {
   const [open, setOpen] = useState(false);

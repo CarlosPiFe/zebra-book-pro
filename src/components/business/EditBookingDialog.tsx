@@ -64,10 +64,6 @@ interface EditBookingDialogProps {
   onBookingUpdated: () => void;
 }
 
-interface Business {
-  booking_slot_duration_minutes: number;
-}
-
 export function EditBookingDialog({ 
   booking, 
   businessId, 
@@ -179,7 +175,7 @@ export function EditBookingDialog({
   // Auto-calculate end time when start time changes
   useEffect(() => {
     if (startTime && slotDuration) {
-      const [hours, minutes] = startTime.split(":").map(Number);
+      const [hours = 0, minutes = 0] = startTime.split(":").map(Number);
       const startDate = new Date();
       startDate.setHours(hours, minutes, 0, 0);
       const endDate = addMinutes(startDate, slotDuration);
@@ -312,8 +308,8 @@ export function EditBookingDialog({
         .from("bookings")
         .update({
           client_name: formData.client_name,
-          client_email: formData.client_email || null,
-          client_phone: formData.client_phone || null,
+          client_email: formData.client_email || undefined,
+          client_phone: formData.client_phone || undefined,
           booking_date: dateString,
           start_time: formData.start_time,
           end_time: formData.end_time,
@@ -340,7 +336,7 @@ export function EditBookingDialog({
     } catch (error: any) {
       console.error("Error updating booking:", error);
       if (error instanceof z.ZodError) {
-        toast.error(error.errors[0].message);
+        toast.error(error.errors?.[0]?.message || "Error de validación");
       } else {
         toast.error("Error al actualizar la reserva");
       }

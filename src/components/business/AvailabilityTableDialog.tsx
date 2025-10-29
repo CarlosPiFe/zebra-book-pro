@@ -117,7 +117,7 @@ export function AvailabilityTableDialog({
       const slots = generateTimeSlots(availability, business.booking_slot_duration_minutes);
 
       setTables(tablesData || []);
-      setBookings(bookingsData || []);
+      setBookings((bookingsData || []) as any);
       setTimeSlots(slots);
     } catch (error) {
       console.error("Error loading availability:", error);
@@ -134,8 +134,8 @@ export function AvailabilityTableDialog({
     const slots: TimeSlot[] = [];
 
     availability.forEach((period) => {
-      const [startHour, startMin] = period.start_time.split(":").map(Number);
-      const [endHour, endMin] = period.end_time.split(":").map(Number);
+      const [startHour = 0, startMin = 0] = period.start_time.split(":").map(Number);
+      const [endHour = 0, endMin = 0] = period.end_time.split(":").map(Number);
 
       let currentMinutes = startHour * 60 + startMin;
       let endMinutes = endHour * 60 + endMin;
@@ -168,7 +168,7 @@ export function AvailabilityTableDialog({
 
   const isSlotOccupied = (tableId: string, slotStart: string, slotEnd: string): Booking | null => {
     const parseTime = (time: string): number => {
-      const [hours, minutes] = time.split(":").map(Number);
+      const [hours = 0, minutes = 0] = time.split(":").map(Number);
       return hours * 60 + minutes;
     };
 

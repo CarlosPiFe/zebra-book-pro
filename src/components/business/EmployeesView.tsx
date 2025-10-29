@@ -89,7 +89,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
         })
       );
 
-      setEmployees(employeesWithVacations);
+      setEmployees(employeesWithVacations as any);
     } catch (error) {
       console.error("Error loading employees:", error);
       toast.error("Error al cargar empleados");
@@ -178,7 +178,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
         .order("start_date", { ascending: true });
 
       if (error) throw error;
-      setVacations(data || []);
+      setVacations((data || []) as any);
     } catch (error) {
       console.error("Error loading vacations:", error);
       toast.error("Error al cargar vacaciones");
@@ -452,8 +452,8 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                   <>
                     {vacations.map((vacation) => {
                       // Parsear las fechas como strings de fecha (sin hora) para evitar problemas de zona horaria
-                      const [startYear, startMonth, startDay] = vacation.start_date.split('-').map(Number);
-                      const [endYear, endMonth, endDay] = vacation.end_date.split('-').map(Number);
+                      const [startYear = 2024, startMonth = 1, startDay = 1] = vacation.start_date.split('-').map(Number);
+                      const [endYear = 2024, endMonth = 1, endDay = 1] = vacation.end_date.split('-').map(Number);
                       
                       const startDate = new Date(startYear, startMonth - 1, startDay);
                       const endDate = new Date(endYear, endMonth - 1, endDay);
