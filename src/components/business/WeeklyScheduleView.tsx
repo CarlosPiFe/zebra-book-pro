@@ -327,60 +327,61 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
             <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <div className="text-center min-w-[200px]">
-              <p className="font-semibold text-sm">
-                {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
-                {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          {scheduleViewMode === 'visual' && (
-            <Button
-              variant={isEditMode ? "outline" : "default"}
-              onClick={() => setIsEditMode(!isEditMode)}
-              className="gap-2"
-              size="sm"
-            >
-              <Calendar className="w-4 h-4" />
-              {isEditMode ? "Ver horario" : "Editar horario"}
-            </Button>
-          )}
-          {(scheduleViewMode === 'editable' || isEditMode) && (
-            <>
-              <AddFixedScheduleDialog
-                businessId={businessId}
-                currentWeekStart={currentWeekStart}
-                onScheduleAdded={loadSchedules}
-              />
+          <div className="flex justify-end gap-2">
+            {scheduleViewMode === 'visual' && (
               <Button
-                variant="destructive"
-                onClick={() => setDeleteWeekDialogOpen(true)}
+                variant={isEditMode ? "outline" : "default"}
+                onClick={() => setIsEditMode(!isEditMode)}
                 className="gap-2"
                 size="sm"
               >
-                <Trash2 className="w-4 h-4" />
-                Eliminar Semana
+                <Calendar className="w-4 h-4" />
+                {isEditMode ? "Ver horario" : "Editar horario"}
               </Button>
-            </>
-          )}
+            )}
+            {(scheduleViewMode === 'editable' || isEditMode) && (
+              <>
+                <AddFixedScheduleDialog
+                  businessId={businessId}
+                  currentWeekStart={currentWeekStart}
+                  onScheduleAdded={loadSchedules}
+                />
+                <Button
+                  variant="destructive"
+                  onClick={() => setDeleteWeekDialogOpen(true)}
+                  className="gap-2"
+                  size="sm"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Vaciar Semana
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Navegación de semana alineada a la izquierda */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <div className="text-center min-w-[200px]">
+            <p className="font-semibold text-sm">
+              {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
+              {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
+          >
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       </div>
       
