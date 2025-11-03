@@ -60,7 +60,7 @@ async function findAvailableTable(
 
   if (tablesError || !tables || tables.length === 0) {
     console.log("No tables found with sufficient capacity");
-    return { tableId: null, status: "pending" };
+    return { tableId: null, status: "pending_client_confirmation" };
   }
 
   // Get all bookings for the same date
@@ -74,7 +74,7 @@ async function findAvailableTable(
 
   if (bookingsError) {
     console.error("Error fetching bookings:", bookingsError);
-    return { tableId: null, status: "pending" };
+    return { tableId: null, status: "pending_client_confirmation" };
   }
 
   // Helper function to check time overlap
@@ -106,12 +106,12 @@ async function findAvailableTable(
 
     if (isAvailable) {
       console.log(`Table ${table.id} is available`);
-      return { tableId: table.id, status: "reserved" };
+      return { tableId: table.id, status: "confirmed" };
     }
   }
 
-  console.log("No available tables found, marking as pending");
-  return { tableId: null, status: "pending" };
+  console.log("No available tables found, marking as pending client confirmation");
+  return { tableId: null, status: "pending_client_confirmation" };
 }
 
 serve(async (req) => {
@@ -181,7 +181,7 @@ serve(async (req) => {
     // Get business information and verify it exists and is active
     const { data: business, error: businessError } = await supabase
       .from("businesses")
-      .select("booking_slot_duration_minutes, phone, is_active, booking_mode")
+      .select("booking_slot_duration_minutes, phone, is_active, confirmation_mode")
       .eq("id", businessId)
       .eq("is_active", true)
       .maybeSingle();
@@ -198,7 +198,7 @@ serve(async (req) => {
       );
     }
 
-    const confirmationMode = business?.booking_mode ?? 'automatic';
+    const confirmationMode = business?.confirmation_mode ?? 'automatic';
     console.log("📌 confirmationMode =", confirmationMode);
     console.log("✅ STEP: business-lookup | Business found:", businessId);
 
@@ -240,11 +240,11 @@ serve(async (req) => {
     let responseMessage: string;
 
     if (confirmationMode === 'manual') {
-      // MANUAL CONFIRMATION MODE
-      bookingStatus = "pending_confirmation";
-      tableId = null; // No table assignment for manual confirmation
+      // MANUAL CONFIRMATION MODE - Business must confirm first
+      bookingStatus = "pending_business_confirmation";
+      tableId = null; // No table assignment until business confirms
       responseMessage = "Tu reserva ha sido enviada correctamente. El negocio contactará contigo para confirmarla.";
-      console.log("📌 STEP: booking-mode | Manual confirmation - no table assignment");
+      console.log("📌 STEP: booking-mode | Manual confirmation - pending business approval");
     } else {
       // AUTOMATIC CONFIRMATION MODE
       console.log("📌 STEP: booking-mode | Automatic confirmation - checking table availability");
@@ -273,9 +273,16 @@ serve(async (req) => {
         );
       }
       
-      bookingStatus = "reserved";
-      responseMessage = "Reserva creada correctamente";
-      console.log("✅ STEP: table-availability | Table assigned:", tableId);
+      // If client email exists, ask for client confirmation; otherwise confirm directly
+      if (clientEmail) {
+        bookingStatus = "pending_client_confirmation";
+        responseMessage = "Reserva creada. Revisa tu email para confirmar tu asistencia.";
+        console.log("✅ STEP: table-availability | Table assigned, waiting client confirmation:", tableId);
+      } else {
+        bookingStatus = "confirmed";
+        responseMessage = "Reserva confirmada exitosamente";
+        console.log("✅ STEP: table-availability | Table assigned and auto-confirmed:", tableId);
+      }
     }
 
     // Get or create time_slot_id - REQUIRED for all bookings
@@ -383,19 +390,35 @@ serve(async (req) => {
       confirmationMode: confirmationMode
     });
 
-    // Send confirmation email (non-blocking)
+    // Send appropriate confirmation email based on status (non-blocking)
     if (booking?.id && clientEmail) {
-      supabase.functions.invoke('send-booking-email', {
-        body: { bookingId: booking.id }
-      }).then(({ error: emailError }: { error: any }) => {
-        if (emailError) {
-          console.error('⚠️ Email notification failed:', emailError);
-        } else {
-          console.log('✅ Confirmation email sent to:', clientEmail);
+      try {
+        if (bookingStatus === "pending_business_confirmation") {
+          // Send to business for manual approval
+          supabase.functions.invoke('send-business-notification', {
+            body: { bookingId: booking.id }
+          }).then(({ error: emailError }: { error: any }) => {
+            if (emailError) {
+              console.error('⚠️ Business notification failed:', emailError);
+            } else {
+              console.log('✅ Business notification sent');
+            }
+          });
+        } else if (bookingStatus === "pending_client_confirmation") {
+          // Send to client for confirmation
+          supabase.functions.invoke('send-client-confirmation', {
+            body: { bookingId: booking.id }
+          }).then(({ error: emailError }: { error: any }) => {
+            if (emailError) {
+              console.error('⚠️ Client confirmation email failed:', emailError);
+            } else {
+              console.log('✅ Client confirmation email sent to:', clientEmail);
+            }
+          });
         }
-      }).catch((err: any) => {
+      } catch (err: any) {
         console.error('⚠️ Email service error:', err);
-      });
+      }
     }
 
     return new Response(
