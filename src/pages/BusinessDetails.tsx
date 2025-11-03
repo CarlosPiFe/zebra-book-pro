@@ -629,11 +629,11 @@ export default function BusinessDetails() {
             {/* Icono circular de estado - Fijo en la parte superior */}
             <div className="flex justify-center pt-4 pb-2 px-4">
               <div className={`w-20 h-20 rounded-full flex items-center justify-center ${
-                confirmedBooking.status === 'reserved' 
+                confirmedBooking.status === 'confirmed' 
                   ? 'bg-green-100 dark:bg-green-900/30' 
                   : 'bg-orange-100 dark:bg-orange-900/30'
               }`}>
-                {confirmedBooking.status === 'reserved' ? (
+                {confirmedBooking.status === 'confirmed' ? (
                   <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />
                 ) : (
                   <Clock className="w-12 h-12 text-orange-600 dark:text-orange-400" />
