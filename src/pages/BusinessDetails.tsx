@@ -68,15 +68,51 @@ export default function BusinessDetails() {
   });
   const [phoneError, setPhoneError] = useState<string>("");
 
-  // Hook de disponibilidad
+  // Hook de disponibilidad (sin filtro de sala para obtener todas las mesas)
   const {
     isDateAvailable,
     getAvailableTimeSlots,
     refreshAvailability,
     loading: availabilityLoading,
-    tables
+    tables: allTables,
+    slotDuration
   } = useBookingAvailability(businessId, bookingForm.roomId);
-  const maxTableCapacity = tables.length > 0 ? Math.max(...tables.map(t => t.max_capacity)) : 20;
+  
+  const maxTableCapacity = allTables.length > 0 ? Math.max(...allTables.map(t => t.max_capacity)) : 20;
+
+  // Cargar reservas para verificar disponibilidad por sala
+  const [bookings, setBookings] = useState<Array<{
+    id: string;
+    booking_date: string;
+    start_time: string;
+    end_time: string;
+    party_size: number;
+    table_id: string;
+  }>>([]);
+
+  useEffect(() => {
+    if (!businessId) return;
+    
+    const loadBookings = async () => {
+      const today = new Date().toISOString().split("T")[0];
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 30);
+      const future = futureDate.toISOString().split("T")[0];
+
+      const { data } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("business_id", businessId)
+        .gte("booking_date", today)
+        .lte("booking_date", future)
+        .neq("status", "cancelled")
+        .neq("status", "completed");
+
+      setBookings(data as any || []);
+    };
+
+    loadBookings();
+  }, [businessId]);
 
   // 🔐 Verificar autenticación y cargar perfil
   useEffect(() => {
@@ -482,6 +518,85 @@ export default function BusinessDetails() {
   };
   const availableTimeSlots = getAvailableTimeSlotsForForm();
 
+  // 🏠 Filtrar salas que tienen mesas disponibles
+  const getAvailableRooms = (): Room[] => {
+    if (!bookingForm.bookingDate || !bookingForm.startTime || !bookingForm.partySize) {
+      // Si no hay fecha/hora/personas seleccionadas, mostrar todas las salas que tengan mesas
+      return rooms.filter(room => {
+        const roomTables = allTables.filter(t => t.room_id === room.id);
+        return roomTables.length > 0;
+      });
+    }
+
+    const dateStr = format(bookingForm.bookingDate, "yyyy-MM-dd");
+    const partySize = parseInt(bookingForm.partySize);
+    const selectedStartTime = bookingForm.startTime;
+
+    if (!selectedStartTime) return [];
+
+    // Calcular hora de fin del slot
+    const [hour = 0, minute = 0] = selectedStartTime.split(":").map(Number);
+    const endMinutes = hour * 60 + minute + slotDuration;
+    const endHour = Math.floor(endMinutes / 60) % 24;
+    const endMinute = endMinutes % 60;
+    const endTime = `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
+
+    // Función para verificar superposición de horarios
+    const isTimeOverlapping = (
+      bookingStart: string,
+      bookingEnd: string,
+      slotStart: string,
+      slotEnd: string
+    ): boolean => {
+      const bookingStartMin = parseInt(bookingStart.split(":")[0] || "0") * 60 + parseInt(bookingStart.split(":")[1] || "0");
+      const bookingEndMin = parseInt(bookingEnd.split(":")[0] || "0") * 60 + parseInt(bookingEnd.split(":")[1] || "0");
+      const slotStartMin = parseInt(slotStart.split(":")[0] || "0") * 60 + parseInt(slotStart.split(":")[1] || "0");
+      const slotEndMin = parseInt(slotEnd.split(":")[0] || "0") * 60 + parseInt(slotEnd.split(":")[1] || "0");
+      return !(bookingEndMin <= slotStartMin || bookingStartMin >= slotEndMin);
+    };
+
+    // Filtrar salas que tengan al menos una mesa disponible
+    return rooms.filter(room => {
+      const roomTables = allTables.filter(t => t.room_id === room.id);
+      
+      // Verificar que la sala tenga mesas
+      if (roomTables.length === 0) return false;
+
+      // Buscar mesas que puedan acomodar al grupo
+      const suitableTables = roomTables.filter((table) => {
+        const meetsMinCapacity = table.min_capacity <= partySize;
+        const meetsMaxCapacity = table.max_capacity >= partySize;
+        return meetsMinCapacity && meetsMaxCapacity;
+      });
+
+      if (suitableTables.length === 0) return false;
+
+      // Verificar si al menos una mesa está disponible (no tiene reservas superpuestas)
+      return suitableTables.some((table) => {
+        const tableBookings = bookings.filter(
+          (b) => b.booking_date === dateStr && b.table_id === table.id
+        );
+        
+        // Si no hay reservas para esta mesa, está disponible
+        if (tableBookings.length === 0) return true;
+
+        // Verificar si alguna reserva se superpone con el horario seleccionado
+        const hasOverlap = tableBookings.some((booking) =>
+          isTimeOverlapping(
+            booking.start_time,
+            booking.end_time,
+            selectedStartTime,
+            endTime
+          )
+        );
+
+        return !hasOverlap; // Mesa disponible si NO hay superposición
+      });
+    });
+  };
+
+  const availableRooms = getAvailableRooms();
+
   // Debug: Log para ver qué horarios están disponibles
   console.log("=== DEBUG DISPONIBILIDAD ===");
   console.log("Fecha seleccionada:", bookingForm.bookingDate);
@@ -798,17 +913,32 @@ export default function BusinessDetails() {
                       <Label>Elegir sala</Label>
                       <Select value={bookingForm.roomId || "all-rooms"} onValueChange={handleRoomChange} disabled={!user}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Todas las salas" />
+                          <SelectValue placeholder={availableRooms.length === 0 && bookingForm.bookingDate && bookingForm.startTime ? "No hay salas disponibles" : "Todas las salas"} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all-rooms">Todas las salas</SelectItem>
-                          {rooms.map((room) => (
-                            <SelectItem key={room.id} value={room.id}>
-                              {room.name}
+                          {availableRooms.length > 0 ? (
+                            <>
+                              <SelectItem value="all-rooms">Todas las salas</SelectItem>
+                              {availableRooms.map((room) => (
+                                <SelectItem key={room.id} value={room.id}>
+                                  {room.name}
+                                </SelectItem>
+                              ))}
+                            </>
+                          ) : (
+                            <SelectItem disabled value="no-rooms">
+                              {bookingForm.bookingDate && bookingForm.startTime 
+                                ? "No hay salas disponibles para esta fecha y hora" 
+                                : "Selecciona fecha, hora y personas primero"}
                             </SelectItem>
-                          ))}
+                          )}
                         </SelectContent>
                       </Select>
+                      {availableRooms.length === 0 && bookingForm.bookingDate && bookingForm.startTime && bookingForm.partySize && (
+                        <p className="text-sm text-destructive mt-1">
+                          No quedan salas disponibles para esta fecha y hora con {bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? "persona" : "personas"}.
+                        </p>
+                      )}
                     </div>
                   )}
 
