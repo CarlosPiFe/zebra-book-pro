@@ -365,7 +365,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
       const dateString = format(formData.booking_date, "yyyy-MM-dd");
 
       let tableId: string | null = null;
-      let status: "reserved" | "pending" = "reserved";
+      let status: string = "reserved"; // Temporary status for table assignment logic
 
       // Only handle table assignment for hospitality businesses
       if (isHospitality) {
@@ -400,30 +400,82 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         return;
       }
 
+      // Fetch business confirmation mode
+      const { data: businessData, error: businessError } = await supabase
+        .from("businesses")
+        .select("confirmation_mode")
+        .eq("id", businessId)
+        .single();
+
+      if (businessError) {
+        console.error("Error fetching business:", businessError);
+      }
+
+      const confirmationMode = businessData?.confirmation_mode || "automatic";
+      
+      // Determine initial status based on confirmation mode
+      let initialStatus = status;
+      if (confirmationMode === "manual") {
+        // Manual mode: needs business confirmation first
+        initialStatus = "pending_business_confirmation";
+      } else if (formData.client_email) {
+        // Automatic mode with email: needs client confirmation
+        initialStatus = "pending_client_confirmation";
+      } else {
+        // Automatic mode without email: confirmed directly
+        initialStatus = "confirmed";
+      }
+
       // Create booking
-      const { error: bookingError } = await supabase.from("bookings").insert([{
-        business_id: businessId,
-        client_name: formData.client_name,
-        client_email: formData.client_email || undefined,
-        client_phone: formData.client_phone || undefined,
-        booking_date: dateString,
-        start_time: formData.start_time,
-        end_time: formData.end_time,
-        party_size: formData.party_size || undefined,
-        notes: formData.notes || undefined,
-        table_id: tableId,
-        status: status,
-        time_slot_id: timeSlotId,
-      }]);
+      const { data: newBooking, error: bookingError } = await supabase
+        .from("bookings")
+        .insert([{
+          business_id: businessId,
+          client_name: formData.client_name,
+          client_email: formData.client_email || undefined,
+          client_phone: formData.client_phone || undefined,
+          booking_date: dateString,
+          start_time: formData.start_time,
+          end_time: formData.end_time,
+          party_size: formData.party_size || undefined,
+          notes: formData.notes || undefined,
+          table_id: tableId,
+          status: initialStatus,
+          time_slot_id: timeSlotId,
+        }])
+        .select()
+        .single();
 
       if (bookingError) throw bookingError;
 
-      if (selectedTableId !== "auto") {
-        toast.success("Reserva creada con mesa asignada manualmente");
-      } else if (status === "reserved") {
-        toast.success("Reserva creada y mesa asignada automáticamente");
+      // Send appropriate confirmation email based on mode
+      if (newBooking && formData.client_email) {
+        try {
+          if (confirmationMode === "manual") {
+            // Send to business for approval
+            await supabase.functions.invoke("send-business-notification", {
+              body: { bookingId: newBooking.id },
+            });
+            toast.success("Reserva creada. Se ha enviado notificación al negocio para confirmación.");
+          } else {
+            // Send to client for confirmation
+            await supabase.functions.invoke("send-client-confirmation", {
+              body: { bookingId: newBooking.id },
+            });
+            toast.success("Reserva creada. Se ha enviado email de confirmación al cliente.");
+          }
+        } catch (emailError) {
+          console.error("Error sending confirmation email:", emailError);
+          toast.warning("Reserva creada pero no se pudo enviar el email de confirmación");
+        }
       } else {
-        toast.warning("Reserva creada como pendiente - sin mesas disponibles para esta capacidad");
+        if (selectedTableId !== "auto") {
+          toast.success("Reserva creada con mesa asignada manualmente");
+        } else if (initialStatus === "confirmed") {
+          toast.success("Reserva creada y confirmada automáticamente");
+        } else {
+          toast.warning("Reserva creada como pendiente");
+        }
       }
 
       resetForm();

@@ -46,6 +46,7 @@ interface Business {
   booking_additional_message?: string | null;
   schedule_view_mode?: string;
   booking_mode?: string;
+  confirmation_mode?: string;
 }
 
 interface BusinessSettingsProps {
@@ -83,7 +84,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
   });
   
   const [bookingConfirmationType, setBookingConfirmationType] = useState<string>(
-    business.booking_mode || "automatic"
+    business.confirmation_mode || "automatic"
   );
 
   // Estado para la configuración de salas
@@ -582,6 +583,80 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
             className="w-full"
           >
             {loading ? "Guardando..." : "Guardar Configuración de Estados"}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CalendarCheck className="h-5 w-5" />
+            Modo de Confirmación de Reservas
+          </CardTitle>
+          <CardDescription>
+            Configura cómo se gestionan las confirmaciones de nuevas reservas
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-4">
+            <Label htmlFor="confirmation_mode">Tipo de confirmación</Label>
+            <RadioGroup
+              id="confirmation_mode"
+              value={bookingConfirmationType}
+              onValueChange={setBookingConfirmationType}
+            >
+              <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                <RadioGroupItem value="automatic" id="automatic" />
+                <div className="space-y-1 leading-none flex-1">
+                  <Label htmlFor="automatic" className="text-base font-medium cursor-pointer">
+                    Confirmación Automática
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Las reservas se confirman automáticamente. El cliente solo necesita confirmar su asistencia por email.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+                <RadioGroupItem value="manual" id="manual" />
+                <div className="space-y-1 leading-none flex-1">
+                  <Label htmlFor="manual" className="text-base font-medium cursor-pointer">
+                    Confirmación Manual del Negocio
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    Recibirás un email para aceptar o rechazar cada reserva. Solo después, el cliente recibirá email para confirmar su asistencia.
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <Button
+            type="button"
+            onClick={async () => {
+              setLoading(true);
+              try {
+                const { error } = await supabase
+                  .from("businesses")
+                  .update({
+                    confirmation_mode: bookingConfirmationType,
+                  })
+                  .eq("id", business.id);
+
+                if (error) throw error;
+
+                toast.success("Modo de confirmación actualizado correctamente");
+                onUpdate();
+              } catch (error) {
+                console.error("Error updating confirmation mode:", error);
+                toast.error("Error al actualizar el modo de confirmación");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="w-full"
+          >
+            {loading ? "Guardando..." : "Guardar Modo de Confirmación"}
           </Button>
         </CardContent>
       </Card>
