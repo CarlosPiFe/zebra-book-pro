@@ -9,6 +9,7 @@ import { Calendar, Building2, Clock, Users, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { EditBookingDialog } from "@/components/business/EditBookingDialog";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface Profile {
   id: string;
@@ -187,12 +188,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 pt-24">
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-muted rounded w-1/3" />
-            <div className="h-32 bg-muted rounded" />
-          </div>
-        </div>
+        <LoadingSpinner fullScreen text="Cargando tu panel..." />
       </div>
     );
   }

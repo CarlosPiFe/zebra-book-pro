@@ -9,14 +9,14 @@ import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
 import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { LoadingSpinner, LoadingOverlay } from "@/components/ui/loading-spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -604,9 +604,11 @@ export default function BusinessDetails() {
 
   // 🧱 Renderizado principal
   if (loading) {
-    return <div className="min-h-screen bg-background flex items-center justify-center">
-        <Skeleton className="h-8 w-32" />
-      </div>;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <LoadingSpinner size="xl" text="Cargando información del negocio..." />
+      </div>
+    );
   }
   if (!business) {
     return <div className="min-h-screen flex items-center justify-center text-center">
@@ -833,7 +835,8 @@ export default function BusinessDetails() {
 
           {/* Columna 3: Haz tu reserva */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-4 shadow-lg">
+            <Card className="sticky top-4 shadow-lg relative">
+              {submitting && <LoadingOverlay text="Procesando tu reserva..." />}
               <CardContent className="pt-6">
                 <h3 className="text-2xl font-semibold mb-4 flex items-center">
                   <Calendar className="mr-2 h-6 w-6 text-primary" />

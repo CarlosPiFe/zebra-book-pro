@@ -12,6 +12,7 @@ import { MenuView } from "@/components/business/MenuView";
 import { EmployeesView } from "@/components/business/EmployeesView";
 import { WeeklyScheduleView } from "@/components/business/WeeklyScheduleView";
 import { BusinessSettings } from "@/components/business/BusinessSettings";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface Business {
   id: string;
@@ -111,12 +112,7 @@ const ManageBusiness = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 pt-24">
-          <div className="animate-pulse space-y-4">
-            <div className="h-12 bg-muted rounded w-1/3" />
-            <div className="h-64 bg-muted rounded" />
-          </div>
-        </div>
+        <LoadingSpinner fullScreen text="Cargando información del negocio..." />
       </div>
     );
   }
