@@ -221,9 +221,7 @@ export default function BusinessDetails() {
   const handleRoomChange = (value: string) => {
     setBookingForm({
       ...bookingForm,
-      roomId: value === "all-rooms" ? undefined : value,
-      bookingDate: undefined,
-      startTime: undefined
+      roomId: value === "all-rooms" ? undefined : value
     });
   };
 
