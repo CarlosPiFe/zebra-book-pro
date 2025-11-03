@@ -644,7 +644,7 @@ export default function BusinessDetails() {
             {/* Título dinámico - Fijo en la parte superior */}
             <DialogHeader className="px-4 pb-2">
               <DialogTitle className="text-center text-xl">
-                {confirmedBooking.status === 'reserved' 
+                {confirmedBooking.status === 'confirmed' 
                   ? '¡Reserva Confirmada!' 
                   : 'Reserva Recibida'}
               </DialogTitle>
