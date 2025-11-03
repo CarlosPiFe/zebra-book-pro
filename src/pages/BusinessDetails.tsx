@@ -393,7 +393,7 @@ export default function BusinessDetails() {
 
     // Estado de la reserva
     doc.setFontSize(12);
-    const statusText = confirmedBooking.status === 'reserved' 
+    const statusText = confirmedBooking.status === 'confirmed' 
       ? "✓ CONFIRMADA AUTOMÁTICAMENTE" 
       : "⏰ PENDIENTE DE CONFIRMACIÓN";
     doc.text(statusText, pageWidth / 2, yPos, { align: "center" });
@@ -489,8 +489,8 @@ export default function BusinessDetails() {
     yPos += 10;
     doc.setFontSize(10);
     doc.setFont("helvetica", "italic");
-    if (confirmedBooking.status === 'reserved') {
-      doc.text(`Tu mesa ha sido asignada. ¡Te esperamos en ${business.name}!`, pageWidth / 2, yPos, { align: "center" });
+    if (confirmedBooking.status === 'confirmed') {
+      doc.text(`Tu reserva ha sido confirmada. ¡Te esperamos en ${business.name}!`, pageWidth / 2, yPos, { align: "center" });
     } else {
       doc.text(`El negocio revisará tu solicitud y te contactará pronto para confirmar.`, pageWidth / 2, yPos, { align: "center" });
     }
@@ -655,13 +655,13 @@ export default function BusinessDetails() {
               <div className="space-y-2.5 pb-4">
                 {/* Mensaje según el estado */}
                 <div className={`p-3 rounded-lg border ${
-                  confirmedBooking.status === 'reserved'
+                  confirmedBooking.status === 'confirmed'
                     ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
                     : 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800'
                 }`}>
                   <p className="text-sm text-center">
-                    {confirmedBooking.status === 'reserved'
-                      ? `Tu mesa ha sido asignada. ¡Te esperamos en ${business.name}!`
+                    {confirmedBooking.status === 'confirmed'
+                      ? `¡Tu reserva ha sido confirmada! Te esperamos en ${business.name}.`
                       : 'El negocio revisará tu solicitud y te contactará pronto para confirmar.'}
                   </p>
                 </div>
