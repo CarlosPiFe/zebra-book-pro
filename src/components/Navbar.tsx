@@ -17,11 +17,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CreateBusinessDialog } from "@/components/CreateBusinessDialog";
 
 export const Navbar = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [showCreateBusinessDialog, setShowCreateBusinessDialog] = useState(false);
   const { isEmployee, loading: employeeLoading } = useEmployeeAccess(user);
   const { hasBusinesses, loading: businessLoading } = useBusinessOwner(user);
 
@@ -101,7 +103,7 @@ export const Navbar = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate("/dashboard")}
+                    onClick={() => hasBusinesses ? navigate("/dashboard") : setShowCreateBusinessDialog(true)}
                     className="gap-2"
                   >
                     {hasBusinesses ? (
@@ -176,6 +178,11 @@ export const Navbar = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CreateBusinessDialog 
+        open={showCreateBusinessDialog} 
+        onOpenChange={setShowCreateBusinessDialog}
+      />
     </nav>
   );
 };
