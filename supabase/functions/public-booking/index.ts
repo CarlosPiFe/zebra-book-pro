@@ -241,7 +241,7 @@ serve(async (req) => {
 
     if (confirmationMode === 'manual') {
       // MANUAL CONFIRMATION MODE
-      bookingStatus = "pending_confirmation";
+      bookingStatus = "pending_business_confirmation";
       tableId = null; // No table assignment for manual confirmation
       responseMessage = "Tu reserva ha sido enviada correctamente. El negocio contactará contigo para confirmarla.";
       console.log("📌 STEP: booking-mode | Manual confirmation - no table assignment");
@@ -273,7 +273,7 @@ serve(async (req) => {
         );
       }
       
-      bookingStatus = "reserved";
+      bookingStatus = "confirmed";
       responseMessage = "Reserva creada correctamente";
       console.log("✅ STEP: table-availability | Table assigned:", tableId);
     }
