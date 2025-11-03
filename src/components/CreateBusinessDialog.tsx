@@ -24,31 +24,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Building2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const businessCategories = [
-  { value: "restaurante", label: "Restaurante" },
-  { value: "cafeteria", label: "Cafetería" },
-  { value: "bar", label: "Bar" },
-  { value: "peluqueria", label: "Peluquería" },
-  { value: "spa", label: "Spa & Bienestar" },
-  { value: "gimnasio", label: "Gimnasio" },
-  { value: "consultorio", label: "Consultorio Médico" },
-  { value: "taller", label: "Taller Mecánico" },
-  { value: "otro", label: "Otro" },
-];
-
 const formSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres").max(100),
-  category: z.string().min(1, "Selecciona una categoría"),
   description: z.string().max(500, "La descripción no puede exceder 500 caracteres").optional(),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
   phone: z.string().min(9, "Teléfono inválido").max(15).optional().or(z.literal("")),
@@ -71,7 +51,6 @@ export const CreateBusinessDialog = ({ open, onOpenChange }: CreateBusinessDialo
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      category: "",
       description: "",
       email: "",
       phone: "",
@@ -98,7 +77,7 @@ export const CreateBusinessDialog = ({ open, onOpenChange }: CreateBusinessDialo
         .insert({
           owner_id: session.user.id,
           name: data.name,
-          category: data.category,
+          category: "restaurante",
           description: data.description || null,
           email: data.email || null,
           phone: data.phone || null,
@@ -138,31 +117,6 @@ export const CreateBusinessDialog = ({ open, onOpenChange }: CreateBusinessDialo
         <ScrollArea className="max-h-[calc(90vh-180px)] pr-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tipo de Negocio *</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona el tipo de negocio" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {businessCategories.map((cat) => (
-                          <SelectItem key={cat.value} value={cat.value}>
-                            {cat.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="name"
