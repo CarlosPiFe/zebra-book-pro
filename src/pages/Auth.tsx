@@ -31,6 +31,7 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("mode") === "signup");
   const [isBusiness, setIsBusiness] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -47,6 +48,28 @@ const Auth = () => {
       }
     });
   }, [navigate]);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+
+      toast.success("Si tu correo está registrado recibirás un enlace de recuperación.");
+      setIsForgotPassword(false);
+      setEmail("");
+    } catch (error: any) {
+      console.error("Error sending reset email:", error);
+      toast.success("Si tu correo está registrado recibirás un enlace de recuperación.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,17 +154,23 @@ const Auth = () => {
             <Calendar className="h-12 w-12 text-accent" />
           </div>
           <CardTitle className="text-2xl">
-            {isSignUp ? "Crear cuenta" : "Iniciar sesión"}
+            {isForgotPassword 
+              ? "Recuperar contraseña" 
+              : isSignUp 
+              ? "Crear cuenta" 
+              : "Iniciar sesión"}
           </CardTitle>
           <CardDescription>
-            {isSignUp
+            {isForgotPassword
+              ? "Introduce tu correo para recibir el enlace de recuperación"
+              : isSignUp
               ? "Regístrate para comenzar a gestionar reservas"
               : "Accede a tu cuenta de ZebraTime"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {isSignUp && (
+          <form onSubmit={isForgotPassword ? handleForgotPassword : handleSubmit} className="space-y-4">
+            {!isForgotPassword && isSignUp && (
               <>
                 <div className="space-y-3">
                   <Label className="text-base font-semibold">¿Qué tipo de cuenta necesitas?</Label>
@@ -214,7 +243,7 @@ const Auth = () => {
               </>
             )}
 
-            {!isSignUp && isBusiness ? (
+            {!isForgotPassword && !isSignUp && isBusiness ? (
               <div className="space-y-2">
                 <Label htmlFor="businessId">Identificación del negocio</Label>
                 <Input
@@ -240,28 +269,32 @@ const Auth = () => {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
-              <PasswordInput
-                id="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+            {!isForgotPassword && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <PasswordInput
+                    id="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
 
-            {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
-                <PasswordInput
-                  id="confirmPassword"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
+                {isSignUp && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+                    <PasswordInput
+                      id="confirmPassword"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             <Button
@@ -269,11 +302,17 @@ const Auth = () => {
               className="w-full bg-accent hover:bg-accent/90"
               disabled={loading}
             >
-              {loading ? "Procesando..." : isSignUp ? "Crear cuenta" : "Iniciar sesión"}
+              {loading 
+                ? "Procesando..." 
+                : isForgotPassword 
+                ? "Enviar enlace de recuperación"
+                : isSignUp 
+                ? "Crear cuenta" 
+                : "Iniciar sesión"}
             </Button>
 
             <div className="text-center text-sm space-y-2">
-              {!isSignUp && (
+              {!isForgotPassword && !isSignUp && (
                 <button
                   type="button"
                   onClick={() => setIsBusiness(!isBusiness)}
@@ -283,7 +322,30 @@ const Auth = () => {
                 </button>
               )}
               
-              {isSignUp ? (
+              {!isForgotPassword && !isSignUp && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(true);
+                    setIsBusiness(false);
+                  }}
+                  className="text-accent hover:underline font-medium block w-full"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              )}
+
+              {isForgotPassword ? (
+                <p className="text-muted-foreground">
+                  <button
+                    type="button"
+                    onClick={() => setIsForgotPassword(false)}
+                    className="text-accent hover:underline font-medium"
+                  >
+                    Volver al inicio de sesión
+                  </button>
+                </p>
+              ) : isSignUp ? (
                 <p className="text-muted-foreground">
                   ¿Ya tienes cuenta?{" "}
                   <button
