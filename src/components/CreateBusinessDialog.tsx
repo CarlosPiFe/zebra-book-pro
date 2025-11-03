@@ -29,10 +29,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 
 const formSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres").max(100),
+  email: z.string().min(1, "El email es obligatorio").email("Email inválido"),
+  phone: z.string().min(9, "El teléfono debe tener al menos 9 dígitos").max(15, "El teléfono no puede exceder 15 dígitos"),
+  address: z.string().min(1, "La dirección es obligatoria").max(200),
   description: z.string().max(500, "La descripción no puede exceder 500 caracteres").optional(),
-  email: z.string().email("Email inválido").optional().or(z.literal("")),
-  phone: z.string().min(9, "Teléfono inválido").max(15).optional().or(z.literal("")),
-  address: z.string().max(200).optional(),
   image_url: z.string().url("URL inválida").optional().or(z.literal("")),
 });
 
@@ -157,7 +157,7 @@ export const CreateBusinessDialog = ({ open, onOpenChange }: CreateBusinessDialo
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email de Contacto</FormLabel>
+                      <FormLabel>Email de Contacto *</FormLabel>
                       <FormControl>
                         <Input type="email" placeholder="contacto@negocio.com" {...field} />
                       </FormControl>
@@ -171,7 +171,7 @@ export const CreateBusinessDialog = ({ open, onOpenChange }: CreateBusinessDialo
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Teléfono</FormLabel>
+                      <FormLabel>Teléfono *</FormLabel>
                       <FormControl>
                         <Input placeholder="+34 600 000 000" {...field} />
                       </FormControl>
@@ -186,7 +186,7 @@ export const CreateBusinessDialog = ({ open, onOpenChange }: CreateBusinessDialo
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Dirección</FormLabel>
+                    <FormLabel>Dirección *</FormLabel>
                     <FormControl>
                       <Input placeholder="Calle Principal 123, Ciudad" {...field} />
                     </FormControl>
