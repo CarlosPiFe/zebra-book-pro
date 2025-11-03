@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Plus, Trash2, UserPlus, Edit, Calendar } from "lucide-react";
+import { Plus, Trash2, UserPlus, Edit, Calendar } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
@@ -153,12 +153,6 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
       console.error("Error deleting employee:", error);
       toast.error("Error al eliminar empleado");
     }
-  };
-
-  const copyEmployeeLink = (token: string) => {
-    const link = `${window.location.origin}/waiter/${token}`;
-    navigator.clipboard.writeText(link);
-    toast.success("Link copiado al portapapeles");
   };
 
   const handleEmployeeClick = async (employee: Employee & { email?: string }) => {
@@ -362,14 +356,6 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                 </p>
               </div>
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => copyEmployeeLink(employee.token)}
-                  >
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copiar Link
-                  </Button>
                   <Button
                     variant="destructive"
                     size="sm"
