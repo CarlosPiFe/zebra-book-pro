@@ -17,15 +17,3 @@ verify_jwt = false
 
 [functions.openai-chat]
 verify_jwt = false
-
-[functions.send-client-confirmation]
-verify_jwt = false
-
-[functions.send-business-notification]
-verify_jwt = false
-
-[functions.confirm-client-booking]
-verify_jwt = false
-
-[functions.business-booking-action]
-verify_jwt = false

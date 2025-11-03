@@ -90,10 +90,8 @@ export type Database = {
       bookings: {
         Row: {
           booking_date: string
-          business_confirmation_token: string | null
           business_id: string
           business_phone: string | null
-          client_confirmation_token: string | null
           client_email: string | null
           client_id: string | null
           client_name: string
@@ -103,7 +101,6 @@ export type Database = {
           id: string
           notes: string | null
           party_size: number
-          rejection_reason: string | null
           room_id: string | null
           start_time: string
           status: string
@@ -113,10 +110,8 @@ export type Database = {
         }
         Insert: {
           booking_date: string
-          business_confirmation_token?: string | null
           business_id: string
           business_phone?: string | null
-          client_confirmation_token?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string
@@ -126,7 +121,6 @@ export type Database = {
           id?: string
           notes?: string | null
           party_size?: number
-          rejection_reason?: string | null
           room_id?: string | null
           start_time: string
           status?: string
@@ -136,10 +130,8 @@ export type Database = {
         }
         Update: {
           booking_date?: string
-          business_confirmation_token?: string | null
           business_id?: string
           business_phone?: string | null
-          client_confirmation_token?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string
@@ -149,7 +141,6 @@ export type Database = {
           id?: string
           notes?: string | null
           party_size?: number
-          rejection_reason?: string | null
           room_id?: string | null
           start_time?: string
           status?: string
@@ -244,7 +235,6 @@ export type Database = {
           booking_mode: string
           booking_slot_duration_minutes: number
           category: string
-          confirmation_mode: string
           created_at: string
           description: string | null
           email: string | null
@@ -270,7 +260,6 @@ export type Database = {
           booking_mode?: string
           booking_slot_duration_minutes?: number
           category: string
-          confirmation_mode?: string
           created_at?: string
           description?: string | null
           email?: string | null
@@ -296,7 +285,6 @@ export type Database = {
           booking_mode?: string
           booking_slot_duration_minutes?: number
           category?: string
-          confirmation_mode?: string
           created_at?: string
           description?: string | null
           email?: string | null
@@ -1052,9 +1040,12 @@ export type Database = {
         }
         Returns: boolean
       }
-      cleanup_old_schedules: { Args: never; Returns: undefined }
+      cleanup_old_schedules: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_public_businesses: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           address: string
           category: string
