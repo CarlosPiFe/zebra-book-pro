@@ -1,11 +1,13 @@
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState, useEffect } from "react";
 
 interface LoadingSpinnerProps {
   size?: "sm" | "md" | "lg" | "xl";
   className?: string;
   fullScreen?: boolean;
   text?: string;
+  delay?: number; // Delay en ms antes de mostrar el spinner
 }
 
 const sizeClasses = {
@@ -19,8 +21,25 @@ export function LoadingSpinner({
   size = "md", 
   className,
   fullScreen = false,
-  text
+  text,
+  delay = 200 // Por defecto 200ms de delay
 }: LoadingSpinnerProps) {
+  const [showSpinner, setShowSpinner] = useState(delay === 0);
+
+  useEffect(() => {
+    if (delay === 0) return;
+    
+    const timer = setTimeout(() => {
+      setShowSpinner(true);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [delay]);
+
+  // No mostrar nada si aún no ha pasado el delay
+  if (!showSpinner) {
+    return null;
+  }
   const spinner = (
     <div className={cn(
       "flex flex-col items-center justify-center gap-3",
