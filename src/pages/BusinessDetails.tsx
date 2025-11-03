@@ -68,7 +68,7 @@ export default function BusinessDetails() {
   });
   const [phoneError, setPhoneError] = useState<string>("");
 
-  // Hook de disponibilidad (sin filtro de sala para obtener todas las mesas)
+  // Hook de disponibilidad (sin filtro de sala inicial)
   const {
     isDateAvailable,
     getAvailableTimeSlots,
@@ -76,7 +76,7 @@ export default function BusinessDetails() {
     loading: availabilityLoading,
     tables: allTables,
     slotDuration
-  } = useBookingAvailability(businessId, bookingForm.roomId);
+  } = useBookingAvailability(businessId, undefined);
   
   const maxTableCapacity = allTables.length > 0 ? Math.max(...allTables.map(t => t.max_capacity)) : 20;
 
@@ -891,6 +891,7 @@ export default function BusinessDetails() {
                     {phoneError && <p className="text-sm text-destructive mt-1">{phoneError}</p>}
                   </div>
 
+                  {/* 1. Número de personas */}
                   <div>
                     <Label>Número de personas *</Label>
                     <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange} disabled={!user}>
@@ -907,41 +908,7 @@ export default function BusinessDetails() {
                     </Select>
                   </div>
 
-                  {/* Selector de sala */}
-                  {rooms.length > 0 && (
-                    <div>
-                      <Label>Elegir sala</Label>
-                      <Select value={bookingForm.roomId || "all-rooms"} onValueChange={handleRoomChange} disabled={!user}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={availableRooms.length === 0 && bookingForm.bookingDate && bookingForm.startTime ? "No hay salas disponibles" : "Todas las salas"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableRooms.length > 0 ? (
-                            <>
-                              <SelectItem value="all-rooms">Todas las salas</SelectItem>
-                              {availableRooms.map((room) => (
-                                <SelectItem key={room.id} value={room.id}>
-                                  {room.name}
-                                </SelectItem>
-                              ))}
-                            </>
-                          ) : (
-                            <SelectItem disabled value="no-rooms">
-                              {bookingForm.bookingDate && bookingForm.startTime 
-                                ? "No hay salas disponibles para esta fecha y hora" 
-                                : "Selecciona fecha, hora y personas primero"}
-                            </SelectItem>
-                          )}
-                        </SelectContent>
-                      </Select>
-                      {availableRooms.length === 0 && bookingForm.bookingDate && bookingForm.startTime && bookingForm.partySize && (
-                        <p className="text-sm text-destructive mt-1">
-                          No quedan salas disponibles para esta fecha y hora con {bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? "persona" : "personas"}.
-                        </p>
-                      )}
-                    </div>
-                  )}
-
+                  {/* 2. Fecha */}
                   <div>
                     <Label>Fecha *</Label>
                     <DatePicker 
@@ -957,6 +924,7 @@ export default function BusinessDetails() {
                     />
                   </div>
 
+                  {/* 3. Hora */}
                   <div>
                     <Label>Hora *</Label>
                     <Select 
@@ -979,6 +947,39 @@ export default function BusinessDetails() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* 4. Selector de sala - SOLO se muestra si hay personas, fecha y hora seleccionadas */}
+                  {rooms.length > 0 && bookingForm.partySize && bookingForm.bookingDate && bookingForm.startTime && (
+                    <div>
+                      <Label>Elegir sala (opcional)</Label>
+                      <Select value={bookingForm.roomId || "all-rooms"} onValueChange={handleRoomChange} disabled={!user}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={availableRooms.length === 0 ? "No hay salas disponibles" : "Todas las salas"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableRooms.length > 0 ? (
+                            <>
+                              <SelectItem value="all-rooms">Todas las salas</SelectItem>
+                              {availableRooms.map((room) => (
+                                <SelectItem key={room.id} value={room.id}>
+                                  {room.name}
+                                </SelectItem>
+                              ))}
+                            </>
+                          ) : (
+                            <SelectItem disabled value="no-rooms">
+                              No hay salas disponibles para esta fecha y hora
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {availableRooms.length === 0 && (
+                        <p className="text-sm text-destructive mt-1">
+                          No quedan salas disponibles para esta fecha y hora con {bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? "persona" : "personas"}.
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <div>
                     <Label>Notas adicionales</Label>
