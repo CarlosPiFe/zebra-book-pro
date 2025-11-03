@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
 import { DayDetailsDialog } from "./DayDetailsDialog";
 import { format } from "date-fns";
@@ -184,16 +185,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   }
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Calendario</h1>
-          <p className="text-muted-foreground">
-            Cargando horarios del negocio...
-          </p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text="Cargando calendario..." />;
   }
 
   return (

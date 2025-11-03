@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, UtensilsCrossed, Wine } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   AlertDialog,
@@ -150,11 +151,7 @@ export function MenuView({ businessId }: MenuViewProps) {
   const bebidas = menuItems.filter((item) => item.category === "bebida");
 
   if (loading) {
-    return (
-      <div className="h-64 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Cargando menú...</div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text="Cargando menú..." />;
   }
 
   return (

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface Waiter {
   id: string;
@@ -187,11 +188,7 @@ const WaiterInterface = () => {
   }, {} as Record<string, MenuItem[]>);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-lg">Cargando...</div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text="Cargando interfaz..." />;
   }
 
   if (showNameForm) {

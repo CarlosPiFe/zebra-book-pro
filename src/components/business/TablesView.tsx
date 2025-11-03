@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrdersDialog } from "./OrdersDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { addMinutes } from "date-fns";
@@ -742,11 +743,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   };
 
   if (loading) {
-    return (
-      <div className="h-64 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Cargando mesas...</div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text="Cargando mesas..." />;
   }
 
   // Filtrar mesas según la sala seleccionada

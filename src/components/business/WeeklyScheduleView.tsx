@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ChevronLeft, ChevronRight, Calendar, Trash2 } from "lucide-react";
 import {
   AlertDialog,
@@ -308,14 +309,7 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
 
   if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="animate-pulse space-y-4">
-          <div className="h-12 bg-muted rounded w-1/3" />
-          <div className="h-96 bg-muted rounded" />
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text="Cargando horarios..." />;
   }
 
   return (

@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -228,10 +229,10 @@ export function AvailabilityTableDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Cargando disponibilidad...</DialogTitle>
+            <DialogTitle>Disponibilidad de Mesas</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            <LoadingSpinner size="lg" text="Cargando disponibilidad..." />
           </div>
         </DialogContent>
       </Dialog>

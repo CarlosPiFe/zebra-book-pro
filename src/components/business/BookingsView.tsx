@@ -14,6 +14,7 @@ import { CreateBookingDialog } from "./CreateBookingDialog";
 import { EditBookingDialog } from "./EditBookingDialog";
 import { format, parse } from "date-fns";
 import { cn } from "@/lib/utils";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 interface Booking {
   id: string;
@@ -311,16 +312,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
   };
 
   if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="h-12 bg-muted rounded animate-pulse" />
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-32 bg-muted rounded animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullScreen text="Cargando reservas..." />;
   }
 
   return (

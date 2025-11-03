@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Clock, Plus, Trash2 } from "lucide-react";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { TimePicker } from "@/components/ui/time-picker";
 import {
   AlertDialog,
@@ -139,7 +140,7 @@ export function EmployeeSchedule({ employeeId, employeeName }: EmployeeScheduleP
   }, {} as Record<string, { startTime: string; endTime: string; days: { day: number; id: string }[] }>);
 
   if (loading) {
-    return <div className="animate-pulse h-32 bg-muted rounded" />;
+    return <LoadingSpinner size="lg" text="Cargando horarios..." />;
   }
 
   return (

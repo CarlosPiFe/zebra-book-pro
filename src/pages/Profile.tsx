@@ -9,7 +9,7 @@ import { User as SupabaseUser } from "@supabase/supabase-js";
 import { MyBookings } from "@/components/profile/MyBookings";
 import { ProfileSettings } from "@/components/profile/ProfileSettings";
 import { AccountSecurity } from "@/components/profile/AccountSecurity";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -59,12 +59,7 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container mx-auto px-4 py-8 mt-16">
-          <div className="max-w-4xl mx-auto space-y-6">
-            <Skeleton className="h-32 w-full" />
-            <Skeleton className="h-96 w-full" />
-          </div>
-        </div>
+        <LoadingSpinner fullScreen text="Cargando perfil..." />
       </div>
     );
   }
