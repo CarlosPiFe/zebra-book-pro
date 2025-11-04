@@ -249,8 +249,9 @@ export function AvailabilityTableDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-auto">
-          <div className="min-w-max">
-            <table className="w-full border-collapse">
+          <TooltipProvider>
+            <div className="min-w-max">
+              <table className="w-full border-collapse">
               <thead className="sticky top-0 bg-background z-10">
                 <tr>
                   <th className="border border-border p-2 bg-muted font-semibold text-left min-w-[100px]">
@@ -280,56 +281,54 @@ export function AvailabilityTableDialog({
                       const isOccupied = !!booking;
 
                       return (
-                        <TooltipProvider key={table.id}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <td
-                                className={cn(
-                                  "border border-border p-3 text-center transition-colors",
-                                  isOccupied
-                                    ? "bg-destructive/20 cursor-not-allowed"
-                                    : "bg-green-500/10 hover:bg-green-500/20 cursor-pointer"
-                                )}
-                                onClick={() => {
-                                  if (!isOccupied) {
-                                    handleSlotClick(table.id, slot.startTime, slot.endTime);
-                                  }
-                                }}
-                              >
-                                {isOccupied ? (
-                                  <span className="text-xs font-medium text-destructive">
-                                    Ocupado
-                                  </span>
-                                ) : (
-                                  <span className="text-xs font-medium text-green-700">
-                                    Disponible
-                                  </span>
-                                )}
-                              </td>
-                            </TooltipTrigger>
-                            {isOccupied && booking && (
-                              <TooltipContent side="top" className="max-w-xs">
-                                <div className="space-y-1">
-                                  <p className="font-semibold">{booking.client_name}</p>
-                                  <p className="text-xs">
-                                    {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
-                                  </p>
-                                  <p className="text-xs">{booking.party_size} personas</p>
-                                  {booking.status && (
-                                    <p className="text-xs capitalize">Estado: {booking.status}</p>
-                                  )}
-                                </div>
-                              </TooltipContent>
-                            )}
-                            {!isOccupied && (
-                              <TooltipContent side="top">
+                        <Tooltip key={table.id}>
+                          <TooltipTrigger asChild>
+                            <td
+                              className={cn(
+                                "border border-border p-3 text-center transition-colors",
+                                isOccupied
+                                  ? "bg-destructive/20 cursor-not-allowed"
+                                  : "bg-green-500/10 hover:bg-green-500/20 cursor-pointer"
+                              )}
+                              onClick={() => {
+                                if (!isOccupied) {
+                                  handleSlotClick(table.id, slot.startTime, slot.endTime);
+                                }
+                              }}
+                            >
+                              {isOccupied ? (
+                                <span className="text-xs font-medium text-destructive">
+                                  Ocupado
+                                </span>
+                              ) : (
+                                <span className="text-xs font-medium text-green-700">
+                                  Disponible
+                                </span>
+                              )}
+                            </td>
+                          </TooltipTrigger>
+                          {isOccupied && booking && (
+                            <TooltipContent side="top" className="max-w-xs">
+                              <div className="space-y-1">
+                                <p className="font-semibold">{booking.client_name}</p>
                                 <p className="text-xs">
-                                  Click para crear reserva en esta franja horaria
+                                  {booking.start_time.substring(0, 5)} - {booking.end_time.substring(0, 5)}
                                 </p>
-                              </TooltipContent>
-                            )}
-                          </Tooltip>
-                        </TooltipProvider>
+                                <p className="text-xs">{booking.party_size} personas</p>
+                                {booking.status && (
+                                  <p className="text-xs capitalize">Estado: {booking.status}</p>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          )}
+                          {!isOccupied && (
+                            <TooltipContent side="top">
+                              <p className="text-xs">
+                                Click para crear reserva en esta franja horaria
+                              </p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
                       );
                     })}
                   </tr>
@@ -337,6 +336,7 @@ export function AvailabilityTableDialog({
               </tbody>
             </table>
           </div>
+          </TooltipProvider>
         </div>
       </DialogContent>
     </Dialog>
