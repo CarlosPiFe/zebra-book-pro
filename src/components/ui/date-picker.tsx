@@ -26,7 +26,7 @@ export function DatePicker({ date, onDateChange, placeholder = "Seleccionar fech
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal px-1.5 gap-0 h-10",
+            "justify-start text-left font-normal px-1.5 gap-0 h-10 w-auto",
             !date && "text-muted-foreground"
           )}
         >
