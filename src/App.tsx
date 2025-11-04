@@ -16,6 +16,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Search from "./pages/Search";
 import ScrollToTop from "./components/ScrollToTop";
+import { ThemeManager } from "./components/ThemeManager";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <ScrollToTop />
+        <ThemeManager />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/search" element={<Search />} />
