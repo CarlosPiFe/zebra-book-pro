@@ -125,7 +125,7 @@ export const Navbar = () => {
           {isScrolled && isHomePage && <div className="flex-1 max-w-xl mx-4">
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center bg-background border border-input rounded-md h-10 overflow-hidden">
-                  <div className="relative flex-1">
+                  <div className="relative flex-[0.35]">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input 
                       placeholder="Ubicación" 
@@ -136,7 +136,7 @@ export const Navbar = () => {
                     />
                   </div>
                   <Separator orientation="vertical" className="h-6" />
-                  <div className="relative flex-1">
+                  <div className="relative flex-[0.65]">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input 
                       placeholder="Tipo de cocina..." 
