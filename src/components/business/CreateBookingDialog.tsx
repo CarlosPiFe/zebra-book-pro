@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
-import { Plus, Info, AlertCircle, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Info, AlertCircle, Calendar as CalendarIcon, User, Mail, Phone, Clock, Armchair, ClipboardList } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addMinutes, startOfDay, isBefore } from "date-fns";
 import { z } from "zod";
@@ -463,7 +463,10 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="client_name">Nombre del cliente *</Label>
+                <Label htmlFor="client_name" className="flex items-center gap-2">
+                  <User className="h-4 w-4 text-primary" />
+                  Nombre del cliente *
+                </Label>
                 <Input
                   id="client_name"
                   value={clientName}
@@ -491,7 +494,10 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="client_email">Email</Label>
+                <Label htmlFor="client_email" className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  Email
+                </Label>
                 <Input
                   id="client_email"
                   type="email"
@@ -502,19 +508,25 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="client_phone">Teléfono</Label>
+                <Label htmlFor="client_phone" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-primary" />
+                  Teléfono
+                </Label>
                 <PhoneInput
                   defaultCountry="es"
                   value={clientPhone}
                   onChange={(phone) => setClientPhone(phone)}
                   placeholder="+34 600 000 000"
-                  className="w-full"
+                  className="phone-input-custom"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Fecha de reserva *</Label>
+              <Label className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 text-primary" />
+                Fecha de reserva *
+              </Label>
               <DatePicker
                 date={bookingDate}
                 onDateChange={setBookingDate}
@@ -552,7 +564,10 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start_time" className="block">Hora de inicio *</Label>
+                  <Label htmlFor="start_time" className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    Hora de inicio *
+                  </Label>
                   <TimePicker
                     time={startTime}
                     onTimeChange={setStartTime}
@@ -561,7 +576,8 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="end_time" className="block">
+                  <Label htmlFor="end_time" className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
                     Hora de fin {!customEndTime && "(automática)"}
                   </Label>
                   <TimePicker
@@ -595,7 +611,10 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
 
             {(businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar") && (
               <div className="space-y-2">
-                <Label htmlFor="table_id">Mesa (opcional)</Label>
+                <Label htmlFor="table_id" className="flex items-center gap-2">
+                  <Armchair className="h-4 w-4 text-primary" />
+                  Mesa (opcional)
+                </Label>
                 <Select value={selectedTableId} onValueChange={setSelectedTableId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Asignación automática" />
@@ -642,7 +661,10 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="notes">Observaciones</Label>
+              <Label htmlFor="notes" className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-primary" />
+                Observaciones
+              </Label>
               <Textarea
                 id="notes"
                 value={notes}

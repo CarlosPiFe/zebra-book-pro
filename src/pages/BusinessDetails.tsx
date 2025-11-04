@@ -769,7 +769,6 @@ export default function BusinessDetails() {
         <Card className="overflow-hidden shadow-lg animate-fade-in">
           <div className="relative w-full h-64 md:h-80">
             {business.image_url ? <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />}
-            <div className="absolute inset-0 bg-gradient-to-t from-white via-white/60 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
               <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-2">{business.name}</h1>
               <p className="text-lg md:text-xl text-muted-foreground font-medium">{business.category}</p>

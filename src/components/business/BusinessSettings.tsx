@@ -888,7 +888,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                 type="button"
                 variant="outline"
                 onClick={handleAddRoom}
-                className="w-full border-dashed border-2 hover:border-primary hover:bg-primary/5"
+                className="w-full border-dashed border-2 hover:border-primary hover:bg-primary/5 hover:text-foreground"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Añadir sala
@@ -899,7 +899,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                   type="button"
                   onClick={handleSaveRooms}
                   disabled={loading}
-                  className="w-full bg-foreground hover:bg-foreground/90 text-background"
+                  className="w-full"
                 >
                   {loading ? "Guardando..." : "Guardar configuración de salas"}
                 </Button>
