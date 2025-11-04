@@ -29,8 +29,7 @@ export const Navbar = () => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showCreateBusinessDialog, setShowCreateBusinessDialog] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [searchLocation, setSearchLocation] = useState("");
-  const [searchType, setSearchType] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const { isEmployee, loading: employeeLoading } = useEmployeeAccess(user);
   const { hasBusinesses, loading: businessLoading } = useBusinessOwner(user);
 
@@ -61,18 +60,20 @@ export const Navbar = () => {
     if (!isHomePage) return;
 
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 100);
+      const heroSearch = document.getElementById('hero-search');
+      if (heroSearch) {
+        const heroSearchBottom = heroSearch.offsetTop + heroSearch.offsetHeight;
+        setIsScrolled(window.scrollY > heroSearchBottom - 100);
+      }
     };
 
+    handleScroll(); // Check initial position
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isHomePage]);
 
   const handleCompactSearch = () => {
-    const params = new URLSearchParams();
-    if (searchLocation) params.set("location", searchLocation);
-    if (searchType) params.set("type", searchType);
-    navigate(`/search?${params.toString()}`);
+    navigate(searchQuery ? `/search?query=${encodeURIComponent(searchQuery)}` : "/search");
   };
 
   const handleLogout = async () => {
@@ -129,30 +130,21 @@ export const Navbar = () => {
 
           {/* Buscador Compacto - Centro (solo visible al hacer scroll en home) */}
           {isScrolled && isHomePage && (
-            <div className="flex-1 max-w-2xl mx-4">
+            <div className="flex-1 max-w-xl mx-4">
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   <Input
-                    placeholder="Ubicación"
-                    value={searchLocation}
-                    onChange={(e) => setSearchLocation(e.target.value)}
+                    placeholder="Tipo de cocina, nombre del restaurante..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleCompactSearch()}
-                    className="pl-10 h-10"
+                    className="pl-10 pr-10 h-10 text-sm"
                   />
                 </div>
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Tipo de restaurante"
-                    value={searchType}
-                    onChange={(e) => setSearchType(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleCompactSearch()}
-                    className="pl-10 h-10"
-                  />
-                </div>
-                <Button onClick={handleCompactSearch} size="sm" className="h-10">
-                  Buscar
+                <Button onClick={handleCompactSearch} size="sm" className="h-10 px-6 font-semibold">
+                  BÚSQUEDA
                 </Button>
               </div>
             </div>
