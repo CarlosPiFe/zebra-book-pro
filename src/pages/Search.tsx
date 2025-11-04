@@ -1,16 +1,14 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/public/Footer";
 import { RestaurantCard } from "@/components/public/RestaurantCard";
+import { RestaurantMap } from "@/components/public/RestaurantMap";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Business {
   id: string;
@@ -26,12 +24,14 @@ interface Business {
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Filtros
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
+  const [location] = useState(searchParams.get("location") || "");
+  const [restaurantType] = useState(searchParams.get("type") || "");
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [ratingFilter, setRatingFilter] = useState<number[]>([0]);
@@ -42,7 +42,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [businesses, searchQuery, priceFilter, categoryFilter, ratingFilter]);
+  }, [businesses, location, restaurantType, priceFilter, categoryFilter, ratingFilter]);
 
   const loadBusinesses = async () => {
     setLoading(true);
@@ -64,14 +64,21 @@ export default function SearchPage() {
   const applyFilters = () => {
     let filtered = [...businesses];
 
-    // Filtro de búsqueda
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    // Filtro de ubicación
+    if (location) {
+      const loc = location.toLowerCase();
+      filtered = filtered.filter(
+        (b) => b.address?.toLowerCase().includes(loc)
+      );
+    }
+
+    // Filtro de tipo de restaurante
+    if (restaurantType) {
+      const type = restaurantType.toLowerCase();
       filtered = filtered.filter(
         (b) =>
-          b.name.toLowerCase().includes(query) ||
-          b.category?.toLowerCase().includes(query) ||
-          b.address?.toLowerCase().includes(query)
+          b.name.toLowerCase().includes(type) ||
+          b.category?.toLowerCase().includes(type)
       );
     }
 
@@ -94,118 +101,140 @@ export default function SearchPage() {
     setFilteredBusinesses(filtered);
   };
 
+  const handleBusinessClick = (businessId: string) => {
+    navigate(`/business/${businessId}`);
+  };
+
+  const resetFilters = () => {
+    setPriceFilter("all");
+    setCategoryFilter("all");
+    setRatingFilter([0]);
+  };
+
   // Obtener categorías únicas
   const categories = Array.from(new Set(businesses.map((b) => b.category)));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <main className="pt-20 pb-16">
-        <div className="container mx-auto px-4">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-4">Buscar Restaurantes</h1>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre, tipo de cocina o ubicación..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-12"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Filtros */}
-            <aside className="lg:col-span-1 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Filtros</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Precio */}
-                  <div className="space-y-2">
-                    <Label>Rango de Precio</Label>
-                    <Select value={priceFilter} onValueChange={setPriceFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todos" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        <SelectItem value="€">€ - Económico</SelectItem>
-                        <SelectItem value="€€">€€ - Moderado</SelectItem>
-                        <SelectItem value="€€€">€€€ - Caro</SelectItem>
-                        <SelectItem value="€€€€">€€€€ - Muy Caro</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Categoría */}
-                  <div className="space-y-2">
-                    <Label>Tipo de Cocina</Label>
-                    <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Todas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todas</SelectItem>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Rating */}
-                  <div className="space-y-2">
-                    <Label>Valoración Mínima: {ratingFilter?.[0] ?? 0}/10</Label>
-                    <Slider
-                      value={ratingFilter}
-                      onValueChange={setRatingFilter}
-                      max={10}
-                      step={1}
-                      className="py-4"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </aside>
-
-            {/* Resultados */}
-            <div className="lg:col-span-3">
-              {loading ? (
-                <LoadingSpinner />
-              ) : filteredBusinesses.length === 0 ? (
-                <Card>
-                  <CardContent className="py-12 text-center">
-                    <p className="text-muted-foreground">
-                      No se encontraron restaurantes con estos filtros.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    {filteredBusinesses.length} restaurante
-                    {filteredBusinesses.length !== 1 ? "s" : ""} encontrado
-                    {filteredBusinesses.length !== 1 ? "s" : ""}
+      <main className="flex-1 pt-20">
+        <div className="h-[calc(100vh-5rem)] flex">
+          {/* Panel Izquierdo - Lista y Filtros */}
+          <div className="w-full lg:w-2/5 flex flex-col overflow-hidden border-r">
+            {/* Header con info de búsqueda */}
+            <div className="p-4 border-b bg-card">
+              <div className="space-y-2">
+                {location && (
+                  <p className="text-sm text-muted-foreground">
+                    📍 <span className="font-medium text-foreground">{location}</span>
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {filteredBusinesses.map((business) => (
-                      <RestaurantCard key={business.id} business={business} />
-                    ))}
+                )}
+                {restaurantType && (
+                  <p className="text-sm text-muted-foreground">
+                    🍽️ <span className="font-medium text-foreground">{restaurantType}</span>
+                  </p>
+                )}
+                <p className="text-lg font-bold">
+                  {filteredBusinesses.length} restaurante{filteredBusinesses.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+
+            {/* Filtros */}
+            <div className="p-4 border-b bg-card space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Filtros</h3>
+                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                  Limpiar
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Precio */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Precio</Label>
+                  <Select value={priceFilter} onValueChange={setPriceFilter}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="€">€</SelectItem>
+                      <SelectItem value="€€">€€</SelectItem>
+                      <SelectItem value="€€€">€€€</SelectItem>
+                      <SelectItem value="€€€€">€€€€</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Categoría */}
+                <div className="space-y-2">
+                  <Label className="text-xs">Cocina</Label>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="h-9">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Rating */}
+              <div className="space-y-2">
+                <Label className="text-xs">Valoración mínima: {ratingFilter?.[0] ?? 0}/10</Label>
+                <Slider
+                  value={ratingFilter}
+                  onValueChange={setRatingFilter}
+                  max={10}
+                  step={1}
+                  className="py-4"
+                />
+              </div>
+            </div>
+
+            {/* Lista de Resultados */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <LoadingSpinner />
+                </div>
+              ) : filteredBusinesses.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground text-center">
+                    No se encontraron restaurantes con estos filtros.
+                  </p>
+                </div>
+              ) : (
+                filteredBusinesses.map((business) => (
+                  <div
+                    key={business.id}
+                    className="cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors"
+                    onClick={() => handleBusinessClick(business.id)}
+                  >
+                    <RestaurantCard business={business} />
                   </div>
-                </>
+                ))
               )}
             </div>
           </div>
+
+          {/* Panel Derecho - Mapa */}
+          <div className="hidden lg:block lg:w-3/5 relative">
+            <RestaurantMap 
+              businesses={filteredBusinesses}
+              onBusinessClick={handleBusinessClick}
+            />
+          </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
