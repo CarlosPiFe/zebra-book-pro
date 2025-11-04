@@ -285,10 +285,10 @@ export function AvailabilityTableDialog({
                           <TooltipTrigger asChild>
                             <td
                               className={cn(
-                                "border border-border p-3 text-center transition-colors",
+                                "border border-border p-3 text-center transition-colors outline outline-2 outline-transparent",
                                 isOccupied
                                   ? "bg-destructive/20 cursor-not-allowed"
-                                  : "bg-green-500/10 hover:bg-green-500/20 cursor-pointer"
+                                  : "bg-green-500/10 hover:bg-green-500/20 hover:outline-green-500/40 cursor-pointer"
                               )}
                               onClick={() => {
                                 if (!isOccupied) {
