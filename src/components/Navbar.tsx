@@ -94,8 +94,7 @@ export const Navbar = () => {
             <img 
               src={isManagerPage ? zebraLogoManager : zebraLogo} 
               alt="ZebraTime Logo" 
-              className="h-20 transition-transform group-hover:scale-105"
-              style={{ imageRendering: '-webkit-optimize-contrast' }}
+              className="h-12 transition-transform group-hover:scale-105"
             />
           </Link>
 
