@@ -19,7 +19,7 @@ export default function Index() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto">
             <Card className="text-center">
               <CardContent className="pt-5 pb-5">
-                <CalendarCheck className="h-10 w-10 mx-auto mb-3 text-accent" />
+                <CalendarCheck className="h-10 w-10 mx-auto mb-3 text-primary" />
                 <h3 className="font-semibold text-base mb-1">Reservas Fáciles</h3>
                 <p className="text-xs text-muted-foreground">
                   Reserva en segundos, sin llamadas ni esperas
@@ -28,7 +28,7 @@ export default function Index() {
             </Card>
             <Card className="text-center">
               <CardContent className="pt-5 pb-5">
-                <Clock className="h-10 w-10 mx-auto mb-3 text-accent" />
+                <Clock className="h-10 w-10 mx-auto mb-3 text-primary" />
                 <h3 className="font-semibold text-base mb-1">Disponibilidad Real</h3>
                 <p className="text-xs text-muted-foreground">
                   Mesas actualizadas en tiempo real
@@ -37,7 +37,7 @@ export default function Index() {
             </Card>
             <Card className="text-center">
               <CardContent className="pt-5 pb-5">
-                <ShieldCheck className="h-10 w-10 mx-auto mb-3 text-accent" />
+                <ShieldCheck className="h-10 w-10 mx-auto mb-3 text-primary" />
                 <h3 className="font-semibold text-base mb-1">Negocios Verificados</h3>
                 <p className="text-xs text-muted-foreground">
                   Todos los restaurantes están verificados

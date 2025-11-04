@@ -64,7 +64,11 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
     const container = document.getElementById(`carousel-${title}`);
     if (!container) return;
 
-    const scrollAmount = container.clientWidth * 0.8;
+    // Calcular el ancho para mostrar exactamente 4 cards (con gaps)
+    const cardWidth = 260; // ancho de cada card
+    const gap = 12; // gap-3 = 12px
+    const scrollAmount = (cardWidth * 4) + (gap * 3); // 4 cards + 3 gaps
+    
     const newPosition = direction === "left" 
       ? Math.max(0, scrollPosition - scrollAmount)
       : Math.min(container.scrollWidth - container.clientWidth, scrollPosition + scrollAmount);
@@ -78,7 +82,7 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">{title}</h2>
+        <h2 className="text-2xl md:text-3xl font-bold">{title}</h2>
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -102,12 +106,12 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
 
       <div className="relative">
         {/* Degradado izquierdo */}
-        <div className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none" 
+        <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none" 
           style={{ background: 'linear-gradient(to right, hsl(0 0% 100%), transparent)' }} 
         />
         
         {/* Degradado derecho */}
-        <div className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none" 
+        <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" 
           style={{ background: 'linear-gradient(to left, hsl(0 0% 100%), transparent)' }} 
         />
         

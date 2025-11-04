@@ -25,9 +25,9 @@ export const HeroSearch = () => {
   };
 
   return (
-    <div className="w-full py-12 px-4 bg-gradient-to-b from-background to-muted/10">
+    <div className="w-full py-12 px-4 bg-primary">
       <div className="container mx-auto max-w-6xl space-y-5">
-        <div className="bg-card rounded-xl shadow-md p-6 space-y-4">
+        <div className="bg-white rounded-xl shadow-md p-6 space-y-4">
           <div className="text-center space-y-2">
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
               Busca y reserva los mejores restaurantes
