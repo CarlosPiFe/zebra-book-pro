@@ -51,6 +51,10 @@ const ManageBusiness = () => {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeView]);
+
   const loadBusiness = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();

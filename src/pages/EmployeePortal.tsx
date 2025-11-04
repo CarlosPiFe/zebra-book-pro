@@ -33,6 +33,10 @@ const EmployeePortal = () => {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeView]);
+
   const checkAuth = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
