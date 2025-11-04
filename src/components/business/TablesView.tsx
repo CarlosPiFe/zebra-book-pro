@@ -894,7 +894,7 @@ export function TablesView({ businessId }: TablesViewProps) {
 
       {/* Selector de salas (siempre visible) */}
       {rooms.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full px-4">
           <Button
             variant={selectedRoomId === null ? "default" : "outline"}
             size="sm"
