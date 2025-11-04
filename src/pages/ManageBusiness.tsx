@@ -126,7 +126,7 @@ const ManageBusiness = () => {
       <Navbar />
       
       <SidebarProvider>
-        <div className="flex min-h-screen w-full pt-24">
+        <div className="flex min-h-screen w-full">
           <BusinessSidebar
             business={business}
             activeView={activeView}
