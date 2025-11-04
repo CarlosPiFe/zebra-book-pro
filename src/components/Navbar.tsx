@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut, Briefcase, Store, PlusCircle, User } from "lucide-react";
 import zebraLogo from "@/assets/zebra-logo.png";
+import zebraLogoManager from "@/assets/zebra-logo-manager.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -89,18 +90,12 @@ export const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <div className="flex items-center justify-between h-16">
           {/* Logo - Izquierda */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center group">
             <img 
-              src={zebraLogo} 
+              src={isManagerPage ? zebraLogoManager : zebraLogo} 
               alt="ZebraTime Logo" 
-              className="h-10 w-10 transition-transform group-hover:scale-110"
+              className="h-12 transition-transform group-hover:scale-105"
             />
-            <div className="flex flex-col">
-              <span className="text-xl font-bold text-foreground leading-tight">ZebraTime</span>
-              {isManagerPage && (
-                <span className="text-xs font-semibold text-primary leading-tight">Manager</span>
-              )}
-            </div>
           </Link>
 
           {/* Botones - Derecha */}
