@@ -182,14 +182,9 @@ export const Navbar = () => {
                 <Button variant="ghost" size="sm" onClick={() => setShowLogoutDialog(true)} className="gap-1 text-sm text-muted-foreground hover:text-foreground">
                   <LogOut className="h-4 w-4" />
                 </Button>
-              </> : <>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="text-sm">
+              </> : <Button variant="ghost" size="sm" onClick={() => navigate("/auth")} className="text-sm">
                   Iniciar sesión
-                </Button>
-                <Button size="sm" onClick={() => navigate("/auth?mode=signup")} className="text-sm">
-                  Registrarse
-                </Button>
-              </>}
+                </Button>}
           </div>
         </div>
       </div>

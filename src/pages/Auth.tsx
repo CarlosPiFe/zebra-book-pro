@@ -151,7 +151,7 @@ const Auth = () => {
         
         <CardHeader className="text-center pt-12">
           <div className="flex justify-center mb-4">
-            <Calendar className="h-12 w-12 text-accent" />
+            <Calendar className="h-12 w-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">
             {isForgotPassword 
@@ -181,14 +181,14 @@ const Auth = () => {
                       className={cn(
                         "relative flex items-start p-4 rounded-lg border-2 transition-all text-left",
                         role === "client"
-                          ? "border-accent bg-accent/5 shadow-md"
-                          : "border-border hover:border-accent/50 bg-background"
+                          ? "border-primary bg-primary/5 shadow-md"
+                          : "border-border hover:border-primary/50 bg-background"
                       )}
                     >
                       <div className="flex items-center gap-3 w-full">
                         <div className={cn(
                           "flex items-center justify-center w-10 h-10 rounded-full",
-                          role === "client" ? "bg-accent text-white" : "bg-muted text-muted-foreground"
+                          role === "client" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                         )}>
                           <User className="h-5 w-5" />
                         </div>
@@ -207,14 +207,14 @@ const Auth = () => {
                       className={cn(
                         "relative flex items-start p-4 rounded-lg border-2 transition-all text-left",
                         role === "owner"
-                          ? "border-accent bg-accent/5 shadow-md"
-                          : "border-border hover:border-accent/50 bg-background"
+                          ? "border-primary bg-primary/5 shadow-md"
+                          : "border-border hover:border-primary/50 bg-background"
                       )}
                     >
                       <div className="flex items-center gap-3 w-full">
                         <div className={cn(
                           "flex items-center justify-center w-10 h-10 rounded-full",
-                          role === "owner" ? "bg-accent text-white" : "bg-muted text-muted-foreground"
+                          role === "owner" ? "bg-primary text-white" : "bg-muted text-muted-foreground"
                         )}>
                           <Store className="h-5 w-5" />
                         </div>
@@ -299,7 +299,7 @@ const Auth = () => {
 
             <Button
               type="submit"
-              className="w-full bg-accent hover:bg-accent/90"
+              className="w-full bg-primary hover:bg-primary/90 text-white"
               disabled={loading}
             >
               {loading 
@@ -316,7 +316,7 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={() => setIsBusiness(!isBusiness)}
-                  className="text-accent hover:underline font-medium block w-full"
+                  className="text-primary hover:underline font-medium block w-full"
                 >
                   {isBusiness ? "¿Eres cliente?" : "¿Eres negocio?"}
                 </button>
@@ -329,7 +329,7 @@ const Auth = () => {
                     setIsForgotPassword(true);
                     setIsBusiness(false);
                   }}
-                  className="text-accent hover:underline font-medium block w-full"
+                  className="text-primary hover:underline font-medium block w-full"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -340,7 +340,7 @@ const Auth = () => {
                   <button
                     type="button"
                     onClick={() => setIsForgotPassword(false)}
-                    className="text-accent hover:underline font-medium"
+                    className="text-primary hover:underline font-medium"
                   >
                     Volver al inicio de sesión
                   </button>
@@ -351,7 +351,7 @@ const Auth = () => {
                   <button
                     type="button"
                     onClick={() => setIsSignUp(false)}
-                    className="text-accent hover:underline font-medium"
+                    className="text-primary hover:underline font-medium"
                   >
                     Inicia sesión
                   </button>
@@ -362,7 +362,7 @@ const Auth = () => {
                   <button
                     type="button"
                     onClick={() => setIsSignUp(true)}
-                    className="text-accent hover:underline font-medium"
+                    className="text-primary hover:underline font-medium"
                   >
                     Regístrate
                   </button>
