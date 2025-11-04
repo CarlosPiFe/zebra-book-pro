@@ -22,6 +22,7 @@ import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import jsPDF from "jspdf";
+import { formatPhoneNumber } from "@/lib/utils";
 interface Business {
   id: string;
   name: string;
@@ -474,7 +475,7 @@ export default function BusinessDetails() {
 
     doc.setFont("helvetica", "normal");
     if (business.phone) {
-      doc.text(`Teléfono: ${business.phone}`, 25, yPos);
+      doc.text(`Teléfono: ${formatPhoneNumber(business.phone)}`, 25, yPos);
       yPos += 6;
     }
     if (business.email) {
@@ -822,7 +823,7 @@ export default function BusinessDetails() {
                   <div className="space-y-3">
                     {business.phone && <a href={`tel:${business.phone}`} className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale">
                         <Phone className="mr-3 h-5 w-5 text-primary" />
-                        <span className="font-medium">{business.phone}</span>
+                        <span className="font-medium">{formatPhoneNumber(business.phone)}</span>
                       </a>}
                     {business.email && <a href={`mailto:${business.email}`} className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale">
                         <Mail className="mr-3 h-5 w-5 text-primary" />

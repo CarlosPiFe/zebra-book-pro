@@ -12,6 +12,8 @@ import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BusinessHours } from "./BusinessHours";
 import { cn } from "@/lib/utils";
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
 
 interface TimeSlot {
   id: string;
@@ -1139,11 +1141,12 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Teléfono</Label>
-                <Input
-                  id="phone"
+                <PhoneInput
+                  defaultCountry="es"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(phone) => setFormData({ ...formData, phone })}
                   placeholder="+34 XXX XXX XXX"
+                  className="phone-input-custom"
                 />
               </div>
 
