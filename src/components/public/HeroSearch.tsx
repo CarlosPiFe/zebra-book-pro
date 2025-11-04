@@ -26,7 +26,7 @@ export const HeroSearch = () => {
             <h1 className="text-3xl tracking-tight text-foreground text-left font-bold md:text-4xl">
               Reserva tu próxima mesa en segundos
             </h1>
-            <p className="text-base text-muted-foreground">
+            <p className="text-base text-muted-foreground text-left">
               Descubre los mejores restaurantes de tu zona
             </p>
           </div>
