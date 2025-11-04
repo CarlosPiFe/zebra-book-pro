@@ -32,7 +32,7 @@ export const Navbar = () => {
   } = useBusinessOwner(user);
 
   // Detectar si estamos en páginas de gestión
-  const isManagerPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/manage-business') || location.pathname.startsWith('/employee-portal') || location.pathname.startsWith('/waiter-interface');
+  const isManagerPage = location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/manage-business') || location.pathname.startsWith('/employee-portal') || location.pathname.startsWith('/waiter-interface') || location.pathname.startsWith('/business/');
 
   // Detectar si estamos en la página principal
   const isHomePage = location.pathname === '/';
