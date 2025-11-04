@@ -26,6 +26,8 @@ import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AvailabilityTableDialog } from "./AvailabilityTableDialog";
 import { getTimeSlotId } from "@/lib/timeSlots";
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
 
 const createBookingSchema = (isHospitality: boolean) => z.object({
   client_name: z.string().trim().min(1, "El nombre es requerido").max(100),
@@ -501,12 +503,12 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               
               <div className="space-y-2">
                 <Label htmlFor="client_phone">Teléfono</Label>
-                <Input
-                  id="client_phone"
-                  type="tel"
+                <PhoneInput
+                  defaultCountry="es"
                   value={clientPhone}
-                  onChange={(e) => setClientPhone(e.target.value)}
+                  onChange={(phone) => setClientPhone(phone)}
                   placeholder="+34 600 000 000"
+                  className="w-full"
                 />
               </div>
             </div>
@@ -550,7 +552,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start_time">Hora de inicio *</Label>
+                  <Label htmlFor="start_time" className="block">Hora de inicio *</Label>
                   <TimePicker
                     time={startTime}
                     onTimeChange={setStartTime}
@@ -559,7 +561,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="end_time" className="flex items-center gap-2">
+                  <Label htmlFor="end_time" className="block">
                     Hora de fin {!customEndTime && "(automática)"}
                   </Label>
                   <TimePicker
