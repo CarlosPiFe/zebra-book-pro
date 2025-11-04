@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { supabase } from "@/integrations/supabase/client";
@@ -193,20 +193,11 @@ export function CalendarView({ businessId }: CalendarViewProps) {
       <div>
         <h1 className="text-3xl font-bold mb-2">Calendario</h1>
         <p className="text-muted-foreground">
-          Navega por el calendario y haz clic en un día para ver sus reservas
+          Navega por el calendario y haz clic en un día para ver sus eventos, horarios o reservas
         </p>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Calendario de Reservas
-          </CardTitle>
-          <CardDescription>
-            Haz clic en cualquier día para ver las reservas. Los días cerrados aparecen marcados.
-          </CardDescription>
-        </CardHeader>
         <CardContent className="p-4">
           {/* Navigation Controls */}
           <div className="flex items-center justify-center gap-3 mb-4">
