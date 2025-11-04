@@ -50,7 +50,7 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
 
       <SidebarContent>
         {business && !isCollapsed && (
-          <div className="px-4 py-3 border-b border-border">
+          <div className="px-4 pt-8 pb-3 border-b border-border">
             <div className="flex items-center gap-3">
               <Building2 className="h-8 w-8 text-accent flex-shrink-0" />
               <div className="flex-1 min-w-0">
