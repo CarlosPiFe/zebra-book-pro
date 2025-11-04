@@ -787,25 +787,25 @@ export default function BusinessDetails() {
       </div>
 
       {/* Header del restaurante */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-start justify-between mb-4">
+      <div className="container mx-auto px-4 py-4 max-w-7xl">
+        <div className="flex items-start justify-between mb-3">
           <div>
-            <h1 className="text-4xl font-bold mb-3">{business.name}</h1>
-            <div className="space-y-2 text-muted-foreground">
+            <h1 className="text-3xl font-bold mb-2">{business.name}</h1>
+            <div className="space-y-1 text-sm text-muted-foreground">
               {business.address && (
-                <p className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
+                <p className="flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
                   {business.address}
                 </p>
               )}
-              <p className="flex items-center gap-2">
-                <UtensilsCrossed className="h-4 w-4" />
+              <p className="flex items-center gap-1">
+                <UtensilsCrossed className="h-3 w-3" />
                 {business.category}
-                {business.price_range && ` · Precio medio: ${business.price_range}`}
+                {business.price_range && ` · ${business.price_range}`}
               </p>
               {business.average_rating && (
-                <p className="flex items-center gap-2 font-semibold text-foreground">
-                  <Star className="h-5 w-5 fill-primary text-primary" />
+                <p className="flex items-center gap-1 font-semibold text-foreground">
+                  <Star className="h-4 w-4 fill-primary text-primary" />
                   {business.average_rating.toFixed(1)} (Opiniones)
                 </p>
               )}
@@ -814,16 +814,16 @@ export default function BusinessDetails() {
           <Button 
             variant="ghost" 
             size="icon" 
-            className="text-muted-foreground hover:text-primary"
+            className="text-muted-foreground hover:text-primary h-10 w-10"
             onClick={handleToggleFavorite}
             disabled={favoriteLoading}
           >
-            <Heart className={`h-6 w-6 ${isFavorite ? 'fill-primary text-primary' : ''}`} />
+            <Heart className={`h-5 w-5 ${isFavorite ? 'fill-primary text-primary' : ''}`} />
           </Button>
         </div>
 
         {/* Galería de fotos estilo grid */}
-        <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[400px] rounded-xl overflow-hidden">
+        <div className="grid grid-cols-4 grid-rows-2 gap-1 h-[350px] rounded-lg overflow-hidden">
           {business.image_url ? (
             <>
               <div className="col-span-2 row-span-2">
@@ -838,7 +838,7 @@ export default function BusinessDetails() {
               <div className="col-span-1 row-span-1 relative">
                 <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <span className="text-white font-semibold">Ver más fotos</span>
+                  <span className="text-white text-sm font-semibold">Ver más fotos</span>
                 </div>
               </div>
             </>
@@ -851,7 +851,7 @@ export default function BusinessDetails() {
       </div>
 
       {/* Contenido principal - 2 columnas */}
-      <div className="container mx-auto px-4 pb-8">
+      <div className="container mx-auto px-4 pb-8 max-w-7xl">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Columna izquierda (2/3): Tabs con toda la información */}
           <div className="lg:col-span-2">
@@ -860,31 +860,31 @@ export default function BusinessDetails() {
 
           {/* Columna derecha (1/3): Haz tu reserva */}
           <div className="lg:col-span-1">
-            <Card className="sticky top-4 shadow-lg relative">
+            <Card className="sticky top-20 shadow-md relative">
               {submitting && <LoadingOverlay />}
-              <CardContent className="pt-6">
-                <h3 className="text-2xl font-semibold mb-4 flex items-center">
-                  <Calendar className="mr-2 h-6 w-6 text-primary" />
+              <CardContent className="pt-5 pb-5">
+                <h3 className="text-lg font-semibold mb-4 flex items-center">
+                  <Calendar className="mr-2 h-5 w-5 text-primary" />
                   Haz tu reserva
                 </h3>
                 
                 {/* Mensaje adicional del negocio */}
-                {business.booking_additional_message && <div className="mb-4 p-4 bg-primary/10 border-l-4 border-primary rounded-md animate-fade-in">
-                    <p className="text-sm text-foreground font-medium">{business.booking_additional_message}</p>
+                {business.booking_additional_message && <div className="mb-3 p-3 bg-primary/10 border-l-4 border-primary rounded-md">
+                    <p className="text-xs text-foreground font-medium">{business.booking_additional_message}</p>
                   </div>}
 
                 {!user && (
-                  <Alert variant="info" className="mb-4">
+                  <Alert variant="info" className="mb-3">
                     <Info className="h-4 w-4" />
-                    <AlertDescription className="font-medium">
+                    <AlertDescription className="text-xs font-medium">
                       Debes <Link to="/auth" className="underline font-bold hover:text-accent-blue/80">iniciar sesión</Link> para hacer una reserva
                     </AlertDescription>
                   </Alert>
                 )}
 
-                <form onSubmit={handleBookingSubmit} className="space-y-4">
+                <form onSubmit={handleBookingSubmit} className="space-y-3">
                   <div>
-                    <Label>Nombre *</Label>
+                    <Label className="text-sm">Nombre *</Label>
                     <Input 
                       value={bookingForm.clientName} 
                       onChange={e => setBookingForm({
@@ -892,11 +892,12 @@ export default function BusinessDetails() {
                         clientName: e.target.value
                       })} 
                       disabled={!user}
+                      className="h-10 text-sm"
                     />
                   </div>
 
                   <div>
-                    <Label>Teléfono *</Label>
+                    <Label className="text-sm">Teléfono *</Label>
                     <PhoneInput 
                       defaultCountry="es" 
                       value={bookingForm.clientPhone} 
@@ -911,18 +912,18 @@ export default function BusinessDetails() {
                           setPhoneError("");
                         }
                       }} 
-                      inputClassName={phoneError ? "!border-destructive" : ""} 
-                      className="phone-input-custom px-0 text-base mx-0"
+                      inputClassName={phoneError ? "!border-destructive h-10" : "h-10"} 
+                      className="phone-input-custom text-sm"
                       disabled={!user}
                     />
-                    {phoneError && <p className="text-sm text-destructive mt-1">{phoneError}</p>}
+                    {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
                   </div>
 
                   {/* 1. Número de personas */}
                   <div>
-                    <Label>Número de personas *</Label>
+                    <Label className="text-sm">Número de personas *</Label>
                     <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange} disabled={!user}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -937,7 +938,7 @@ export default function BusinessDetails() {
 
                   {/* 2. Fecha */}
                   <div>
-                    <Label>Fecha *</Label>
+                    <Label className="text-sm">Fecha *</Label>
                     <DatePicker 
                       date={bookingForm.bookingDate} 
                       onDateChange={handleDateChange} 
@@ -953,7 +954,7 @@ export default function BusinessDetails() {
 
                   {/* 3. Hora */}
                   <div>
-                    <Label>Hora *</Label>
+                    <Label className="text-sm">Hora *</Label>
                     <Select 
                       value={bookingForm.startTime ?? undefined} 
                       onValueChange={v => setBookingForm({
@@ -962,7 +963,7 @@ export default function BusinessDetails() {
                       })} 
                       disabled={!user || !bookingForm.bookingDate || availabilityLoading}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-10">
                         <SelectValue placeholder={!bookingForm.bookingDate ? "Selecciona una fecha primero" : availableTimeSlots.length === 0 ? "No hay horarios disponibles" : "Seleccionar hora"} />
                       </SelectTrigger>
                       <SelectContent>
@@ -978,7 +979,7 @@ export default function BusinessDetails() {
                   {/* 4. Selector de sala - Siempre visible, deshabilitado hasta seleccionar personas, fecha y hora */}
                   {rooms.length > 0 && (
                     <div>
-                      <Label className={!bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime ? "text-muted-foreground" : ""}>
+                      <Label className={`text-sm ${!bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime ? "text-muted-foreground" : ""}`}>
                         Elegir sala (opcional)
                       </Label>
                       <Select 
@@ -986,7 +987,7 @@ export default function BusinessDetails() {
                         onValueChange={handleRoomChange} 
                         disabled={!user || !bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime}
                       >
-                        <SelectTrigger className={!bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime ? "opacity-50" : ""}>
+                        <SelectTrigger className={`h-10 ${!bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime ? "opacity-50" : ""}`}>
                           <SelectValue placeholder={
                             !bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime 
                               ? "Selecciona personas, fecha y hora primero" 
@@ -1017,7 +1018,7 @@ export default function BusinessDetails() {
                         </SelectContent>
                       </Select>
                       {bookingForm.partySize && bookingForm.bookingDate && bookingForm.startTime && availableRooms.length === 0 && (
-                        <p className="text-sm text-destructive mt-1">
+                        <p className="text-xs text-destructive mt-1">
                           No quedan salas disponibles para esta fecha y hora con {bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? "persona" : "personas"}.
                         </p>
                       )}
@@ -1025,7 +1026,7 @@ export default function BusinessDetails() {
                   )}
 
                   <div>
-                    <Label>Notas adicionales</Label>
+                    <Label className="text-sm">Notas adicionales</Label>
                     <Textarea 
                       value={bookingForm.notes} 
                       onChange={e => setBookingForm({
@@ -1033,12 +1034,14 @@ export default function BusinessDetails() {
                         notes: e.target.value
                       })} 
                       disabled={!user}
+                      className="text-sm"
+                      rows={3}
                     />
                   </div>
 
                   <Button 
                     type="submit" 
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md hover-scale" 
+                    className="w-full h-10 text-sm font-semibold" 
                     disabled={!user || submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading || !!phoneError || !bookingForm.clientPhone}
                   >
                     <Calendar className="mr-2 h-4 w-4" />
@@ -1047,18 +1050,18 @@ export default function BusinessDetails() {
                 </form>
 
                 {/* Botones de contacto - Alineados horizontalmente con separación */}
-                {(business.phone || business.email) && <div className="mt-6 pt-4 border-t border-border">
-                    <p className="text-sm text-muted-foreground mb-3 text-center">¿Prefieres contactarnos directamente?</p>
-                    <div className="flex gap-3">
+                {(business.phone || business.email) && <div className="mt-4 pt-3 border-t">
+                    <p className="text-xs text-muted-foreground mb-2 text-center">¿Prefieres contactarnos directamente?</p>
+                    <div className="flex gap-2">
                       {business.phone && <a href={`tel:${business.phone}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full hover-scale">
-                            <Phone className="mr-2 h-4 w-4" />
+                          <Button variant="outline" size="sm" className="w-full text-xs h-9">
+                            <Phone className="mr-1 h-3 w-3" />
                             Llámanos
                           </Button>
                         </a>}
                       {business.email && <a href={`mailto:${business.email}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full hover-scale">
-                            <Mail className="mr-2 h-4 w-4" />
+                          <Button variant="outline" size="sm" className="w-full text-xs h-9">
+                            <Mail className="mr-1 h-3 w-3" />
                             Escríbenos
                           </Button>
                         </a>}

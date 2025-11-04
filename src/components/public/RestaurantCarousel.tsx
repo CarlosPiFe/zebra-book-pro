@@ -76,13 +76,14 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
   if (loading || businesses.length === 0) return null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-xl font-bold">{title}</h2>
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="icon"
+            className="h-8 w-8"
             onClick={() => scroll("left")}
             disabled={scrollPosition === 0}
           >
@@ -91,6 +92,7 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
           <Button
             variant="outline"
             size="icon"
+            className="h-8 w-8"
             onClick={() => scroll("right")}
           >
             <ChevronRight className="h-4 w-4" />
@@ -100,11 +102,11 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
 
       <div
         id={`carousel-${title}`}
-        className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth pb-4"
+        className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {businesses.map((business) => (
-          <div key={business.id} className="flex-none w-[280px]">
+          <div key={business.id} className="flex-none w-[260px]">
             <RestaurantCard business={business} />
           </div>
         ))}

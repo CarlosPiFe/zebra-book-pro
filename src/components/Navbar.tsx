@@ -77,17 +77,17 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-b border-border shadow-sm">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-b shadow-sm">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+        <div className="flex items-center justify-between h-16">
           {/* Logo - Izquierda */}
           <Link to="/" className="flex items-center gap-2 group">
-            <Calendar className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
-            <span className="text-2xl font-bold text-foreground">ZebraTime</span>
+            <Calendar className="h-6 w-6 text-primary transition-transform group-hover:scale-110" />
+            <span className="text-xl font-bold text-foreground">ZebraTime</span>
           </Link>
 
           {/* Botones - Derecha */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {user ? (
               <>
                 {/* Botón de Perfil del Cliente (siempre visible si está logueado) */}
@@ -96,10 +96,10 @@ export const Navbar = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => navigate("/profile")}
-                    className="gap-2"
+                    className="gap-1 text-sm"
                   >
                     <User className="h-4 w-4" />
-                    Mi perfil
+                    <span className="hidden md:inline">Mi perfil</span>
                   </Button>
                 )}
 
@@ -109,17 +109,17 @@ export const Navbar = () => {
                     variant={hasBusinesses ? "default" : "outline"}
                     size="sm"
                     onClick={() => hasBusinesses ? navigate("/dashboard") : setShowCreateBusinessDialog(true)}
-                    className="gap-2"
+                    className="gap-1 text-sm"
                   >
                     {hasBusinesses ? (
                       <>
                         <Store className="h-4 w-4" />
-                        Mi negocio
+                        <span className="hidden md:inline">Mi negocio</span>
                       </>
                     ) : (
                       <>
                         <PlusCircle className="h-4 w-4" />
-                        ¿Tienes un negocio?
+                        <span className="hidden md:inline">¿Tienes un negocio?</span>
                       </>
                     )}
                   </Button>
@@ -131,10 +131,10 @@ export const Navbar = () => {
                     variant="ghost"
                     size="sm"
                     onClick={() => navigate("/employee-portal")}
-                    className="gap-2"
+                    className="gap-1 text-sm"
                   >
                     <Briefcase className="h-4 w-4" />
-                    Portal Empleado
+                    <span className="hidden md:inline">Portal</span>
                   </Button>
                 )}
 
@@ -142,10 +142,9 @@ export const Navbar = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowLogoutDialog(true)}
-                  className="gap-2 text-muted-foreground hover:text-foreground"
+                  className="gap-1 text-sm text-muted-foreground hover:text-foreground"
                 >
                   <LogOut className="h-4 w-4" />
-                  Salir
                 </Button>
               </>
             ) : (
@@ -154,12 +153,14 @@ export const Navbar = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate("/auth")}
+                  className="text-sm"
                 >
                   Iniciar sesión
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => navigate("/auth?mode=signup")}
+                  className="text-sm"
                 >
                   Registrarse
                 </Button>

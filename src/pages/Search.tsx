@@ -118,44 +118,44 @@ export default function SearchPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <main className="flex-1 pt-20">
-        <div className="h-[calc(100vh-5rem)] flex">
+      <main className="flex-1 pt-16">
+        <div className="h-[calc(100vh-4rem)] flex">
           {/* Panel Izquierdo - Lista y Filtros */}
           <div className="w-full lg:w-2/5 flex flex-col overflow-hidden border-r">
             {/* Header con info de búsqueda */}
-            <div className="p-4 border-b bg-card">
-              <div className="space-y-2">
+            <div className="p-3 border-b bg-card">
+              <div className="space-y-1">
                 {location && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     📍 <span className="font-medium text-foreground">{location}</span>
                   </p>
                 )}
                 {restaurantType && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     🍽️ <span className="font-medium text-foreground">{restaurantType}</span>
                   </p>
                 )}
-                <p className="text-lg font-bold">
+                <p className="text-base font-bold">
                   {filteredBusinesses.length} restaurante{filteredBusinesses.length !== 1 ? "s" : ""}
                 </p>
               </div>
             </div>
 
             {/* Filtros */}
-            <div className="p-4 border-b bg-card space-y-4">
+            <div className="p-3 border-b bg-card space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Filtros</h3>
-                <Button variant="ghost" size="sm" onClick={resetFilters}>
+                <h3 className="font-semibold text-sm">Filtros</h3>
+                <Button variant="ghost" size="sm" onClick={resetFilters} className="h-7 text-xs">
                   Limpiar
                 </Button>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 {/* Precio */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label className="text-xs">Precio</Label>
                   <Select value={priceFilter} onValueChange={setPriceFilter}>
-                    <SelectTrigger className="h-9">
+                    <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
@@ -169,10 +169,10 @@ export default function SearchPage() {
                 </div>
 
                 {/* Categoría */}
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label className="text-xs">Cocina</Label>
                   <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="h-9">
+                    <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
@@ -195,20 +195,20 @@ export default function SearchPage() {
                   onValueChange={setRatingFilter}
                   max={10}
                   step={1}
-                  className="py-4"
+                  className="py-2"
                 />
               </div>
             </div>
 
             {/* Lista de Resultados */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <LoadingSpinner />
                 </div>
               ) : filteredBusinesses.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-muted-foreground text-center">
+                  <p className="text-muted-foreground text-center text-sm">
                     No se encontraron restaurantes con estos filtros.
                   </p>
                 </div>
