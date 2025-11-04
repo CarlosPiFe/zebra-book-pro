@@ -26,7 +26,7 @@ export function DatePicker({ date, onDateChange, placeholder = "Seleccionar fech
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-between text-left font-normal group",
+            "w-full justify-start text-left font-normal px-2 gap-0",
             !date && "text-muted-foreground"
           )}
         >
@@ -36,12 +36,12 @@ export function DatePicker({ date, onDateChange, placeholder = "Seleccionar fech
                 e.stopPropagation();
                 onPreviousDay();
               }}
-              className="h-full flex items-center justify-center hover:bg-accent rounded-sm transition-colors px-1.5"
+              className="flex items-center justify-center hover:bg-accent rounded-sm transition-colors p-1 mr-1"
             >
               <ChevronLeft className="h-3 w-3" />
             </button>
           )}
-          <span className="flex-1 text-center">
+          <span className="text-sm">
             {date ? format(date, "PPP", { locale: es }) : <span>{placeholder}</span>}
           </span>
           {onNextDay && (
@@ -50,7 +50,7 @@ export function DatePicker({ date, onDateChange, placeholder = "Seleccionar fech
                 e.stopPropagation();
                 onNextDay();
               }}
-              className="h-full flex items-center justify-center hover:bg-accent rounded-sm transition-colors px-1.5"
+              className="flex items-center justify-center hover:bg-accent rounded-sm transition-colors p-1 ml-1"
             >
               <ChevronRight className="h-3 w-3" />
             </button>
