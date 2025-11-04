@@ -275,10 +275,10 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                     onClick={() => handleDayClick(day)}
                     className={cn(
                       "w-full p-1 rounded text-center transition-all text-xs min-h-[60px]",
-                      "hover:bg-accent/10 hover:scale-105",
+                      "hover:bg-primary/10 hover:scale-105",
                       closed && "bg-muted opacity-70 hover:bg-muted/80",
-                      today && !closed && "bg-accent text-accent-foreground font-bold",
-                      !closed && !today && "bg-background border border-border hover:border-accent"
+                      today && !closed && "bg-primary text-primary-foreground font-bold",
+                      !closed && !today && "bg-background border border-border hover:border-primary"
                     )}
                   >
                     <div className="flex flex-col items-center justify-center h-full gap-0.5">
@@ -314,7 +314,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
           <div className="mt-3 pt-3 border-t border-border">
             <div className="flex flex-wrap gap-2 text-[10px]">
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded bg-accent" />
+                <div className="w-2 h-2 rounded bg-primary" />
                 <span>Día actual</span>
               </div>
               <div className="flex items-center gap-1">

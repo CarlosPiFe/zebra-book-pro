@@ -215,7 +215,6 @@ const Dashboard = () => {
                   <Button
                     onClick={() => navigate("/business/create")}
                     size="lg"
-                    className="bg-accent hover:bg-accent/90"
                   >
                     <Building2 className="mr-2 h-5 w-5" />
                     Crear Negocio
@@ -267,8 +266,7 @@ const Dashboard = () => {
               {mainBusiness && (
                 <div className="flex justify-center py-4">
                   <Button 
-                    size="lg" 
-                    className="bg-accent hover:bg-accent/90"
+                    size="lg"
                     onClick={() => navigate(`/business/${mainBusiness.id}/manage`)}
                   >
                     Gestionar Negocio

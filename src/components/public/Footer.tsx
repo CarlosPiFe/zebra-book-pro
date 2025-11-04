@@ -9,20 +9,20 @@ export const Footer = () => {
           {/* Columna 1: Sobre ZebraTime */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Calendar className="h-6 w-6 text-accent" />
+              <Calendar className="h-6 w-6 text-primary" />
               <span className="text-xl font-bold">ZebraTime</span>
             </div>
             <p className="text-sm text-muted-foreground">
               Tu plataforma de reservas de restaurantes más fácil y rápida.
             </p>
             <div className="flex gap-3 pt-2">
-              <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
+              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
+              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
+              <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
             </div>
@@ -33,22 +33,22 @@ export const Footer = () => {
             <h3 className="font-semibold text-lg">Para Clientes</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/" className="text-muted-foreground hover:text-accent transition-colors">
+                <Link to="/" className="text-muted-foreground hover:text-primary transition-colors">
                   Buscar restaurantes
                 </Link>
               </li>
               <li>
-                <Link to="/profile" className="text-muted-foreground hover:text-accent transition-colors">
+                <Link to="/profile" className="text-muted-foreground hover:text-primary transition-colors">
                   Mis reservas
                 </Link>
               </li>
               <li>
-                <Link to="/profile" className="text-muted-foreground hover:text-accent transition-colors">
+                <Link to="/profile" className="text-muted-foreground hover:text-primary transition-colors">
                   Mis favoritos
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                   Ayuda y FAQ
                 </a>
               </li>
@@ -60,22 +60,22 @@ export const Footer = () => {
             <h3 className="font-semibold text-lg">Para Restaurantes</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link to="/create-business" className="text-muted-foreground hover:text-accent transition-colors">
+                <Link to="/create-business" className="text-muted-foreground hover:text-primary transition-colors">
                   Registrar mi negocio
                 </Link>
               </li>
               <li>
-                <Link to="/dashboard" className="text-muted-foreground hover:text-accent transition-colors">
+                <Link to="/dashboard" className="text-muted-foreground hover:text-primary transition-colors">
                   Acceder a mi negocio
                 </Link>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                   Planes y precios
                 </a>
               </li>
               <li>
-                <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
+                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                   Centro de ayuda
                 </a>
               </li>
@@ -88,13 +88,13 @@ export const Footer = () => {
             <ul className="space-y-3 text-sm">
               <li className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <a href="mailto:info@zebratime.com" className="hover:text-accent transition-colors">
+                <a href="mailto:info@zebratime.com" className="hover:text-primary transition-colors">
                   info@zebratime.com
                 </a>
               </li>
               <li className="flex items-center gap-2 text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <a href="tel:+34900000000" className="hover:text-accent transition-colors">
+                <a href="tel:+34900000000" className="hover:text-primary transition-colors">
                   +34 900 000 000
                 </a>
               </li>
@@ -106,13 +106,13 @@ export const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} ZebraTime. Todos los derechos reservados.</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-accent transition-colors">
+              <a href="#" className="hover:text-primary transition-colors">
                 Política de Privacidad
               </a>
-              <a href="#" className="hover:text-accent transition-colors">
+              <a href="#" className="hover:text-primary transition-colors">
                 Términos de Uso
               </a>
-              <a href="#" className="hover:text-accent transition-colors">
+              <a href="#" className="hover:text-primary transition-colors">
                 Cookies
               </a>
             </div>

@@ -106,7 +106,7 @@ export const CreateBusinessDialog = ({ open, onOpenChange }: CreateBusinessDialo
       <DialogContent className="max-w-2xl max-h-[90vh]">
         <DialogHeader>
           <div className="flex justify-center mb-2">
-            <Building2 className="h-10 w-10 text-accent" />
+            <Building2 className="h-10 w-10 text-primary" />
           </div>
           <DialogTitle className="text-2xl text-center">Registrar Nuevo Negocio</DialogTitle>
           <DialogDescription className="text-center">
@@ -222,7 +222,7 @@ export const CreateBusinessDialog = ({ open, onOpenChange }: CreateBusinessDialo
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-accent hover:bg-accent/90"
+                  className="flex-1"
                   disabled={loading}
                 >
                   {loading ? "Creando..." : "Crear Negocio"}

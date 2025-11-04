@@ -166,7 +166,7 @@ export const ScheduleCell = ({
   const getCellContent = () => {
     if (onVacation) {
       return (
-        <div className="text-xs text-center p-1.5 bg-accent/20 rounded border-2 border-accent">
+        <div className="text-xs text-center p-1.5 bg-primary/20 rounded border-2 border-primary">
           <div className="font-semibold text-foreground text-[10px]">Vacaciones</div>
         </div>
       );

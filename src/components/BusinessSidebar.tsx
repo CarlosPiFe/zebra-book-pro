@@ -52,7 +52,7 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
         {business && !isCollapsed && (
           <div className="px-4 pt-8 pb-3 border-b border-border">
             <div className="flex items-center gap-3">
-              <Building2 className="h-8 w-8 text-accent flex-shrink-0" />
+              <Building2 className="h-8 w-8 text-primary flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <h3 className="font-semibold leading-snug mb-1.5">{business.name}</h3>
                 <p className="text-xs text-muted-foreground truncate">{business.category}</p>
@@ -70,7 +70,7 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
                   <SidebarMenuButton
                     onClick={() => onViewChange(item.id)}
                     isActive={activeView === item.id}
-                    className={activeView === item.id ? "bg-accent/10 text-accent" : ""}
+                    className={activeView === item.id ? "bg-primary/10 text-primary" : ""}
                   >
                     <item.icon className="h-4 w-4" />
                     {!isCollapsed && <span>{item.label}</span>}
@@ -91,7 +91,7 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
                     <SidebarMenuButton
                       onClick={() => onViewChange(item.id)}
                       isActive={activeView === item.id}
-                      className={activeView === item.id ? "bg-accent/10 text-accent" : ""}
+                      className={activeView === item.id ? "bg-primary/10 text-primary" : ""}
                     >
                       <item.icon className="h-4 w-4" />
                       {!isCollapsed && <span>{item.label}</span>}
@@ -111,7 +111,7 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
                 <SidebarMenuButton
                   onClick={() => onViewChange("settings")}
                   isActive={activeView === "settings"}
-                  className={activeView === "settings" ? "bg-accent/10 text-accent" : ""}
+                  className={activeView === "settings" ? "bg-primary/10 text-primary" : ""}
                 >
                   <Settings className="h-4 w-4" />
                   {!isCollapsed && <span>Configuración</span>}
