@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { format, startOfDay, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
-import { ArrowLeft, Calendar, Clock, CheckCircle2, Download, Info, Phone, Mail } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, CheckCircle2, Download, Info, Phone, Mail, Heart, Star, MapPin, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,6 +24,7 @@ import "react-international-phone/style.css";
 import jsPDF from "jspdf";
 import { formatPhoneNumber } from "@/lib/utils";
 import { BusinessTabs } from "@/components/business/BusinessTabs";
+import { useFavorites } from "@/hooks/useFavorites";
 interface Business {
   id: string;
   name: string;
@@ -36,6 +37,8 @@ interface Business {
   website: string | null;
   social_media: any;
   booking_additional_message?: string | null;
+  price_range?: string | null;
+  average_rating?: number | null;
 }
 
 interface Room {
@@ -54,6 +57,8 @@ export default function BusinessDetails() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [user, setUser] = useState<User | null>(null);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const { toggleFavorite, loading: favoriteLoading } = useFavorites();
   
   // Estados para el modal de confirmación
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -123,6 +128,18 @@ export default function BusinessDetails() {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
       
+      // Verificar si este negocio está en favoritos
+      if (user && businessId) {
+        const { data } = await supabase
+          .from("favorites")
+          .select("*")
+          .eq("client_id", user.id)
+          .eq("business_id", businessId)
+          .maybeSingle();
+        
+        setIsFavorite(!!data);
+      }
+      
       // Cargar perfil del usuario si está autenticado
       if (user) {
         const { data: profile } = await supabase
@@ -159,11 +176,12 @@ export default function BusinessDetails() {
           clientName: "",
           clientPhone: ""
         }));
+        setIsFavorite(false);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [businessId]);
 
   // 🔹 Cargar negocio y salas desde Supabase
   useEffect(() => {
@@ -253,6 +271,13 @@ export default function BusinessDetails() {
     }
     setPhoneError("");
     return true;
+  };
+
+  // Manejar favoritos
+  const handleToggleFavorite = async () => {
+    if (!businessId) return;
+    const newStatus = await toggleFavorite(businessId, user?.id, isFavorite);
+    setIsFavorite(newStatus);
   };
 
   // 💾 Enviar reserva - Usando el edge function public-booking
@@ -750,28 +775,79 @@ export default function BusinessDetails() {
     </Dialog>
 
     <div className="min-h-screen bg-background">
-      {/* Botón Volver - FUERA del banner */}
-      <div className="border-b border-border bg-background">
+      {/* Botón Volver */}
+      <div className="border-b bg-background">
         <div className="container mx-auto px-4 py-4">
           <Link to="/">
-            <Button variant="outline" size="sm" className="hover-scale">
+            <Button variant="outline" size="sm">
               <ArrowLeft className="mr-2 h-4 w-4" /> Volver
             </Button>
           </Link>
         </div>
       </div>
 
-      {/* Banner del negocio - Ocupa todo el ancho con esquinas redondeadas */}
+      {/* Header del restaurante */}
       <div className="container mx-auto px-4 py-6">
-        <Card className="overflow-hidden shadow-lg animate-fade-in">
-          <div className="relative w-full h-64 md:h-80">
-            {business.image_url ? <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />}
-            <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-              <h1 className="text-3xl md:text-5xl font-bold text-foreground mb-2">{business.name}</h1>
-              <p className="text-lg md:text-xl text-muted-foreground font-medium">{business.category}</p>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-3">{business.name}</h1>
+            <div className="space-y-2 text-muted-foreground">
+              {business.address && (
+                <p className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {business.address}
+                </p>
+              )}
+              <p className="flex items-center gap-2">
+                <UtensilsCrossed className="h-4 w-4" />
+                {business.category}
+                {business.price_range && ` · Precio medio: ${business.price_range}`}
+              </p>
+              {business.average_rating && (
+                <p className="flex items-center gap-2 font-semibold text-foreground">
+                  <Star className="h-5 w-5 fill-primary text-primary" />
+                  {business.average_rating.toFixed(1)} (Opiniones)
+                </p>
+              )}
             </div>
           </div>
-        </Card>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="text-muted-foreground hover:text-primary"
+            onClick={handleToggleFavorite}
+            disabled={favoriteLoading}
+          >
+            <Heart className={`h-6 w-6 ${isFavorite ? 'fill-primary text-primary' : ''}`} />
+          </Button>
+        </div>
+
+        {/* Galería de fotos estilo grid */}
+        <div className="grid grid-cols-4 grid-rows-2 gap-2 h-[400px] rounded-xl overflow-hidden">
+          {business.image_url ? (
+            <>
+              <div className="col-span-2 row-span-2">
+                <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="col-span-2 row-span-1">
+                <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="col-span-1 row-span-1">
+                <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="col-span-1 row-span-1 relative">
+                <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <span className="text-white font-semibold">Ver más fotos</span>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="col-span-4 row-span-2 bg-muted flex items-center justify-center">
+              <p className="text-muted-foreground">Sin fotos disponibles</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Contenido principal - 2 columnas */}
