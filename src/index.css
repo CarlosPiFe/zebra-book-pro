@@ -139,10 +139,10 @@ All colors MUST be HSL.
 /* Botón selector de país - más estrecho y con margen derecho para separación */
 .phone-input-custom .react-international-phone-country-selector-button {
   @apply h-10 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground text-sm text-foreground;
-  min-width: 80px !important;
-  max-width: 80px !important;
-  padding: 0 0.5rem !important;
-  margin-right: 12px !important;
+  min-width: 70px !important;
+  max-width: 70px !important;
+  padding: 0 0.375rem !important;
+  margin-right: 8px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -155,11 +155,11 @@ All colors MUST be HSL.
   @apply flex-shrink-0;
   display: flex !important;
   align-items: center !important;
-  gap: 0.375rem !important;
+  gap: 0.25rem !important;
 }
 
 .phone-input-custom .react-international-phone-country-selector-button__dropdown-arrow {
-  margin-left: 0.125rem !important;
+  margin-left: 0 !important;
 }
 
 /* Input del teléfono - misma altura con posición relativa */
