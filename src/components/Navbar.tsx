@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import { LogOut, Briefcase, Store, PlusCircle, User, MapPin, Search } from "lucide-react";
 import zebraLogo from "@/assets/zebra-logo.svg";
 import zebraLogoManager from "@/assets/zebra-logo-manager.svg";
@@ -19,7 +20,8 @@ export const Navbar = () => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showCreateBusinessDialog, setShowCreateBusinessDialog] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchLocation, setSearchLocation] = useState("");
+  const [searchType, setSearchType] = useState("");
   const {
     isEmployee,
     loading: employeeLoading
@@ -68,7 +70,10 @@ export const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isHomePage]);
   const handleCompactSearch = () => {
-    navigate(searchQuery ? `/search?query=${encodeURIComponent(searchQuery)}` : "/search");
+    const params = new URLSearchParams();
+    if (searchLocation) params.append('location', searchLocation);
+    if (searchType) params.append('type', searchType);
+    navigate(params.toString() ? `/search?${params.toString()}` : "/search");
   };
   const handleLogout = async () => {
     try {
@@ -119,12 +124,32 @@ export const Navbar = () => {
           {/* Buscador Compacto - Centro (solo visible al hacer scroll en home) */}
           {isScrolled && isHomePage && <div className="flex-1 max-w-xl mx-4">
               <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input placeholder="Tipo de cocina, nombre del restaurante..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleCompactSearch()} className="pl-10 pr-10 h-10 text-sm" />
+                <div className="flex-1 flex items-center bg-background border border-input rounded-md h-10 overflow-hidden">
+                  <div className="relative flex-1">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Ubicación" 
+                      value={searchLocation} 
+                      onChange={e => setSearchLocation(e.target.value)} 
+                      onKeyPress={e => e.key === 'Enter' && handleCompactSearch()} 
+                      className="h-full border-0 pl-10 pr-2 text-sm focus-visible:ring-0 focus-visible:ring-offset-0" 
+                    />
+                  </div>
+                  <Separator orientation="vertical" className="h-6" />
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input 
+                      placeholder="Tipo de cocina..." 
+                      value={searchType} 
+                      onChange={e => setSearchType(e.target.value)} 
+                      onKeyPress={e => e.key === 'Enter' && handleCompactSearch()} 
+                      className="h-full border-0 pl-9 pr-2 text-sm focus-visible:ring-0 focus-visible:ring-offset-0" 
+                    />
+                  </div>
                 </div>
-                <Button onClick={handleCompactSearch} size="sm" className="h-10 px-6 font-semibold">BUSCAR</Button>
+                <Button onClick={handleCompactSearch} size="sm" className="h-10 px-6 font-semibold">
+                  BUSCAR
+                </Button>
               </div>
             </div>}
 
