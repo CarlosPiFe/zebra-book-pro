@@ -272,7 +272,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
       case "pending":
         return "bg-yellow-500/20 text-yellow-700 border border-yellow-500 hover:bg-yellow-500/20 hover:text-yellow-700 hover:border-yellow-500";
       case "pending_confirmation":
-        return "bg-[#B99AD9]/20 text-[#7B5FA0] border border-[#B99AD9] hover:bg-[#B99AD9]/20 hover:text-[#7B5FA0] hover:border-[#B99AD9]";
+        return "bg-accent-purple/20 text-accent-purple border border-accent-purple hover:bg-accent-purple/20 hover:text-accent-purple hover:border-accent-purple";
       case "occupied":
         return "bg-green-500/20 text-green-700 border border-green-500 hover:bg-green-500/20 hover:text-green-700 hover:border-green-500";
       case "in_progress":
@@ -280,7 +280,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
       case "completed":
         return "bg-blue-500/20 text-blue-700 border border-blue-500 hover:bg-blue-500/20 hover:text-blue-700 hover:border-blue-500";
       case "cancelled":
-        return "bg-gray-500/20 text-gray-700 border border-gray-500 hover:bg-gray-500/20 hover:text-gray-700 hover:border-gray-500";
+        return "bg-destructive/20 text-destructive border border-destructive hover:bg-destructive/20 hover:text-destructive hover:border-destructive";
       case "no_show":
         return "bg-destructive/20 text-destructive border border-destructive hover:bg-destructive/20 hover:text-destructive hover:border-destructive";
       default:

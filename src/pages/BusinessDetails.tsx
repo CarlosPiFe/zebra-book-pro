@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { format, startOfDay, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
-import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download } from "lucide-react";
+import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -848,11 +849,12 @@ export default function BusinessDetails() {
                   </div>}
 
                 {!user && (
-                  <div className="mb-4 p-4 bg-yellow-500/10 border-l-4 border-yellow-500 rounded-md">
-                    <p className="text-sm text-foreground font-medium">
-                      Debes <Link to="/auth" className="underline font-bold">iniciar sesión</Link> para hacer una reserva
-                    </p>
-                  </div>
+                  <Alert variant="info" className="mb-4">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription className="font-medium">
+                      Debes <Link to="/auth" className="underline font-bold hover:text-accent-blue/80">iniciar sesión</Link> para hacer una reserva
+                    </AlertDescription>
+                  </Alert>
                 )}
 
                 <form onSubmit={handleBookingSubmit} className="space-y-4">
