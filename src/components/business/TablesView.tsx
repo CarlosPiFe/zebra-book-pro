@@ -894,11 +894,12 @@ export function TablesView({ businessId }: TablesViewProps) {
 
       {/* Selector de salas (siempre visible) */}
       {rooms.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 w-full">
           <Button
             variant={selectedRoomId === null ? "default" : "outline"}
             size="sm"
             onClick={() => setSelectedRoomId(null)}
+            className="w-full"
           >
             Todas las salas
           </Button>
@@ -908,6 +909,7 @@ export function TablesView({ businessId }: TablesViewProps) {
               variant={selectedRoomId === room.id ? "default" : "outline"}
               size="sm"
               onClick={() => setSelectedRoomId(room.id)}
+              className="w-full"
             >
               {room.name}
             </Button>
