@@ -122,7 +122,7 @@ export const Navbar = () => {
           </Link>
 
           {/* Buscador Compacto - Centro (solo visible al hacer scroll en home) */}
-          {isScrolled && isHomePage && <div className="flex-1 max-w-xl mx-4">
+          {isScrolled && isHomePage && <div className="flex-1 max-w-xl mx-4 animate-fade-in">
               <div className="flex gap-2">
                 <div className="flex-1 flex items-center bg-background border border-input rounded-md h-10 overflow-hidden">
                   <div className="relative flex-[0.35]">
