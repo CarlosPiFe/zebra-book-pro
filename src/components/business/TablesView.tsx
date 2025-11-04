@@ -4,23 +4,34 @@ import { toast } from "sonner";
 import { Plus, Users, Trash2, Edit, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrdersDialog } from "./OrdersDialog";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { addMinutes } from "date-fns";
 import { getTimeSlotId } from "@/lib/timeSlots";
+
 interface Room {
   id: string;
   name: string;
   is_active: boolean;
 }
+
 interface Table {
   id: string;
   table_number: number;
@@ -31,6 +42,7 @@ interface Table {
   total_spent?: number;
   is_out_of_service?: boolean;
 }
+
 interface Booking {
   id: string;
   table_id: string;
@@ -44,12 +56,12 @@ interface Booking {
   notes: string | null;
   party_size: number | null;
 }
+
 interface TablesViewProps {
   businessId: string;
 }
-export function TablesView({
-  businessId
-}: TablesViewProps) {
+
+export function TablesView({ businessId }: TablesViewProps) {
   const [tables, setTables] = useState<Table[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
@@ -70,11 +82,13 @@ export function TablesView({
   const [newRoomIdForTable, setNewRoomIdForTable] = useState<string>("");
   const [newMinCapacity, setNewMinCapacity] = useState<string>("");
   const [newMaxCapacity, setNewMaxCapacity] = useState<string>("");
-
+  
   // Filter states
   const [filterDate, setFilterDate] = useState<Date>(new Date());
-  const [filterTime, setFilterTime] = useState<string>(new Date().toTimeString().slice(0, 5));
-
+  const [filterTime, setFilterTime] = useState<string>(
+    new Date().toTimeString().slice(0, 5)
+  );
+  
   // Booking form state
   const [bookingDate, setBookingDate] = useState("");
   const [startTime, setStartTime] = useState("");
@@ -85,30 +99,43 @@ export function TablesView({
   const [notes, setNotes] = useState("");
   const [bookingStatus, setBookingStatus] = useState("reserved");
   const [partySize, setPartySize] = useState("");
+
   useEffect(() => {
     loadRooms();
     loadTables();
 
     // Subscribe to realtime changes in bookings table
-    const channel = supabase.channel('bookings-changes').on('postgres_changes', {
-      event: '*',
-      schema: 'public',
-      table: 'bookings',
-      filter: `business_id=eq.${businessId}`
-    }, payload => {
-      console.log('Booking change detected:', payload);
-      loadTables(); // Reload tables when any booking changes
-    }).subscribe();
+    const channel = supabase
+      .channel('bookings-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: `business_id=eq.${businessId}`
+        },
+        (payload) => {
+          console.log('Booking change detected:', payload);
+          loadTables(); // Reload tables when any booking changes
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
     };
   }, [businessId, filterDate, filterTime]);
+
   const loadRooms = async () => {
     try {
-      const {
-        data,
-        error
-      } = await supabase.from("business_rooms").select("id, name, is_active").eq("business_id", businessId).eq("is_active", true).order("name");
+      const { data, error } = await supabase
+        .from("business_rooms")
+        .select("id, name, is_active")
+        .eq("business_id", businessId)
+        .eq("is_active", true)
+        .order("name");
+
       if (error) throw error;
       setRooms(data || []);
     } catch (error) {
@@ -123,22 +150,27 @@ export function TablesView({
       if (!isNaN(hours) && !isNaN(minutes)) {
         const startDate = new Date();
         startDate.setHours(hours, minutes, 0, 0);
-
+        
         // Load slot duration and calculate end time
         const loadSlotDuration = async () => {
-          const {
-            data
-          } = await supabase.from("businesses").select("booking_slot_duration_minutes").eq("id", businessId).single();
+          const { data } = await supabase
+            .from("businesses")
+            .select("booking_slot_duration_minutes")
+            .eq("id", businessId)
+            .single();
+          
           if (data) {
             const endDate = addMinutes(startDate, data.booking_slot_duration_minutes);
             const calculatedEndTime = `${String(endDate.getHours()).padStart(2, "0")}:${String(endDate.getMinutes()).padStart(2, "0")}`;
             setEndTime(calculatedEndTime);
           }
         };
+        
         loadSlotDuration();
       }
     }
   }, [startTime, businessId]);
+
   const loadTables = async () => {
     try {
       // Usar formato de fecha local sin conversión UTC
@@ -146,37 +178,49 @@ export function TablesView({
       const month = String(filterDate.getMonth() + 1).padStart(2, '0');
       const day = String(filterDate.getDate()).padStart(2, '0');
       const selectedDate = `${year}-${month}-${day}`;
+      
       console.log('Loading tables for date:', selectedDate, 'time:', filterTime);
-
+      
       // Get tables
-      const {
-        data: tablesData,
-        error: tablesError
-      } = await supabase.from("tables").select("*").eq("business_id", businessId).order("table_number", {
-        ascending: true
-      });
+      const { data: tablesData, error: tablesError } = await supabase
+        .from("tables")
+        .select("*")
+        .eq("business_id", businessId)
+        .order("table_number", { ascending: true });
+
       if (tablesError) throw tablesError;
 
       // Get bookings for selected date and time
       // Using > (not >=) so end time is exclusive - table is free exactly at end_time
-      const {
-        data: bookingsData,
-        error: bookingsError
-      } = await supabase.from("bookings").select("*").eq("business_id", businessId).eq("booking_date", selectedDate).lte("start_time", filterTime).gt("end_time", filterTime).in("status", ["reserved", "occupied"]);
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from("bookings")
+        .select("*")
+        .eq("business_id", businessId)
+        .eq("booking_date", selectedDate)
+        .lte("start_time", filterTime)
+        .gt("end_time", filterTime)
+        .in("status", ["reserved", "occupied"]);
+
       if (bookingsError) throw bookingsError;
+
       console.log('Bookings found:', bookingsData?.length || 0);
 
       // Get orders for today's occupied tables
-      const occupiedTableIds = bookingsData?.filter(b => b.status === "occupied").map(b => b.table_id) || [];
+      const occupiedTableIds = bookingsData
+        ?.filter(b => b.status === "occupied")
+        .map(b => b.table_id) || [];
+
       let ordersData: any[] = [];
       if (occupiedTableIds.length > 0) {
-        const {
-          data,
-          error: ordersError
-        } = await supabase.from("orders").select(`
+        const { data, error: ordersError } = await supabase
+          .from("orders")
+          .select(`
             *,
             menu_items!inner(price)
-          `).in("table_id", occupiedTableIds.filter((id): id is string => id !== null)).eq("status", "pending");
+          `)
+          .in("table_id", occupiedTableIds.filter((id): id is string => id !== null))
+          .eq("status", "pending");
+
         if (ordersError) throw ordersError;
         ordersData = data || [];
       }
@@ -195,6 +239,7 @@ export function TablesView({
         current_booking: bookingsData?.find(b => b.table_id === table.id) || null,
         total_spent: tableTotals[table.id] || 0
       }));
+
       setTables(tablesWithBookings as any);
     } catch (error) {
       console.error("Error loading tables:", error);
@@ -203,32 +248,37 @@ export function TablesView({
       setLoading(false);
     }
   };
+
   const handleAddTable = async () => {
     if (!tableNumber || !maxCapacity || !minCapacity) {
       toast.error("Por favor completa todos los campos");
       return;
     }
+
     const minCap = parseInt(minCapacity);
     const maxCap = parseInt(maxCapacity);
+
     if (minCap > maxCap) {
       toast.error("El mínimo de personas no puede ser mayor que el máximo");
       return;
     }
+
     if (minCap < 1) {
       toast.error("El mínimo de personas debe ser al menos 1");
       return;
     }
+
     try {
-      const {
-        error
-      } = await supabase.from("tables").insert({
+      const { error } = await supabase.from("tables").insert({
         business_id: businessId,
         table_number: parseInt(tableNumber),
         max_capacity: maxCap,
         min_capacity: minCap,
-        room_id: selectedRoomForTable || null
+        room_id: selectedRoomForTable || null,
       });
+
       if (error) throw error;
+
       toast.success("Mesa añadida correctamente");
       setIsAddTableDialogOpen(false);
       setTableNumber("");
@@ -245,13 +295,15 @@ export function TablesView({
       }
     }
   };
+
   const handleDeleteTable = async () => {
     if (!deleteTableId) return;
+
     try {
-      const {
-        error
-      } = await supabase.from("tables").delete().eq("id", deleteTableId);
+      const { error } = await supabase.from("tables").delete().eq("id", deleteTableId);
+
       if (error) throw error;
+
       toast.success("Mesa eliminada correctamente");
       setDeleteTableId(null);
       loadTables();
@@ -260,23 +312,28 @@ export function TablesView({
       toast.error("Error al eliminar la mesa");
     }
   };
+
   const handleTableClick = (table: Table) => {
     setSelectedTable(table);
     setIsActionDialogOpen(true);
   };
+
   const handleViewOrders = async () => {
     if (!selectedTable) return;
+    
     try {
-      const {
-        data,
-        error
-      } = await supabase.from("orders").select(`
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
           *,
           menu_items(name, price)
-        `).eq("table_id", selectedTable.id).eq("status", "pending").order("created_at", {
-        ascending: true
-      });
+        `)
+        .eq("table_id", selectedTable.id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: true });
+
       if (error) throw error;
+
       setOrders(data || []);
       setIsActionDialogOpen(false);
       setIsOrdersDialogOpen(true);
@@ -285,8 +342,10 @@ export function TablesView({
       toast.error("Error al cargar pedidos");
     }
   };
+
   const handleQuickOccupy = async () => {
     if (!selectedTable) return;
+    
     try {
       const today = new Date().toISOString().split('T')[0];
       const now = new Date();
@@ -299,11 +358,11 @@ export function TablesView({
         toast.error("No se pudo obtener la franja horaria");
         return;
       }
+
       const fallbackDate = new Date().toISOString().split('T')[0] || new Date().toISOString().substring(0, 10);
       const bookingDate: string = today || fallbackDate;
-      const {
-        error
-      } = await supabase.from("bookings").insert([{
+      
+      const { error } = await supabase.from("bookings").insert([{
         table_id: selectedTable.id,
         business_id: businessId,
         booking_date: bookingDate,
@@ -311,9 +370,11 @@ export function TablesView({
         end_time: endTime,
         client_name: "Cliente sin reserva",
         status: "occupied",
-        time_slot_id: timeSlotId
+        time_slot_id: timeSlotId,
       }]);
+
       if (error) throw error;
+
       toast.success("Mesa ocupada");
       setIsActionDialogOpen(false);
       loadTables();
@@ -322,15 +383,18 @@ export function TablesView({
       toast.error("Error al ocupar la mesa");
     }
   };
+
   const handleCompleteOccupancy = async () => {
     if (!selectedTable?.current_booking) return;
+
     try {
-      const {
-        error
-      } = await supabase.from("bookings").update({
-        status: "completed"
-      }).eq("id", selectedTable.current_booking.id);
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "completed" })
+        .eq("id", selectedTable.current_booking.id);
+
       if (error) throw error;
+
       toast.success("Mesa liberada");
       loadTables();
       setIsActionDialogOpen(false);
@@ -339,15 +403,18 @@ export function TablesView({
       toast.error("Error al liberar la mesa");
     }
   };
+
   const handleClientLeft = async () => {
     if (!selectedTable?.current_booking) return;
+
     try {
-      const {
-        error
-      } = await supabase.from("bookings").update({
-        status: "cancelled"
-      }).eq("id", selectedTable.current_booking.id);
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "cancelled" })
+        .eq("id", selectedTable.current_booking.id);
+
       if (error) throw error;
+
       toast.success("Cliente marcado como ausente");
       loadTables();
       setIsActionDialogOpen(false);
@@ -356,15 +423,18 @@ export function TablesView({
       toast.error("Error al actualizar el estado");
     }
   };
+
   const handleConfirmArrival = async () => {
     if (!selectedTable?.current_booking) return;
+
     try {
-      const {
-        error
-      } = await supabase.from("bookings").update({
-        status: "occupied"
-      }).eq("id", selectedTable.current_booking.id);
+      const { error } = await supabase
+        .from("bookings")
+        .update({ status: "occupied" })
+        .eq("id", selectedTable.current_booking.id);
+
       if (error) throw error;
+
       toast.success("Cliente confirmado - mesa ocupada");
       setIsActionDialogOpen(false);
       loadTables();
@@ -373,8 +443,10 @@ export function TablesView({
       toast.error("Error al confirmar la llegada");
     }
   };
+
   const handleReserveClick = () => {
     if (!selectedTable) return;
+    
     const today = new Date().toISOString().split('T')[0];
     setBookingDate(today || "");
     setStartTime("");
@@ -388,8 +460,10 @@ export function TablesView({
     setIsActionDialogOpen(false);
     setIsBookingDialogOpen(true);
   };
+
   const handleEditReservation = () => {
     if (!selectedTable || !selectedTable.current_booking) return;
+    
     const booking = selectedTable.current_booking;
     setBookingDate(booking.booking_date);
     setStartTime(booking.start_time);
@@ -403,11 +477,13 @@ export function TablesView({
     setIsActionDialogOpen(false);
     setIsBookingDialogOpen(true);
   };
+
   const handleSaveBooking = async () => {
     if (!selectedTable || !clientName || !clientPhone || !partySize) {
       toast.error("Por favor completa nombre, teléfono y cantidad de comensales");
       return;
     }
+
     try {
       // Obtener time_slot_id
       const timeSlotId = await getTimeSlotId(startTime || "00:00");
@@ -415,6 +491,7 @@ export function TablesView({
         toast.error("No se pudo obtener la franja horaria");
         return;
       }
+
       const bookingData = {
         table_id: selectedTable.id,
         business_id: businessId,
@@ -427,23 +504,28 @@ export function TablesView({
         notes: notes || null,
         status: bookingStatus,
         party_size: parseInt(partySize),
-        time_slot_id: timeSlotId
+        time_slot_id: timeSlotId,
       };
+
       if (selectedTable.current_booking) {
         // Update existing booking
-        const {
-          error
-        } = await supabase.from("bookings").update(bookingData).eq("id", selectedTable.current_booking.id);
+        const { error } = await supabase
+          .from("bookings")
+          .update(bookingData)
+          .eq("id", selectedTable.current_booking.id);
+
         if (error) throw error;
         toast.success("Reserva actualizada correctamente");
       } else {
         // Create new booking
-        const {
-          error
-        } = await supabase.from("bookings").insert([bookingData] as any);
+        const { error } = await supabase
+          .from("bookings")
+          .insert([bookingData] as any);
+
         if (error) throw error;
         toast.success("Reserva creada correctamente");
       }
+
       setIsBookingDialogOpen(false);
       loadTables();
     } catch (error) {
@@ -451,13 +533,18 @@ export function TablesView({
       toast.error("Error al guardar la reserva");
     }
   };
+
   const handleCancelReservation = async () => {
     if (!selectedTable?.current_booking) return;
+
     try {
-      const {
-        error
-      } = await supabase.from("bookings").delete().eq("id", selectedTable.current_booking.id);
+      const { error } = await supabase
+        .from("bookings")
+        .delete()
+        .eq("id", selectedTable.current_booking.id);
+
       if (error) throw error;
+
       toast.success("Reserva cancelada correctamente");
       setDeleteBookingDialogOpen(false);
       setIsActionDialogOpen(false);
@@ -467,13 +554,18 @@ export function TablesView({
       toast.error("Error al cancelar la reserva");
     }
   };
+
   const handleDeleteBooking = async () => {
     if (!selectedTable?.current_booking) return;
+
     try {
-      const {
-        error
-      } = await supabase.from("bookings").delete().eq("id", selectedTable.current_booking.id);
+      const { error } = await supabase
+        .from("bookings")
+        .delete()
+        .eq("id", selectedTable.current_booking.id);
+
       if (error) throw error;
+
       toast.success("Reserva eliminada correctamente");
       setDeleteBookingDialogOpen(false);
       setIsBookingDialogOpen(false);
@@ -483,16 +575,20 @@ export function TablesView({
       toast.error("Error al eliminar la reserva");
     }
   };
+
   const handleToggleOutOfService = async () => {
     if (!selectedTable) return;
+
     try {
       const newStatus = !selectedTable.is_out_of_service;
-      const {
-        error
-      } = await supabase.from("tables").update({
-        is_out_of_service: newStatus
-      } as any).eq("id", selectedTable.id);
+      
+      const { error } = await supabase
+        .from("tables")
+        .update({ is_out_of_service: newStatus } as any)
+        .eq("id", selectedTable.id);
+
       if (error) throw error;
+
       toast.success(newStatus ? "Mesa marcada fuera de servicio" : "Mesa reactivada");
       setIsActionDialogOpen(false);
       loadTables();
@@ -501,6 +597,7 @@ export function TablesView({
       toast.error("Error al actualizar el estado de la mesa");
     }
   };
+
   const handleOpenConfigDialog = () => {
     if (!selectedTable) return;
     setNewRoomIdForTable(selectedTable.room_id || "");
@@ -509,31 +606,40 @@ export function TablesView({
     setIsActionDialogOpen(false);
     setIsConfigDialogOpen(true);
   };
+
   const handleSaveTableConfig = async () => {
     if (!selectedTable) return;
+
     const minCap = parseInt(newMinCapacity);
     const maxCap = parseInt(newMaxCapacity);
+
     if (isNaN(minCap) || isNaN(maxCap)) {
       toast.error("Por favor ingresa valores válidos para las capacidades");
       return;
     }
+
     if (minCap > maxCap) {
       toast.error("La capacidad mínima no puede ser mayor que la máxima");
       return;
     }
+
     if (minCap < 1) {
       toast.error("La capacidad mínima debe ser al menos 1");
       return;
     }
+
     try {
-      const {
-        error
-      } = await supabase.from("tables").update({
-        room_id: newRoomIdForTable || null,
-        min_capacity: minCap,
-        max_capacity: maxCap
-      } as any).eq("id", selectedTable.id);
+      const { error } = await supabase
+        .from("tables")
+        .update({ 
+          room_id: newRoomIdForTable || null,
+          min_capacity: minCap,
+          max_capacity: maxCap
+        } as any)
+        .eq("id", selectedTable.id);
+
       if (error) throw error;
+
       toast.success("Configuración de la mesa actualizada correctamente");
       setIsConfigDialogOpen(false);
       setNewRoomIdForTable("");
@@ -545,82 +651,105 @@ export function TablesView({
       toast.error("Error al actualizar la configuración de la mesa");
     }
   };
+
   const getTableColor = (table: Table) => {
     // Rojo - fuera de servicio (prioridad máxima)
     if (table.is_out_of_service) {
       return "bg-red-500/20 border-red-500";
     }
+    
     if (!table.current_booking) return "bg-muted"; // Gris - disponible
-
+    
     const booking = table.current_booking;
+    
     if (booking.status === "occupied") {
       return "bg-green-500/20 border-green-500"; // Verde - comiendo
     }
+    
     if (booking.status === "reserved") {
       // Calcular si la reserva está retrasada (más de 5 minutos)
       const now = new Date();
       const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
       const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000); // +5 minutos
-
+      
       if (now >= delayThreshold) {
         return "bg-yellow-500/20 border-yellow-500"; // Amarillo - reserva retrasada
       }
+      
       return "bg-orange-500/20 border-orange-500"; // Naranja - pendiente (futura)
     }
+    
     return "bg-muted";
   };
+
   const getTableStatusLabel = (table: Table): string | null => {
     // Rojo - fuera de servicio (prioridad máxima)
     if (table.is_out_of_service) {
       return "Fuera de servicio";
     }
+    
     if (!table.current_booking) return null; // Sin etiqueta para mesas libres
-
+    
     const booking = table.current_booking;
+    
     if (booking.status === "occupied") {
       return "En curso";
     }
+    
     if (booking.status === "reserved") {
       // Calcular si la reserva está retrasada (más de 5 minutos)
       const now = new Date();
       const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
       const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000); // +5 minutos
-
+      
       if (now >= delayThreshold) {
         return "Retraso";
       }
+      
       return "Pendiente";
     }
+    
     return null;
   };
+
   const getTableStatusLabelColor = (table: Table): string => {
     // Rojo oscuro - fuera de servicio
     if (table.is_out_of_service) {
       return "text-red-800";
     }
+    
     if (!table.current_booking) return "";
+    
     const booking = table.current_booking;
+    
     if (booking.status === "occupied") {
       return "text-green-800"; // Verde oscuro
     }
+    
     if (booking.status === "reserved") {
       // Calcular si la reserva está retrasada (más de 5 minutos)
       const now = new Date();
       const bookingDateTime = new Date(`${booking.booking_date}T${booking.start_time}`);
       const delayThreshold = new Date(bookingDateTime.getTime() + 5 * 60 * 1000);
+      
       if (now >= delayThreshold) {
         return "text-yellow-800"; // Amarillo oscuro
       }
+      
       return "text-orange-800"; // Naranja oscuro
     }
+    
     return "";
   };
+
   if (loading) {
     return <LoadingSpinner fullScreen />;
   }
 
   // Filtrar mesas según la sala seleccionada
-  const filteredTables = selectedRoomId ? tables.filter(t => t.room_id === selectedRoomId) : tables;
+  const filteredTables = selectedRoomId
+    ? tables.filter(t => t.room_id === selectedRoomId)
+    : tables;
 
   // Agrupar mesas por sala para vista "Todos"
   const tablesByRoom = tables.reduce((acc, table) => {
@@ -629,31 +758,66 @@ export function TablesView({
     acc[roomId].push(table);
     return acc;
   }, {} as Record<string, Table[]>);
-  return <div className="space-y-4 bg-background min-h-screen">
+
+  return (
+    <div className="space-y-4 bg-background min-h-screen">
       <h1 className="text-xl font-semibold">Gestión de Mesas</h1>
 
-      <Card className="mx-[2px]">
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-          <CardDescription>
-            Selecciona fecha y hora para ver el estado de las mesas
-          </CardDescription>
+      <Card>
+        <CardHeader className="pb-3">
+          <h3 className="text-sm font-medium">Filtros</h3>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Fecha</Label>
-              <DatePicker date={filterDate} onDateChange={date => date && setFilterDate(date)} placeholder="Seleccionar fecha" />
+              <DatePicker
+                date={filterDate}
+                onDateChange={(date) => date && setFilterDate(date)}
+                placeholder="Seleccionar fecha"
+                onPreviousDay={() => {
+                  const newDate = new Date(filterDate);
+                  newDate.setDate(newDate.getDate() - 1);
+                  setFilterDate(newDate);
+                }}
+                onNextDay={() => {
+                  const newDate = new Date(filterDate);
+                  newDate.setDate(newDate.getDate() + 1);
+                  setFilterDate(newDate);
+                }}
+              />
             </div>
             <div className="space-y-2">
-              <Label>Hora</Label>
-              <TimePicker time={filterTime} onTimeChange={setFilterTime} placeholder="Seleccionar hora" />
+              <Label>Hora (opcional)</Label>
+              <TimePicker
+                time={filterTime}
+                onTimeChange={setFilterTime}
+                placeholder="Ver todas las horas"
+                allowClear={true}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Sala</Label>
+              <Select value={selectedRoomId || "all"} onValueChange={(value) => setSelectedRoomId(value === "all" ? null : value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas las salas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las salas</SelectItem>
+                  {rooms.map((room) => (
+                    <SelectItem key={room.id} value={room.id}>
+                      {room.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {tables.length === 0 ? <div className="flex items-center justify-center min-h-[400px]">
+      {tables.length === 0 ? (
+        <div className="flex items-center justify-center min-h-[400px]">
           <Dialog open={isAddTableDialogOpen} onOpenChange={setIsAddTableDialogOpen}>
             <DialogTrigger asChild>
               <button className="flex flex-col items-center justify-center gap-4 p-12 border-2 border-dashed border-muted-foreground/25 rounded-lg hover:border-muted-foreground/50 transition-colors bg-card">
@@ -673,26 +837,42 @@ export function TablesView({
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="table-number">Número de Mesa</Label>
-                    <Input id="table-number" type="number" placeholder="Ej: 1" value={tableNumber} onChange={e => setTableNumber(e.target.value)} />
+                    <Input
+                      id="table-number"
+                      type="number"
+                      placeholder="Ej: 1"
+                      value={tableNumber}
+                      onChange={(e) => setTableNumber(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="max-capacity">Capacidad Máxima</Label>
-                    <Input id="max-capacity" type="number" placeholder="Ej: 4" value={maxCapacity} onChange={e => setMaxCapacity(e.target.value)} />
+                    <Input
+                      id="max-capacity"
+                      type="number"
+                      placeholder="Ej: 4"
+                      value={maxCapacity}
+                      onChange={(e) => setMaxCapacity(e.target.value)}
+                    />
                   </div>
-                  {rooms.length > 0 && <div className="space-y-2">
+                  {rooms.length > 0 && (
+                    <div className="space-y-2">
                       <Label htmlFor="room">Sala (opcional)</Label>
-                      <Select value={selectedRoomForTable || "no-room"} onValueChange={value => setSelectedRoomForTable(value === "no-room" ? "" : value)}>
+                      <Select value={selectedRoomForTable || "no-room"} onValueChange={(value) => setSelectedRoomForTable(value === "no-room" ? "" : value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar sala" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="no-room">Sin sala específica</SelectItem>
-                          {rooms.map(room => <SelectItem key={room.id} value={room.id}>
+                          {rooms.map((room) => (
+                            <SelectItem key={room.id} value={room.id}>
                               {room.name}
-                            </SelectItem>)}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                    </div>}
+                    </div>
+                  )}
                 </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddTableDialogOpen(false)}>
@@ -702,22 +882,31 @@ export function TablesView({
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div> : <>
+        </div>
+      ) : (
+        <>
           <div className="flex justify-between items-center gap-4">
-            {rooms.length > 0 && <div className="flex items-center gap-2">
+            {rooms.length > 0 && (
+              <div className="flex items-center gap-2">
                 <Label className="text-sm font-medium whitespace-nowrap">Filtrar por sala:</Label>
-                <Select value={selectedRoomId || "all-rooms"} onValueChange={value => setSelectedRoomId(value === "all-rooms" ? null : value)}>
+                <Select 
+                  value={selectedRoomId || "all-rooms"} 
+                  onValueChange={(value) => setSelectedRoomId(value === "all-rooms" ? null : value)}
+                >
                   <SelectTrigger className="w-[200px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all-rooms">Todos</SelectItem>
-                    {rooms.map(room => <SelectItem key={room.id} value={room.id}>
+                    {rooms.map((room) => (
+                      <SelectItem key={room.id} value={room.id}>
                         {room.name}
-                      </SelectItem>)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              </div>}
+              </div>
+            )}
             <Dialog open={isAddTableDialogOpen} onOpenChange={setIsAddTableDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
@@ -735,36 +924,60 @@ export function TablesView({
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="table-number">Número de Mesa</Label>
-                    <Input id="table-number" type="number" placeholder="Ej: 1" value={tableNumber} onChange={e => setTableNumber(e.target.value)} />
+                    <Input
+                      id="table-number"
+                      type="number"
+                      placeholder="Ej: 1"
+                      value={tableNumber}
+                      onChange={(e) => setTableNumber(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="min-capacity">Capacidad Mínima</Label>
-                    <Input id="min-capacity" type="number" placeholder="Ej: 1" value={minCapacity} onChange={e => setMinCapacity(e.target.value)} min="1" />
+                    <Input
+                      id="min-capacity"
+                      type="number"
+                      placeholder="Ej: 1"
+                      value={minCapacity}
+                      onChange={(e) => setMinCapacity(e.target.value)}
+                      min="1"
+                    />
                     <p className="text-xs text-muted-foreground">
                       Número mínimo de personas que pueden usar esta mesa
                     </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="max-capacity">Capacidad Máxima</Label>
-                    <Input id="max-capacity" type="number" placeholder="Ej: 4" value={maxCapacity} onChange={e => setMaxCapacity(e.target.value)} min="1" />
+                    <Input
+                      id="max-capacity"
+                      type="number"
+                      placeholder="Ej: 4"
+                      value={maxCapacity}
+                      onChange={(e) => setMaxCapacity(e.target.value)}
+                      min="1"
+                    />
                     <p className="text-xs text-muted-foreground">
                       Número máximo de personas que pueden usar esta mesa
                     </p>
                   </div>
-                  {rooms.length > 0 && <div className="space-y-2">
+                  {rooms.length > 0 && (
+                    <div className="space-y-2">
                       <Label htmlFor="room">Sala (opcional)</Label>
-                      <Select value={selectedRoomForTable || "no-room"} onValueChange={value => setSelectedRoomForTable(value === "no-room" ? "" : value)}>
+                      <Select value={selectedRoomForTable || "no-room"} onValueChange={(value) => setSelectedRoomForTable(value === "no-room" ? "" : value)}>
                         <SelectTrigger>
                           <SelectValue placeholder="Seleccionar sala" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="no-room">Sin sala específica</SelectItem>
-                          {rooms.map(room => <SelectItem key={room.id} value={room.id}>
+                          {rooms.map((room) => (
+                            <SelectItem key={room.id} value={room.id}>
                               {room.name}
-                            </SelectItem>)}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
-                    </div>}
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsAddTableDialogOpen(false)}>
@@ -777,24 +990,37 @@ export function TablesView({
           </div>
 
           {/* Mostrar agrupado por salas si no hay filtro */}
-          {selectedRoomId === null && rooms.length > 0 ? <div className="space-y-6">
+          {selectedRoomId === null && rooms.length > 0 ? (
+            <div className="space-y-6">
               {Object.entries(tablesByRoom).map(([roomId, roomTables]) => {
-          const room = rooms.find(r => r.id === roomId);
-          const roomName = room ? room.name : "Sin sala asignada";
-          return <div key={roomId} className="space-y-2">
+                const room = rooms.find(r => r.id === roomId);
+                const roomName = room ? room.name : "Sin sala asignada";
+                
+                return (
+                  <div key={roomId} className="space-y-2">
                     <h3 className="text-lg font-semibold text-foreground">{roomName}</h3>
                     <div className="grid gap-3 grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
-                      {roomTables.map(table => <button key={table.id} onClick={() => handleTableClick(table)} className={`relative aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-between hover:shadow-md transition-all group ${getTableColor(table)}`}>
-                          <button onClick={e => {
-                  e.stopPropagation();
-                  setDeleteTableId(table.id);
-                }} className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded">
+                      {roomTables.map((table) => (
+                        <button
+                          key={table.id}
+                          onClick={() => handleTableClick(table)}
+                          className={`relative aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-between hover:shadow-md transition-all group ${getTableColor(table)}`}
+                        >
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteTableId(table.id);
+                            }}
+                            className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded"
+                          >
                             <Trash2 className="h-3 w-3 text-destructive" />
                           </button>
                           
-                          {getTableStatusLabel(table) && <div className={`text-[9px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
+                          {getTableStatusLabel(table) && (
+                            <div className={`text-[9px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
                               {getTableStatusLabel(table)}
-                            </div>}
+                            </div>
+                          )}
                           
                           <div className="flex flex-col items-center gap-1 flex-1 justify-center">
                             <div className="text-lg font-bold text-foreground">
@@ -804,31 +1030,49 @@ export function TablesView({
                               <Users className="h-3 w-3" />
                               <span>{table.min_capacity}-{table.max_capacity}</span>
                             </div>
-                            {table.current_booking && table.current_booking.client_name && <div className="text-[9px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
+                            {table.current_booking && table.current_booking.client_name && (
+                              <div className="text-[9px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
                                 {table.current_booking.client_name}
-                              </div>}
+                              </div>
+                            )}
                           </div>
                           
-                          {table.current_booking?.status === "occupied" && table.total_spent! > 0 && <div className="text-xs font-bold text-primary">
+                          {table.current_booking?.status === "occupied" && table.total_spent! > 0 && (
+                            <div className="text-xs font-bold text-primary">
                               ${table.total_spent!.toFixed(2)}
-                            </div>}
-                        </button>)}
+                            </div>
+                          )}
+                        </button>
+                      ))}
                     </div>
-                  </div>;
-        })}
-            </div> : <div className="grid gap-3 grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
-              {filteredTables.map(table => <button key={table.id} onClick={() => handleTableClick(table)} className={`relative aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-between hover:shadow-md transition-all group ${getTableColor(table)}`}>
-                <button onClick={e => {
-            e.stopPropagation();
-            setDeleteTableId(table.id);
-          }} className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded">
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="grid gap-3 grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
+              {filteredTables.map((table) => (
+              <button
+                key={table.id}
+                onClick={() => handleTableClick(table)}
+                className={`relative aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-between hover:shadow-md transition-all group ${getTableColor(table)}`}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteTableId(table.id);
+                  }}
+                  className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded"
+                >
                   <Trash2 className="h-3 w-3 text-destructive" />
                 </button>
                 
                 {/* Estado - parte superior sin recuadro */}
-                {getTableStatusLabel(table) && <div className={`text-[9px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
+                {getTableStatusLabel(table) && (
+                  <div className={`text-[9px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
                     {getTableStatusLabel(table)}
-                  </div>}
+                  </div>
+                )}
                 
                 {/* Contenido central */}
                 <div className="flex flex-col items-center gap-1 flex-1 justify-center">
@@ -844,17 +1088,23 @@ export function TablesView({
                   </div>
                   
                   {/* Nombre del reservante */}
-                  {table.current_booking && table.current_booking.client_name && <div className="text-[9px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
+                  {table.current_booking && table.current_booking.client_name && (
+                    <div className="text-[9px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
                       {table.current_booking.client_name}
-                    </div>}
+                    </div>
+                  )}
                 </div>
                 
                 {/* Total gastado - parte inferior */}
-                {table.current_booking?.status === "occupied" && table.total_spent! > 0 && <div className="text-xs font-bold text-primary">
+                {table.current_booking?.status === "occupied" && table.total_spent! > 0 && (
+                  <div className="text-xs font-bold text-primary">
                     ${table.total_spent!.toFixed(2)}
-                  </div>}
-              </button>)}
-            </div>}
+                  </div>
+                )}
+              </button>
+            ))}
+            </div>
+          )}
 
           {/* Action Dialog */}
           <Dialog open={isActionDialogOpen} onOpenChange={setIsActionDialogOpen}>
@@ -866,77 +1116,145 @@ export function TablesView({
                 </DialogDescription>
               </DialogHeader>
               <div className="flex flex-col gap-3 py-4">
-                {selectedTable?.is_out_of_service ? <>
+                {selectedTable?.is_out_of_service ? (
+                  <>
                     <div className="text-sm text-muted-foreground mb-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                       <p className="text-red-600 font-semibold">⚠️ Mesa fuera de servicio</p>
                       <p className="text-xs mt-1">Esta mesa está bloqueada y no acepta reservas</p>
                     </div>
-                    <Button onClick={handleToggleOutOfService} className="bg-green-500 hover:bg-green-600 text-white h-12">
+                    <Button
+                      onClick={handleToggleOutOfService}
+                      className="bg-green-500 hover:bg-green-600 text-white h-12"
+                    >
                       Reactivar Mesa
                     </Button>
-                  </> : !selectedTable?.current_booking ? <>
-                    <Button className="bg-green-500 hover:bg-green-600 text-white h-12" onClick={handleQuickOccupy}>
+                  </>
+                ) : !selectedTable?.current_booking ? (
+                  <>
+                    <Button
+                      className="bg-green-500 hover:bg-green-600 text-white h-12"
+                      onClick={handleQuickOccupy}
+                    >
                       Comer
                     </Button>
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-white h-12" onClick={handleReserveClick}>
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600 text-white h-12"
+                      onClick={handleReserveClick}
+                    >
                       Reservar
                     </Button>
-                    <Button variant="outline" className="h-12" onClick={handleOpenConfigDialog}>
+                    <Button
+                      variant="outline"
+                      className="h-12"
+                      onClick={handleOpenConfigDialog}
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       Configuración
                     </Button>
-                    <Button variant="outline" className="border-red-500 text-red-600 hover:bg-red-50 h-12" onClick={handleToggleOutOfService}>
+                    <Button
+                      variant="outline"
+                      className="border-red-500 text-red-600 hover:bg-red-50 h-12"
+                      onClick={handleToggleOutOfService}
+                    >
                       Marcar Fuera de Servicio
                     </Button>
-                  </> : selectedTable.current_booking.status === "reserved" ? <>
+                  </>
+                ) : selectedTable.current_booking.status === "reserved" ? (
+                  <>
                     <div className="text-sm text-muted-foreground mb-2">
                       <p><strong>Cliente:</strong> {selectedTable.current_booking.client_name}</p>
-                      {selectedTable.current_booking.client_phone && <p><strong>Teléfono:</strong> {selectedTable.current_booking.client_phone}</p>}
-                      {selectedTable.current_booking.start_time && <p><strong>Hora:</strong> {selectedTable.current_booking.start_time.substring(0, 5)}</p>}
-                      {selectedTable.current_booking.party_size && <p><strong>Comensales:</strong> {selectedTable.current_booking.party_size}</p>}
+                      {selectedTable.current_booking.client_phone && (
+                        <p><strong>Teléfono:</strong> {selectedTable.current_booking.client_phone}</p>
+                      )}
+                      {selectedTable.current_booking.start_time && (
+                        <p><strong>Hora:</strong> {selectedTable.current_booking.start_time.substring(0, 5)}</p>
+                      )}
+                      {selectedTable.current_booking.party_size && (
+                        <p><strong>Comensales:</strong> {selectedTable.current_booking.party_size}</p>
+                      )}
                     </div>
-                    <Button className="bg-green-500 hover:bg-green-600 text-white h-12" onClick={handleConfirmArrival}>
+                    <Button
+                      className="bg-green-500 hover:bg-green-600 text-white h-12"
+                      onClick={handleConfirmArrival}
+                    >
                       Cliente ha llegado / Está comiendo
                     </Button>
-                    <Button className="bg-orange-500 hover:bg-orange-600 text-white h-12" onClick={handleEditReservation}>
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600 text-white h-12"
+                      onClick={handleEditReservation}
+                    >
                       Cambiar Reserva
                     </Button>
-                    <Button variant="outline" className="h-12" onClick={handleOpenConfigDialog}>
+                    <Button
+                      variant="outline"
+                      className="h-12"
+                      onClick={handleOpenConfigDialog}
+                    >
                       <Edit className="h-4 w-4 mr-2" />
                       Configuración
                     </Button>
-                    <Button variant="destructive" className="h-12" onClick={() => setDeleteBookingDialogOpen(true)}>
+                    <Button
+                     variant="destructive"
+                     className="h-12"
+                     onClick={() => setDeleteBookingDialogOpen(true)}
+                   >
                      Cancelar Reserva
                    </Button>
-                  </> : <>
+                  </>
+                ) : (
+                  <>
                     <div className="space-y-2 text-sm text-muted-foreground mb-4">
                       <p><strong>Cliente:</strong> {selectedTable.current_booking.client_name}</p>
-                      {selectedTable.current_booking.client_phone && <p><strong>Teléfono:</strong> {selectedTable.current_booking.client_phone}</p>}
-                      {selectedTable.current_booking.party_size && <p><strong>Comensales:</strong> {selectedTable.current_booking.party_size}</p>}
+                      {selectedTable.current_booking.client_phone && (
+                        <p><strong>Teléfono:</strong> {selectedTable.current_booking.client_phone}</p>
+                      )}
+                      {selectedTable.current_booking.party_size && (
+                        <p><strong>Comensales:</strong> {selectedTable.current_booking.party_size}</p>
+                      )}
                       <p><strong>Estado:</strong> Comiendo</p>
-                      {selectedTable.total_spent! > 0 && <p className="text-lg font-bold text-primary">
+                      {selectedTable.total_spent! > 0 && (
+                        <p className="text-lg font-bold text-primary">
                           <strong>Total:</strong> ${selectedTable.total_spent!.toFixed(2)}
-                        </p>}
+                        </p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
-                      <Button onClick={handleViewOrders} variant="outline" className="w-full h-12">
+                      <Button
+                        onClick={handleViewOrders}
+                        variant="outline"
+                        className="w-full h-12"
+                      >
                         <Receipt className="w-4 h-4 mr-2" />
                         Ver Pedido
                       </Button>
-                      {rooms.length > 0 && <Button variant="outline" className="w-full h-12" onClick={handleOpenConfigDialog}>
+                      {rooms.length > 0 && (
+                        <Button
+                          variant="outline"
+                          className="w-full h-12"
+                          onClick={handleOpenConfigDialog}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Configuración
-                        </Button>}
+                        </Button>
+                      )}
                       <div className="flex gap-2">
-                        <Button onClick={handleCompleteOccupancy} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12">
+                        <Button
+                          onClick={handleCompleteOccupancy}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white h-12"
+                        >
                           Cliente ha terminado
                         </Button>
-                        <Button onClick={handleClientLeft} variant="outline" className="flex-1 h-12">
+                        <Button
+                          onClick={handleClientLeft}
+                          variant="outline"
+                          className="flex-1 h-12"
+                        >
                           Cliente se ha ido
                         </Button>
                       </div>
                     </div>
-                  </>}
+                  </>
+                )}
               </div>
             </DialogContent>
           </Dialog>
@@ -949,39 +1267,80 @@ export function TablesView({
                   {selectedTable?.current_booking ? "Editar Reserva" : "Nueva Reserva"} - Mesa {selectedTable?.table_number}
                 </DialogTitle>
                 <DialogDescription>
-                  {selectedTable?.current_booking ? "Modifica los datos de la reserva o cambia el estado" : "Completa los datos del cliente y la reserva"}
+                  {selectedTable?.current_booking 
+                    ? "Modifica los datos de la reserva o cambia el estado"
+                    : "Completa los datos del cliente y la reserva"}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="booking-date">Fecha</Label>
-                  <Input id="booking-date" type="date" value={bookingDate} onChange={e => setBookingDate(e.target.value)} />
+                  <Input
+                    id="booking-date"
+                    type="date"
+                    value={bookingDate}
+                    onChange={(e) => setBookingDate(e.target.value)}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="start-time">Hora Inicio</Label>
-                    <Input id="start-time" type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
+                    <Input
+                      id="start-time"
+                      type="time"
+                      value={startTime}
+                      onChange={(e) => setStartTime(e.target.value)}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="end-time">Hora Fin</Label>
-                    <Input id="end-time" type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
+                    <Input
+                      id="end-time"
+                      type="time"
+                      value={endTime}
+                      onChange={(e) => setEndTime(e.target.value)}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="client-name">Nombre del Cliente *</Label>
-                  <Input id="client-name" placeholder="Ej: Juan Pérez" value={clientName} onChange={e => setClientName(e.target.value)} />
+                  <Input
+                    id="client-name"
+                    placeholder="Ej: Juan Pérez"
+                    value={clientName}
+                    onChange={(e) => setClientName(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="client-phone">Teléfono *</Label>
-                  <Input id="client-phone" type="tel" placeholder="Ej: 612345678" value={clientPhone} onChange={e => setClientPhone(e.target.value)} />
+                  <Input
+                    id="client-phone"
+                    type="tel"
+                    placeholder="Ej: 612345678"
+                    value={clientPhone}
+                    onChange={(e) => setClientPhone(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="party-size">Cantidad de Comensales *</Label>
-                  <Input id="party-size" type="number" min="1" placeholder="Ej: 4" value={partySize} onChange={e => setPartySize(e.target.value)} />
+                  <Input
+                    id="party-size"
+                    type="number"
+                    min="1"
+                    placeholder="Ej: 4"
+                    value={partySize}
+                    onChange={(e) => setPartySize(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="client-email">Email</Label>
-                  <Input id="client-email" type="email" placeholder="Ej: cliente@email.com" value={clientEmail} onChange={e => setClientEmail(e.target.value)} />
+                  <Input
+                    id="client-email"
+                    type="email"
+                    placeholder="Ej: cliente@email.com"
+                    value={clientEmail}
+                    onChange={(e) => setClientEmail(e.target.value)}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Estado</Label>
@@ -999,18 +1358,37 @@ export function TablesView({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="notes">Notas</Label>
-                  <Textarea id="notes" placeholder="Alergias, preferencias, etc." value={notes} onChange={e => setNotes(e.target.value)} rows={3} />
+                  <Textarea
+                    id="notes"
+                    placeholder="Alergias, preferencias, etc."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    rows={3}
+                  />
                 </div>
               </div>
               <DialogFooter className="flex-col sm:flex-row gap-2">
-                {selectedTable?.current_booking && <Button variant="destructive" onClick={() => setDeleteBookingDialogOpen(true)} className="w-full sm:w-auto">
+                {selectedTable?.current_booking && (
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setDeleteBookingDialogOpen(true)}
+                    className="w-full sm:w-auto"
+                  >
                     Eliminar Reserva
-                  </Button>}
+                  </Button>
+                )}
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <Button variant="outline" onClick={() => setIsBookingDialogOpen(false)} className="flex-1 sm:flex-none">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsBookingDialogOpen(false)}
+                    className="flex-1 sm:flex-none"
+                  >
                     Cancelar
                   </Button>
-                  <Button onClick={handleSaveBooking} className="flex-1 sm:flex-none">
+                  <Button 
+                    onClick={handleSaveBooking}
+                    className="flex-1 sm:flex-none"
+                  >
                     Guardar
                   </Button>
                 </div>
@@ -1019,9 +1397,15 @@ export function TablesView({
           </Dialog>
 
           {/* Orders Dialog */}
-          <OrdersDialog open={isOrdersDialogOpen} onOpenChange={setIsOrdersDialogOpen} tableNumber={selectedTable?.table_number || 0} orders={orders} totalAmount={selectedTable?.total_spent || 0} />
+          <OrdersDialog
+            open={isOrdersDialogOpen}
+            onOpenChange={setIsOrdersDialogOpen}
+            tableNumber={selectedTable?.table_number || 0}
+            orders={orders}
+            totalAmount={selectedTable?.total_spent || 0}
+          />
 
-          <AlertDialog open={deleteTableId !== null} onOpenChange={open => !open && setDeleteTableId(null)}>
+          <AlertDialog open={deleteTableId !== null} onOpenChange={(open) => !open && setDeleteTableId(null)}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>¿Estás seguro que quieres eliminar esta mesa?</AlertDialogTitle>
@@ -1048,13 +1432,16 @@ export function TablesView({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => {
-              if (isBookingDialogOpen) {
-                handleDeleteBooking();
-              } else {
-                handleCancelReservation();
-              }
-            }} className="bg-destructive hover:bg-destructive/90">
+                <AlertDialogAction 
+                  onClick={() => {
+                    if (isBookingDialogOpen) {
+                      handleDeleteBooking();
+                    } else {
+                      handleCancelReservation();
+                    }
+                  }} 
+                  className="bg-destructive hover:bg-destructive/90"
+                >
                   Confirmar
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -1071,30 +1458,48 @@ export function TablesView({
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                {rooms.length > 0 && <div className="space-y-2">
+                {rooms.length > 0 && (
+                  <div className="space-y-2">
                     <Label htmlFor="new-room">Sala</Label>
-                    <Select value={newRoomIdForTable || "no-room"} onValueChange={value => setNewRoomIdForTable(value === "no-room" ? "" : value)}>
+                    <Select value={newRoomIdForTable || "no-room"} onValueChange={(value) => setNewRoomIdForTable(value === "no-room" ? "" : value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar sala" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="no-room">Sin sala específica</SelectItem>
-                        {rooms.map(room => <SelectItem key={room.id} value={room.id}>
+                        {rooms.map((room) => (
+                          <SelectItem key={room.id} value={room.id}>
                             {room.name}
-                          </SelectItem>)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
-                  </div>}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="new-min-capacity">Capacidad Mínima</Label>
-                  <Input id="new-min-capacity" type="number" placeholder="Ej: 1" value={newMinCapacity} onChange={e => setNewMinCapacity(e.target.value)} min="1" />
+                  <Input
+                    id="new-min-capacity"
+                    type="number"
+                    placeholder="Ej: 1"
+                    value={newMinCapacity}
+                    onChange={(e) => setNewMinCapacity(e.target.value)}
+                    min="1"
+                  />
                   <p className="text-xs text-muted-foreground">
                     Número mínimo de personas que pueden usar esta mesa
                   </p>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="new-max-capacity">Capacidad Máxima</Label>
-                  <Input id="new-max-capacity" type="number" placeholder="Ej: 4" value={newMaxCapacity} onChange={e => setNewMaxCapacity(e.target.value)} min="1" />
+                  <Input
+                    id="new-max-capacity"
+                    type="number"
+                    placeholder="Ej: 4"
+                    value={newMaxCapacity}
+                    onChange={(e) => setNewMaxCapacity(e.target.value)}
+                    min="1"
+                  />
                   <p className="text-xs text-muted-foreground">
                     Número máximo de personas que pueden usar esta mesa
                   </p>
@@ -1108,6 +1513,8 @@ export function TablesView({
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </>}
-    </div>;
+        </>
+      )}
+    </div>
+  );
 }
