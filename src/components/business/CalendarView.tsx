@@ -200,27 +200,27 @@ export function CalendarView({ businessId }: CalendarViewProps) {
       <Card>
         <CardContent className="p-4">
           {/* Navigation Controls */}
-          <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="flex items-center justify-center gap-2 mb-3">
             <Button
               variant="outline"
               size="sm"
               onClick={previousYear}
-              className="h-8 px-3 text-sm"
+              className="h-7 px-2 text-xs"
             >
               {year - 1}
             </Button>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={previousMonth}
-                className="h-7 w-7"
+                className="h-6 w-6"
               >
                 <ChevronLeft className="h-3 w-3" />
               </Button>
               
-              <h2 className="text-xl font-bold min-w-[200px] text-center">
+              <h2 className="text-lg font-bold min-w-[180px] text-center">
                 {MONTHS[month]} {year}
               </h2>
               
@@ -228,7 +228,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                 variant="outline"
                 size="icon"
                 onClick={nextMonth}
-                className="h-7 w-7"
+                className="h-6 w-6"
               >
                 <ChevronRight className="h-3 w-3" />
               </Button>
@@ -238,20 +238,20 @@ export function CalendarView({ businessId }: CalendarViewProps) {
               variant="outline"
               size="sm"
               onClick={nextYear}
-              className="h-8 px-3 text-sm"
+              className="h-7 px-2 text-xs"
             >
               {year + 1}
             </Button>
           </div>
 
           {/* Calendar Grid */}
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {/* Days of week header */}
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5">
               {DAYS_OF_WEEK.map((day) => (
                 <div
                   key={day}
-                  className="text-center text-xs font-semibold text-muted-foreground p-1"
+                  className="text-center text-[10px] font-semibold text-muted-foreground py-1"
                 >
                   {day}
                 </div>
@@ -259,7 +259,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
             </div>
 
             {/* Calendar days */}
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5">
               {calendarDays.map((day, index) => {
                 if (day === null) {
                   return <div key={`empty-${index}`} />;
@@ -274,32 +274,32 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                     key={day}
                     onClick={() => handleDayClick(day)}
                     className={cn(
-                      "aspect-square p-1 rounded text-center transition-all text-sm",
+                      "h-14 w-full p-1 rounded text-center transition-all text-xs",
                       "hover:bg-accent/10 hover:scale-105",
                       closed && "bg-muted opacity-70 hover:bg-muted/80",
                       today && !closed && "bg-accent text-accent-foreground font-bold",
                       !closed && !today && "bg-background border border-border hover:border-accent"
                     )}
                   >
-                    <div className="flex flex-col items-center justify-center h-full gap-1">
-                      <span className={cn("text-sm", today && "font-bold")}>
+                    <div className="flex flex-col items-center justify-center h-full gap-0.5">
+                      <span className={cn("text-xs", today && "font-bold")}>
                         {day}
                       </span>
                       {closed ? (
-                        <span className="text-[10px] text-muted-foreground">
+                        <span className="text-[8px] text-muted-foreground">
                           Cerrado
                         </span>
                       ) : dayEvents.length > 0 ? (
                         <div className="flex gap-0.5 flex-wrap justify-center">
-                          {dayEvents.slice(0, 3).map((event) => (
+                          {dayEvents.slice(0, 2).map((event) => (
                             <div
                               key={event.id}
-                              className="w-1.5 h-1.5 rounded-full"
+                              className="w-1 h-1 rounded-full"
                               style={{ backgroundColor: event.color }}
                             />
                           ))}
-                          {dayEvents.length > 3 && (
-                            <span className="text-[8px] text-muted-foreground">+{dayEvents.length - 3}</span>
+                          {dayEvents.length > 2 && (
+                            <span className="text-[7px] text-muted-foreground">+{dayEvents.length - 2}</span>
                           )}
                         </div>
                       ) : null}
@@ -311,18 +311,18 @@ export function CalendarView({ businessId }: CalendarViewProps) {
           </div>
 
           {/* Legend */}
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="flex flex-wrap gap-3 text-xs">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-accent" />
+          <div className="mt-3 pt-3 border-t border-border">
+            <div className="flex flex-wrap gap-2 text-[10px]">
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded bg-accent" />
                 <span>Día actual</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-background border border-border" />
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded bg-background border border-border" />
                 <span>Día disponible</span>
               </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded bg-muted" />
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded bg-muted" />
                 <span>Local cerrado</span>
               </div>
             </div>
