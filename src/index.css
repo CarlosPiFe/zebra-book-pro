@@ -8,101 +8,108 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Zebra-inspired design system */
-    --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
+    /* === Colores Base === */
+    /* Fondo Principal (#06101B) */
+    --background: 214 50% 6%;
+    /* Texto Principal (Blanco) */
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 10%;
+    /* === Acento Primario (#D0E37F) === */
+    /* Color de Botones y Elementos Activos */
+    --primary: 73 59% 69%;
+    /* Texto sobre los botones (oscuro para que contraste con el lima) */
+    --primary-foreground: 73 59% 10%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 10%;
+    /* === Fondos Elevados (#1B2A39) === */
+    /* Fondo de Tarjetas, Pop-ups y Diálogos */
+    --card: 211 31% 17%;
+    --card-foreground: 210 40% 98%;
+    --popover: 211 31% 17%;
+    --popover-foreground: 210 40% 98%;
 
-    /* Primary: Elegant black with subtle warmth */
-    --primary: 0 0% 10%;
-    --primary-foreground: 0 0% 98%;
+    /* === Colores Secundarios y Muted === */
+    --secondary: 211 31% 25%; /* Ligeramente más claro que los pop-ups */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 211 31% 12%; /* Ligeramente más oscuro que los pop-ups */
+    --muted-foreground: 215 16% 57%; /* Texto grisáceo */
 
-    /* Secondary: Soft gray for contrast */
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 10%;
+    /* === Otros Acentos === */
+    --accent: 73 59% 69%; /* Igual que el primario */
+    --accent-foreground: 73 59% 10%;
+    --destructive: 0 72% 51%; /* Rojo vibrante para errores */
+    --destructive-foreground: 210 40% 98%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 45%;
+    /* === Bordes e Inputs === */
+    --border: 211 31% 25%;
+    --input: 211 31% 25%;
+    --ring: 73 59% 69%; /* Anillo de foco (color primario) */
 
-    /* Accent: Fresh mint green for CTAs */
-    --accent: 160 84% 39%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 92%;
-    --input: 0 0% 92%;
-    --ring: 160 84% 39%;
-
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
     /* Sidebar colors */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 10%;
-    --sidebar-primary: 0 0% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 160 84% 39%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 92%;
-    --sidebar-ring: 160 84% 39%;
+    --sidebar-background: 214 50% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 73 59% 69%;
+    --sidebar-primary-foreground: 73 59% 10%;
+    --sidebar-accent: 73 59% 69%;
+    --sidebar-accent-foreground: 73 59% 10%;
+    --sidebar-border: 211 31% 25%;
+    --sidebar-ring: 73 59% 69%;
 
     /* Custom design tokens */
-    --gradient-hero: linear-gradient(135deg, hsl(0 0% 10%) 0%, hsl(0 0% 20%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(160 70% 50%) 100%);
-    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.08);
-    --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.12);
-    --shadow-strong: 0 8px 32px -8px hsl(0 0% 0% / 0.16);
+    --gradient-hero: linear-gradient(135deg, hsl(214 50% 6%) 0%, hsl(211 31% 17%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(73 59% 69%) 0%, hsl(73 59% 80%) 100%);
+    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
+    --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
+    --shadow-strong: 0 8px 32px -8px hsl(0 0% 0% / 0.5);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .dark {
-    --background: 0 0% 10%;
-    --foreground: 0 0% 98%;
+    /* === Colores Base === */
+    --background: 214 50% 6%;
+    --foreground: 210 40% 98%;
 
-    --card: 0 0% 15%;
-    --card-foreground: 0 0% 98%;
+    /* === Acento Primario (#D0E37F) === */
+    --primary: 73 59% 69%;
+    --primary-foreground: 73 59% 10%;
 
-    --popover: 0 0% 15%;
-    --popover-foreground: 0 0% 98%;
+    /* === Fondos Elevados (#1B2A39) === */
+    --card: 211 31% 17%;
+    --card-foreground: 210 40% 98%;
+    --popover: 211 31% 17%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 10%;
+    /* === Colores Secundarios y Muted === */
+    --secondary: 211 31% 25%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 211 31% 12%;
+    --muted-foreground: 215 16% 57%;
 
-    --secondary: 0 0% 20%;
-    --secondary-foreground: 0 0% 98%;
+    /* === Otros Acentos === */
+    --accent: 73 59% 69%;
+    --accent-foreground: 73 59% 10%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 210 40% 98%;
 
-    --muted: 0 0% 20%;
-    --muted-foreground: 0 0% 65%;
-
-    --accent: 160 84% 39%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 62% 50%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 25%;
-    --input: 0 0% 25%;
-    --ring: 160 84% 39%;
+    /* === Bordes e Inputs === */
+    --border: 211 31% 25%;
+    --input: 211 31% 25%;
+    --ring: 73 59% 69%;
 
     /* Sidebar dark mode colors */
-    --sidebar-background: 0 0% 15%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 160 84% 39%;
-    --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 0 0% 25%;
-    --sidebar-ring: 160 84% 39%;
+    --sidebar-background: 214 50% 6%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 73 59% 69%;
+    --sidebar-primary-foreground: 73 59% 10%;
+    --sidebar-accent: 73 59% 69%;
+    --sidebar-accent-foreground: 73 59% 10%;
+    --sidebar-border: 211 31% 25%;
+    --sidebar-ring: 73 59% 69%;
 
-    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.2);
-    --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.3);
-    --shadow-strong: 0 8px 32px -8px hsl(0 0% 0% / 0.4);
+    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.4);
+    --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.5);
+    --shadow-strong: 0 8px 32px -8px hsl(0 0% 0% / 0.6);
   }
 }
 
