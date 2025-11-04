@@ -191,8 +191,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   return (
     <div className="space-y-4 flex flex-col h-full">
       <div>
-        <h1 className="text-3xl font-bold mb-2">Calendario</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-3xl font-bold mb-1">Calendario</h1>
+        <p className="text-muted-foreground text-sm">
           Navega por el calendario y haz clic en un día para ver sus eventos, horarios o reservas
         </p>
       </div>

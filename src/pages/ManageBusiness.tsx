@@ -133,7 +133,7 @@ const ManageBusiness = () => {
             onViewChange={setActiveView}
           />
           
-          <main className="flex-1 p-6 md:p-8 flex flex-col">
+          <main className="flex-1 px-6 md:px-8 pt-3 pb-6 flex flex-col">
             {renderView()}
           </main>
         </div>
