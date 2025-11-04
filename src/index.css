@@ -9,41 +9,37 @@ All colors MUST be HSL.
 @layer base {
   :root {
     /* === Colores Base === */
-    /* Fondo Principal (#06101B) */
-    --background: 214 50% 6%;
-    /* Texto Principal (Blanco) */
-    --foreground: 210 40% 98%;
-
-    /* === Acento Primario (#D0E37F) === */
-    /* Color de Botones y Elementos Activos */
-    --primary: 73 59% 69%;
-    /* Texto sobre los botones (oscuro para que contraste con el lima) */
-    --primary-foreground: 73 59% 10%;
-
-    /* === Fondos Elevados (#1B2A39) === */
-    /* Fondo de Tarjetas, Pop-ups y Diálogos */
-    --card: 211 31% 17%;
+    --background: 214 50% 6%; /* #06101B */
+    --foreground: 210 40% 98%; /* Blanco */
+    --card: 211 31% 17%; /* #1B2A39 */
     --card-foreground: 210 40% 98%;
     --popover: 211 31% 17%;
     --popover-foreground: 210 40% 98%;
+    
+    /* === Acento Primario === */
+    --primary: 73 59% 69%; /* #D0E37F */
+    --primary-foreground: 73 59% 10%;
 
-    /* === Colores Secundarios y Muted === */
-    --secondary: 211 31% 25%; /* Ligeramente más claro que los pop-ups */
+    /* === Colores Secundarios === */
+    --secondary: 211 31% 25%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 211 31% 12%; /* Ligeramente más oscuro que los pop-ups */
-    --muted-foreground: 215 16% 57%; /* Texto grisáceo */
+    --muted: 211 31% 12%;
+    --muted-foreground: 215 16% 57%;
 
-    /* === Otros Acentos === */
-    --accent: 73 59% 69%; /* Igual que el primario */
-    --accent-foreground: 73 59% 10%;
-    --destructive: 0 72% 51%; /* Rojo vibrante para errores */
+    /* === Color Destructivo (ACTUALIZADO) === */
+    --destructive: 343 95% 48%; /* #EC0B43 */
     --destructive-foreground: 210 40% 98%;
 
-    /* === Bordes e Inputs === */
+    /* === NUEVOS Acentos === */
+    --accent-blue: 203 91% 82%; /* #A9DEF9 */
+    --accent-purple: 279 79% 87%; /* #E4C1F9 */
+
+    /* === Otros === */
+    --accent: 73 59% 69%;
+    --accent-foreground: 73 59% 10%;
     --border: 211 31% 25%;
     --input: 211 31% 25%;
-    --ring: 73 59% 69%; /* Anillo de foco (color primario) */
-
+    --ring: 73 59% 69%;
     --radius: 0.5rem;
 
     /* Sidebar colors */
@@ -66,33 +62,24 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* === Colores Base === */
     --background: 214 50% 6%;
     --foreground: 210 40% 98%;
-
-    /* === Acento Primario (#D0E37F) === */
-    --primary: 73 59% 69%;
-    --primary-foreground: 73 59% 10%;
-
-    /* === Fondos Elevados (#1B2A39) === */
     --card: 211 31% 17%;
     --card-foreground: 210 40% 98%;
     --popover: 211 31% 17%;
     --popover-foreground: 210 40% 98%;
-
-    /* === Colores Secundarios y Muted === */
+    --primary: 73 59% 69%;
+    --primary-foreground: 73 59% 10%;
     --secondary: 211 31% 25%;
     --secondary-foreground: 210 40% 98%;
     --muted: 211 31% 12%;
     --muted-foreground: 215 16% 57%;
-
-    /* === Otros Acentos === */
+    --destructive: 343 95% 48%; /* #EC0B43 */
+    --destructive-foreground: 210 40% 98%;
+    --accent-blue: 203 91% 82%; /* #A9DEF9 */
+    --accent-purple: 279 79% 87%; /* #E4C1F9 */
     --accent: 73 59% 69%;
     --accent-foreground: 73 59% 10%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
-
-    /* === Bordes e Inputs === */
     --border: 211 31% 25%;
     --input: 211 31% 25%;
     --ring: 73 59% 69%;
