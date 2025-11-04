@@ -24,10 +24,10 @@ export const HeroSearch = () => {
         <div className="bg-white rounded-xl shadow-md p-6 space-y-4">
           <div className="text-center space-y-2">
             <h1 className="text-3xl tracking-tight text-foreground text-left font-bold md:text-4xl">
-              Busca y reserva los mejores restaurantes
+              Reserva tu próxima mesa en segundos
             </h1>
             <p className="text-base text-muted-foreground">
-              Descubre cerca de ti
+              Descubre los mejores restaurantes de tu zona
             </p>
           </div>
 
