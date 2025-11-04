@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RestaurantCard } from "./RestaurantCard";
@@ -26,10 +27,33 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     loadBusinesses();
   }, [filter]);
+
+  useEffect(() => {
+    checkScrollPosition();
+  }, [businesses]);
+
+  const checkScrollPosition = () => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  };
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollLeft, scrollWidth, clientWidth } = e.currentTarget;
+    setScrollPosition(scrollLeft);
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  };
 
   const loadBusinesses = async () => {
     setLoading(true);
@@ -105,20 +129,30 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
       </div>
 
       <div className="relative">
-        {/* Degradado izquierdo - muy sutil y separado */}
-        <div className="absolute left-0 top-0 bottom-0 w-24 z-10 pointer-events-none" 
-          style={{ background: 'linear-gradient(to right, hsl(0 0% 100% / 1), hsl(0 0% 100% / 0.8) 20%, hsl(0 0% 100% / 0.4) 50%, transparent 100%)' }} 
+        {/* Degradado izquierdo - solo visible cuando se puede hacer scroll a la izquierda */}
+        <div 
+          className="absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none transition-opacity duration-300" 
+          style={{ 
+            background: 'linear-gradient(to right, hsl(var(--background)) 0%, hsl(var(--background) / 0.8) 30%, transparent 100%)',
+            opacity: canScrollLeft ? 1 : 0
+          }} 
         />
         
-        {/* Degradado derecho - muy sutil y separado */}
-        <div className="absolute right-0 top-0 bottom-0 w-24 z-10 pointer-events-none" 
-          style={{ background: 'linear-gradient(to left, hsl(0 0% 100% / 1), hsl(0 0% 100% / 0.8) 20%, hsl(0 0% 100% / 0.4) 50%, transparent 100%)' }} 
+        {/* Degradado derecho - solo visible cuando se puede hacer scroll a la derecha */}
+        <div 
+          className="absolute right-0 top-0 bottom-0 w-16 z-10 pointer-events-none transition-opacity duration-300" 
+          style={{ 
+            background: 'linear-gradient(to left, hsl(var(--background)) 0%, hsl(var(--background) / 0.8) 30%, transparent 100%)',
+            opacity: canScrollRight ? 1 : 0
+          }} 
         />
         
         <div
+          ref={containerRef}
           id={`carousel-${title}`}
           className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          onScroll={handleScroll}
         >
           {businesses.map((business) => (
             <div key={business.id} className="flex-none w-[260px]">
