@@ -100,16 +100,28 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
         </div>
       </div>
 
-      <div
-        id={`carousel-${title}`}
-        className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {businesses.map((business) => (
-          <div key={business.id} className="flex-none w-[260px]">
-            <RestaurantCard business={business} />
-          </div>
-        ))}
+      <div className="relative">
+        {/* Degradado izquierdo */}
+        <div className="absolute left-0 top-0 bottom-0 w-16 z-10 pointer-events-none" 
+          style={{ background: 'linear-gradient(to right, hsl(210 18% 20%), transparent)' }} 
+        />
+        
+        {/* Degradado derecho */}
+        <div className="absolute right-0 top-0 bottom-0 w-16 z-10 pointer-events-none" 
+          style={{ background: 'linear-gradient(to left, hsl(210 18% 20%), transparent)' }} 
+        />
+        
+        <div
+          id={`carousel-${title}`}
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth pb-2"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {businesses.map((business) => (
+            <div key={business.id} className="flex-none w-[260px]">
+              <RestaurantCard business={business} />
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
