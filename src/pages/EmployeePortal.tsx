@@ -118,7 +118,7 @@ const EmployeePortal = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <LoadingSpinner fullScreen text="Cargando portal de empleado..." />
+        <LoadingSpinner fullScreen />
       </div>
     );
   }

@@ -743,7 +743,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   };
 
   if (loading) {
-    return <LoadingSpinner fullScreen text="Cargando mesas..." />;
+    return <LoadingSpinner fullScreen />;
   }
 
   // Filtrar mesas según la sala seleccionada

@@ -232,7 +232,7 @@ export function AvailabilityTableDialog({
             <DialogTitle>Disponibilidad de Mesas</DialogTitle>
           </DialogHeader>
           <div className="flex items-center justify-center py-12">
-            <LoadingSpinner size="lg" text="Cargando disponibilidad..." />
+            <LoadingSpinner size="lg" />
           </div>
         </DialogContent>
       </Dialog>

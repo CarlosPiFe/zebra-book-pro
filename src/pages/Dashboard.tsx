@@ -188,7 +188,7 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <LoadingSpinner fullScreen text="Cargando tu panel..." />
+        <LoadingSpinner fullScreen />
       </div>
     );
   }

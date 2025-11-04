@@ -185,7 +185,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   }
 
   if (loading) {
-    return <LoadingSpinner fullScreen text="Cargando calendario..." />;
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

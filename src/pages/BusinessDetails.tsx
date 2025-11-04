@@ -606,7 +606,7 @@ export default function BusinessDetails() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <LoadingSpinner size="xl" text="Cargando información del negocio..." />
+        <LoadingSpinner size="xl" />
       </div>
     );
   }
@@ -836,7 +836,7 @@ export default function BusinessDetails() {
           {/* Columna 3: Haz tu reserva */}
           <div className="lg:col-span-1">
             <Card className="sticky top-4 shadow-lg relative">
-              {submitting && <LoadingOverlay text="Procesando tu reserva..." />}
+              {submitting && <LoadingOverlay />}
               <CardContent className="pt-6">
                 <h3 className="text-2xl font-semibold mb-4 flex items-center">
                   <Calendar className="mr-2 h-6 w-6 text-primary" />

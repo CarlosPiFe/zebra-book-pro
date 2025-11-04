@@ -262,7 +262,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
   };
 
   if (loading) {
-    return <LoadingSpinner fullScreen text="Cargando empleados..." />;
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

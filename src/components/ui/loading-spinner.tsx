@@ -72,10 +72,10 @@ export function LoadingSpinner({
 }
 
 // Componente para overlay de carga en secciones
-export function LoadingOverlay({ text }: { text?: string }) {
+export function LoadingOverlay() {
   return (
     <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
-      <LoadingSpinner size="lg" text={text} />
+      <LoadingSpinner size="lg" />
     </div>
   );
 }

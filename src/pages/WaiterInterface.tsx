@@ -188,7 +188,7 @@ const WaiterInterface = () => {
   }, {} as Record<string, MenuItem[]>);
 
   if (loading) {
-    return <LoadingSpinner fullScreen text="Cargando interfaz..." />;
+    return <LoadingSpinner fullScreen />;
   }
 
   if (showNameForm) {

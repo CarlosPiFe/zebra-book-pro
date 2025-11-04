@@ -140,7 +140,7 @@ export function EmployeeSchedule({ employeeId, employeeName }: EmployeeScheduleP
   }, {} as Record<string, { startTime: string; endTime: string; days: { day: number; id: string }[] }>);
 
   if (loading) {
-    return <LoadingSpinner size="lg" text="Cargando horarios..." />;
+    return <LoadingSpinner size="lg" />;
   }
 
   return (

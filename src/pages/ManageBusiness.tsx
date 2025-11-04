@@ -112,7 +112,7 @@ const ManageBusiness = () => {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <LoadingSpinner fullScreen text="Cargando información del negocio..." />
+        <LoadingSpinner fullScreen />
       </div>
     );
   }

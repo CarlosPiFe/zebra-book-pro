@@ -312,7 +312,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
   };
 
   if (loading) {
-    return <LoadingSpinner fullScreen text="Cargando reservas..." />;
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

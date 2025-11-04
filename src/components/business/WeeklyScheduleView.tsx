@@ -309,7 +309,7 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
 
   if (loading) {
-    return <LoadingSpinner fullScreen text="Cargando horarios..." />;
+    return <LoadingSpinner fullScreen />;
   }
 
   return (

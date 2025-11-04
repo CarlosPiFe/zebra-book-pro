@@ -59,7 +59,7 @@ export default function Profile() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <LoadingSpinner fullScreen text="Cargando perfil..." />
+        <LoadingSpinner fullScreen />
       </div>
     );
   }

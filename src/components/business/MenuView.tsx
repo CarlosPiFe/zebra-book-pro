@@ -151,7 +151,7 @@ export function MenuView({ businessId }: MenuViewProps) {
   const bebidas = menuItems.filter((item) => item.category === "bebida");
 
   if (loading) {
-    return <LoadingSpinner fullScreen text="Cargando menú..." />;
+    return <LoadingSpinner fullScreen />;
   }
 
   return (
