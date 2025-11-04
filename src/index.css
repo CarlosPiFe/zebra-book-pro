@@ -8,52 +8,53 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* === Colores Base === */
-    --background: 214 50% 6%; /* #06101B */
-    --foreground: 210 40% 98%; /* Blanco */
-    --card: 211 31% 17%; /* #1B2A39 */
+    /* === Colores Base (ACTUALIZADO) === */
+    /* Fondo Principal (El #2C3642 que pediste) */
+    --background: 210 18% 22%;
+    /* Texto Principal (Blanco) */
+    --foreground: 210 40% 98%;
+
+    /* === Fondos Elevados (Pop-ups más claros) === */
+    /* Fondo de Tarjetas, Pop-ups y Diálogos (Más claro que el fondo) */
+    --card: 210 15% 30%;
     --card-foreground: 210 40% 98%;
-    --popover: 211 31% 17%;
+    --popover: 210 15% 30%;
     --popover-foreground: 210 40% 98%;
+
+    /* === Colores Secundarios y Muted (Derivados) === */
+    --secondary: 210 15% 35%; /* Ligeramente más claro que el pop-up */
+    --secondary-foreground: 210 40% 98%;
+    --muted: 210 15% 18%; /* Ligeramente más oscuro que el fondo principal */
+    --muted-foreground: 215 16% 65%; /* Texto grisáceo más claro */
+
+    /* === Bordes e Inputs (Derivados) === */
+    --border: 210 15% 35%; /* Basado en el secundario */
+    --input: 210 15% 35%; /* Basado en el secundario */
     
-    /* === Acento Primario === */
+    /* === Acentos (SIN CAMBIOS) === */
     --primary: 73 59% 69%; /* #D0E37F */
     --primary-foreground: 73 59% 10%;
-
-    /* === Colores Secundarios === */
-    --secondary: 211 31% 25%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 211 31% 12%;
-    --muted-foreground: 215 16% 57%;
-
-    /* === Color Destructivo (ACTUALIZADO) === */
     --destructive: 343 95% 48%; /* #EC0B43 */
     --destructive-foreground: 210 40% 98%;
-
-    /* === NUEVOS Acentos === */
     --accent-blue: 203 91% 82%; /* #A9DEF9 */
     --accent-purple: 279 79% 87%; /* #E4C1F9 */
-
-    /* === Otros === */
     --accent: 73 59% 69%;
     --accent-foreground: 73 59% 10%;
-    --border: 211 31% 25%;
-    --input: 211 31% 25%;
     --ring: 73 59% 69%;
     --radius: 0.5rem;
 
     /* Sidebar colors */
-    --sidebar-background: 214 50% 6%;
+    --sidebar-background: 210 18% 22%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 73 59% 69%;
     --sidebar-primary-foreground: 73 59% 10%;
     --sidebar-accent: 73 59% 69%;
     --sidebar-accent-foreground: 73 59% 10%;
-    --sidebar-border: 211 31% 25%;
+    --sidebar-border: 210 15% 35%;
     --sidebar-ring: 73 59% 69%;
 
     /* Custom design tokens */
-    --gradient-hero: linear-gradient(135deg, hsl(214 50% 6%) 0%, hsl(211 31% 17%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(210 18% 22%) 0%, hsl(210 15% 30%) 100%);
     --gradient-accent: linear-gradient(135deg, hsl(73 59% 69%) 0%, hsl(73 59% 80%) 100%);
     --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
     --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
@@ -62,36 +63,37 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 214 50% 6%;
+    /* Repetimos las variables para el modo oscuro */
+    --background: 210 18% 22%;
     --foreground: 210 40% 98%;
-    --card: 211 31% 17%;
+    --card: 210 15% 30%;
     --card-foreground: 210 40% 98%;
-    --popover: 211 31% 17%;
+    --popover: 210 15% 30%;
     --popover-foreground: 210 40% 98%;
     --primary: 73 59% 69%;
     --primary-foreground: 73 59% 10%;
-    --secondary: 211 31% 25%;
+    --secondary: 210 15% 35%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 211 31% 12%;
-    --muted-foreground: 215 16% 57%;
-    --destructive: 343 95% 48%; /* #EC0B43 */
+    --muted: 210 15% 18%;
+    --muted-foreground: 215 16% 65%;
+    --destructive: 343 95% 48%;
     --destructive-foreground: 210 40% 98%;
-    --accent-blue: 203 91% 82%; /* #A9DEF9 */
-    --accent-purple: 279 79% 87%; /* #E4C1F9 */
+    --accent-blue: 203 91% 82%;
+    --accent-purple: 279 79% 87%;
     --accent: 73 59% 69%;
     --accent-foreground: 73 59% 10%;
-    --border: 211 31% 25%;
-    --input: 211 31% 25%;
+    --border: 210 15% 35%;
+    --input: 210 15% 35%;
     --ring: 73 59% 69%;
 
     /* Sidebar dark mode colors */
-    --sidebar-background: 214 50% 6%;
+    --sidebar-background: 210 18% 22%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 73 59% 69%;
     --sidebar-primary-foreground: 73 59% 10%;
     --sidebar-accent: 73 59% 69%;
     --sidebar-accent-foreground: 73 59% 10%;
-    --sidebar-border: 211 31% 25%;
+    --sidebar-border: 210 15% 35%;
     --sidebar-ring: 73 59% 69%;
 
     --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.4);
