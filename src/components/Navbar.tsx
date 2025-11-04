@@ -88,13 +88,13 @@ export const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-b shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo - Izquierda */}
           <Link to="/" className="flex items-center group">
             <img 
               src={isManagerPage ? zebraLogoManager : zebraLogo} 
               alt="ZebraTime Logo" 
-              className="h-12 transition-transform group-hover:scale-105"
+              className="h-16 transition-transform group-hover:scale-105"
             />
           </Link>
 
