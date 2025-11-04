@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
-import { Plus, Info, AlertCircle, Calendar as CalendarIcon, User, Mail, Phone, Clock, Armchair, ClipboardList } from "lucide-react";
+import { Plus, Info, AlertCircle, Calendar as CalendarIcon, User, Mail, Phone, Clock, Armchair, ClipboardList, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { addMinutes, startOfDay, isBefore } from "date-fns";
 import { z } from "zod";
@@ -557,7 +557,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                   disabled={!bookingDate || isClosedDay}
                   className="w-full"
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <Search className="mr-2 h-4 w-4" />
                   Consultar Disponibilidad
                 </Button>
               </div>
