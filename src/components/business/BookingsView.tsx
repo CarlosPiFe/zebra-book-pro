@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, User, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
@@ -338,11 +339,37 @@ export function BookingsView({ businessId }: BookingsViewProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Fecha</Label>
-              <DatePicker
-                date={selectedDate}
-                onDateChange={(date) => date && setSelectedDate(date)}
-                placeholder="Seleccionar fecha"
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  onClick={() => {
+                    const newDate = new Date(selectedDate);
+                    newDate.setDate(newDate.getDate() - 1);
+                    setSelectedDate(newDate);
+                  }}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <DatePicker
+                  date={selectedDate}
+                  onDateChange={(date) => date && setSelectedDate(date)}
+                  placeholder="Seleccionar fecha"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-10 w-10 shrink-0"
+                  onClick={() => {
+                    const newDate = new Date(selectedDate);
+                    newDate.setDate(newDate.getDate() + 1);
+                    setSelectedDate(newDate);
+                  }}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <div className="space-y-2">
               <Label>Hora (opcional)</Label>
