@@ -131,32 +131,42 @@ All colors MUST be HSL.
 }
 
 .phone-input-custom .react-international-phone-input-container {
-  @apply w-full flex items-center;
-  gap: 0.75rem; /* 12px de separación clara */
+  @apply w-full flex items-stretch;
+  gap: 0.5rem;
+}
+
+/* Botón selector de país - misma altura que el input (h-10 = 40px) */
+.phone-input-custom .react-international-phone-country-selector-button {
+  @apply h-10 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground text-sm text-foreground;
+  min-width: auto !important;
+  padding: 0 0.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .phone-input-custom .react-international-phone-country-selector-button__button-content {
   @apply flex-shrink-0;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
 }
 
+.phone-input-custom .react-international-phone-country-selector-button__dropdown-arrow {
+  margin-left: 0.25rem !important;
+}
+
+/* Input del teléfono - misma altura (h-10 = 40px) */
 .phone-input-custom .react-international-phone-input {
-  @apply w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
-  flex: 1; /* Asegura que tome el espacio disponible */
+  @apply w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  flex: 1;
 }
 
 .phone-input-custom .react-international-phone-input[class*="border-destructive"] {
   @apply border-destructive;
 }
 
-.phone-input-custom .react-international-phone-country-selector-button {
-  @apply h-9 border border-input bg-background hover:bg-accent hover:text-accent-foreground rounded-md text-sm text-foreground;
-  flex-shrink: 0; /* No se encoge */
-  min-width: 65px; /* Ancho mínimo fijo */
-  max-width: 65px; /* Ancho máximo fijo */
-  margin-right: 0.25rem; /* Margen adicional a la derecha */
-  padding: 0 0.5rem; /* Padding interno controlado */
-}
-
+/* Dropdown del selector de país */
 .phone-input-custom .react-international-phone-country-selector-dropdown {
   @apply bg-popover text-popover-foreground border border-border rounded-md shadow-md z-50 max-h-60 overflow-auto;
 }
