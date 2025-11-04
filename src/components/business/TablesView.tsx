@@ -767,23 +767,50 @@ export function TablesView({ businessId }: TablesViewProps) {
         <CardHeader className="pb-3">
           <h3 className="text-sm font-medium">Filtros</h3>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Fecha</Label>
               <DatePicker
                 date={filterDate}
                 onDateChange={(date) => date && setFilterDate(date)}
                 placeholder="Seleccionar fecha"
+                onPreviousDay={() => {
+                  const newDate = new Date(filterDate);
+                  newDate.setDate(newDate.getDate() - 1);
+                  setFilterDate(newDate);
+                }}
+                onNextDay={() => {
+                  const newDate = new Date(filterDate);
+                  newDate.setDate(newDate.getDate() + 1);
+                  setFilterDate(newDate);
+                }}
               />
             </div>
             <div className="space-y-2">
-              <Label>Hora</Label>
+              <Label>Hora (opcional)</Label>
               <TimePicker
                 time={filterTime}
                 onTimeChange={setFilterTime}
-                placeholder="Seleccionar hora"
+                placeholder="Ver todas las horas"
+                allowClear={true}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Sala</Label>
+              <Select value={selectedRoomId || "all"} onValueChange={(value) => setSelectedRoomId(value === "all" ? null : value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas las salas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las salas</SelectItem>
+                  {rooms.map((room) => (
+                    <SelectItem key={room.id} value={room.id}>
+                      {room.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
