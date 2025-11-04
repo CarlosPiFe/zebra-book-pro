@@ -189,7 +189,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 flex flex-col h-full">
       <div>
         <h1 className="text-3xl font-bold mb-2">Calendario</h1>
         <p className="text-muted-foreground">
@@ -197,8 +197,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
         </p>
       </div>
 
-      <Card>
-        <CardContent className="p-4">
+      <Card className="flex-1 flex flex-col min-h-0">
+        <CardContent className="p-4 flex-1 flex flex-col">
           {/* Navigation Controls */}
           <div className="flex items-center justify-center gap-2 mb-3">
             <Button
@@ -244,8 +244,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
             </Button>
           </div>
 
-          {/* Calendar Grid */}
-          <div className="space-y-0.5">
+          {/* Calendar Grid - Flex grow para usar todo el espacio disponible */}
+          <div className="flex-1 flex flex-col space-y-0.5">
             {/* Days of week header */}
             <div className="grid grid-cols-7 gap-0.5">
               {DAYS_OF_WEEK.map((day) => (
@@ -258,8 +258,8 @@ export function CalendarView({ businessId }: CalendarViewProps) {
               ))}
             </div>
 
-            {/* Calendar days */}
-            <div className="grid grid-cols-7 gap-0.5">
+            {/* Calendar days - Grid que crece para llenar el espacio */}
+            <div className="grid grid-cols-7 gap-0.5 flex-1">
               {calendarDays.map((day, index) => {
                 if (day === null) {
                   return <div key={`empty-${index}`} />;
@@ -274,7 +274,7 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                     key={day}
                     onClick={() => handleDayClick(day)}
                     className={cn(
-                      "h-14 w-full p-1 rounded text-center transition-all text-xs",
+                      "w-full p-1 rounded text-center transition-all text-xs min-h-[60px]",
                       "hover:bg-accent/10 hover:scale-105",
                       closed && "bg-muted opacity-70 hover:bg-muted/80",
                       today && !closed && "bg-accent text-accent-foreground font-bold",

@@ -45,7 +45,7 @@ export function BusinessSidebar({ business, activeView, onViewChange }: Business
   ] : [];
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="w-52">
       <SidebarTrigger className="m-2 self-end" />
 
       <SidebarContent>
