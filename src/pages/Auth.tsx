@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Store, User, ArrowLeft } from "lucide-react";
 import { z } from "zod";
-import zebraLogo from "@/assets/zebra-logo.svg";
 import { cn } from "@/lib/utils";
 
 const authSchema = z.object({
@@ -152,7 +151,7 @@ const Auth = () => {
         
         <CardHeader className="text-center pt-12">
           <div className="flex justify-center mb-4">
-            <img src={zebraLogo} alt="ZebraTime Logo" className="h-16" />
+            <img src="/favicon.svg" alt="ZebraTime" className="h-16 w-16" />
           </div>
           <CardTitle className="text-2xl">
             {isForgotPassword 
