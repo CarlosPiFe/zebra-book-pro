@@ -105,13 +105,13 @@ export const RestaurantCarousel = ({ title, filter = "all" }: RestaurantCarousel
       </div>
 
       <div className="relative">
-        {/* Degradado izquierdo */}
-        <div className="absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none" 
+        {/* Degradado izquierdo - más sutil */}
+        <div className="absolute left-0 top-0 bottom-0 w-12 z-10 pointer-events-none" 
           style={{ background: 'linear-gradient(to right, hsl(0 0% 100%), transparent)' }} 
         />
         
-        {/* Degradado derecho */}
-        <div className="absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none" 
+        {/* Degradado derecho - más sutil */}
+        <div className="absolute right-0 top-0 bottom-0 w-12 z-10 pointer-events-none" 
           style={{ background: 'linear-gradient(to left, hsl(0 0% 100%), transparent)' }} 
         />
         
