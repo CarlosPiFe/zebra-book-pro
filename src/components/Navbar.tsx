@@ -1,6 +1,7 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Calendar, LogOut, Briefcase, Store, PlusCircle, User } from "lucide-react";
+import { LogOut, Briefcase, Store, PlusCircle, User } from "lucide-react";
+import zebraLogo from "@/assets/zebra-logo.png";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
@@ -21,11 +22,18 @@ import { CreateBusinessDialog } from "@/components/CreateBusinessDialog";
 
 export const Navbar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [showCreateBusinessDialog, setShowCreateBusinessDialog] = useState(false);
   const { isEmployee, loading: employeeLoading } = useEmployeeAccess(user);
   const { hasBusinesses, loading: businessLoading } = useBusinessOwner(user);
+
+  // Detectar si estamos en páginas de gestión
+  const isManagerPage = location.pathname.startsWith('/dashboard') || 
+                        location.pathname.startsWith('/manage-business') || 
+                        location.pathname.startsWith('/employee-portal') ||
+                        location.pathname.startsWith('/waiter-interface');
 
   useEffect(() => {
     // Get initial session
@@ -81,9 +89,18 @@ export const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
         <div className="flex items-center justify-between h-16">
           {/* Logo - Izquierda */}
-          <Link to="/" className="flex items-center gap-2 group">
-            <Calendar className="h-6 w-6 text-primary transition-transform group-hover:scale-110" />
-            <span className="text-xl font-bold text-foreground">ZebraTime</span>
+          <Link to="/" className="flex items-center gap-3 group">
+            <img 
+              src={zebraLogo} 
+              alt="ZebraTime Logo" 
+              className="h-10 w-10 transition-transform group-hover:scale-110"
+            />
+            <div className="flex flex-col">
+              <span className="text-xl font-bold text-foreground leading-tight">ZebraTime</span>
+              {isManagerPage && (
+                <span className="text-xs font-semibold text-primary leading-tight">Manager</span>
+              )}
+            </div>
           </Link>
 
           {/* Botones - Derecha */}
