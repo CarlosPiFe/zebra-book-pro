@@ -42,7 +42,7 @@ export function DatePicker({ date, onDateChange, placeholder = "Seleccionar fech
             </button>
           )}
           <span className="text-sm px-1 truncate">
-            {date ? format(date, "PPP", { locale: es }) : <span>{placeholder}</span>}
+            {date ? format(date, "d 'de' MMMM", { locale: es }) : <span>{placeholder}</span>}
           </span>
           {onNextDay && (
             <button
