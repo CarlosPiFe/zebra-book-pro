@@ -131,20 +131,24 @@ All colors MUST be HSL.
 }
 
 .phone-input-custom .react-international-phone-input-container {
-  @apply w-full flex items-stretch;
-  gap: 0.75rem;
+  @apply w-full;
+  display: flex !important;
+  align-items: stretch !important;
 }
 
-/* Botón selector de país - más estrecho y misma altura que el input (h-10 = 40px) */
+/* Botón selector de país - más estrecho y con margen derecho para separación */
 .phone-input-custom .react-international-phone-country-selector-button {
   @apply h-10 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground text-sm text-foreground;
   min-width: 80px !important;
   max-width: 80px !important;
   padding: 0 0.5rem !important;
+  margin-right: 12px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   flex-shrink: 0 !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 .phone-input-custom .react-international-phone-country-selector-button__button-content {
@@ -158,10 +162,13 @@ All colors MUST be HSL.
   margin-left: 0.125rem !important;
 }
 
-/* Input del teléfono - misma altura (h-10 = 40px) */
+/* Input del teléfono - misma altura con posición relativa */
 .phone-input-custom .react-international-phone-input {
   @apply w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
-  flex: 1;
+  flex: 1 !important;
+  position: relative !important;
+  z-index: 0 !important;
+  margin-left: 0 !important;
 }
 
 .phone-input-custom .react-international-phone-input[class*="border-destructive"] {
