@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, ChevronDown } from "lucide-react";
@@ -328,11 +328,8 @@ export function BookingsView({ businessId }: BookingsViewProps) {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-          <CardDescription>
-            Filtra reservas por fecha, hora y nombre del comensal
-          </CardDescription>
+        <CardHeader className="pb-3">
+          <h3 className="text-sm font-medium">Filtros</h3>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
