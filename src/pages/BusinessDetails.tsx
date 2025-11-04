@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { format, startOfDay, isBefore } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
-import { MapPin, Phone, Mail, ArrowLeft, Calendar, Clock, Users, CheckCircle2, Download, Info } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, CheckCircle2, Download, Info, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -23,6 +23,7 @@ import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import jsPDF from "jspdf";
 import { formatPhoneNumber } from "@/lib/utils";
+import { BusinessTabs } from "@/components/business/BusinessTabs";
 interface Business {
   id: string;
   name: string;
@@ -364,12 +365,6 @@ export default function BusinessDetails() {
       }
     } finally {
       setSubmitting(false);
-    }
-  };
-  const openInGoogleMaps = () => {
-    if (business?.address) {
-      const encoded = encodeURIComponent(business.address);
-      window.open(`https://www.google.com/maps?q=${encoded}`, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -779,62 +774,15 @@ export default function BusinessDetails() {
         </Card>
       </div>
 
-      {/* Contenido principal - 3 columnas */}
+      {/* Contenido principal - 2 columnas */}
       <div className="container mx-auto px-4 pb-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Columnas 1 y 2: Acerca de nosotros, Ubicación, Contacto */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Acerca de nosotros */}
-            {business.description && <Card className="shadow-md hover-scale transition-all">
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-semibold mb-4 flex items-center">
-                    <Users className="mr-2 h-6 w-6 text-primary" />
-                    Acerca de nosotros
-                  </h2>
-                  <p className="text-muted-foreground leading-relaxed">{business.description}</p>
-                </CardContent>
-              </Card>}
-
-            {/* Ubicación */}
-            {business.address && <Card className="shadow-md hover-scale transition-all">
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-semibold mb-4 flex items-center">
-                    <MapPin className="mr-2 h-6 w-6 text-primary" />
-                    Ubicación
-                  </h2>
-                  <div className="aspect-video w-full rounded-lg overflow-hidden border border-border mb-4">
-                    <iframe width="100%" height="100%" frameBorder="0" style={{
-                  border: 0
-                }} src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD3G8p1Ca5ZxGiQfdDcKRZZwQI0TL40oVk&q=${encodeURIComponent(business.address)}`} allowFullScreen />
-                  </div>
-                  <Button variant="outline" className="w-full hover-scale" onClick={openInGoogleMaps}>
-                    <MapPin className="mr-2 h-4 w-4" /> Abrir en Google Maps
-                  </Button>
-                </CardContent>
-              </Card>}
-
-            {/* Contacto */}
-            {(business.phone || business.email) && <Card className="shadow-md hover-scale transition-all">
-                <CardContent className="pt-6">
-                  <h2 className="text-2xl font-semibold mb-4 flex items-center">
-                    <Phone className="mr-2 h-6 w-6 text-primary" />
-                    Contacto
-                  </h2>
-                  <div className="space-y-3">
-                    {business.phone && <a href={`tel:${business.phone}`} className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale">
-                        <Phone className="mr-3 h-5 w-5 text-primary" />
-                        <span className="font-medium">{formatPhoneNumber(business.phone)}</span>
-                      </a>}
-                    {business.email && <a href={`mailto:${business.email}`} className="flex items-center p-3 rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-all hover-scale">
-                        <Mail className="mr-3 h-5 w-5 text-primary" />
-                        <span className="font-medium">{business.email}</span>
-                      </a>}
-                  </div>
-                </CardContent>
-              </Card>}
+          {/* Columna izquierda (2/3): Tabs con toda la información */}
+          <div className="lg:col-span-2">
+            <BusinessTabs business={business} />
           </div>
 
-          {/* Columna 3: Haz tu reserva */}
+          {/* Columna derecha (1/3): Haz tu reserva */}
           <div className="lg:col-span-1">
             <Card className="sticky top-4 shadow-lg relative">
               {submitting && <LoadingOverlay />}

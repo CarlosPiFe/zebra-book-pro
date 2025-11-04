@@ -77,31 +77,36 @@ export const Navbar = () => {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-lg border-b border-border">
+    <nav className="fixed top-0 left-0 right-0 z-40 bg-card/95 backdrop-blur-lg border-b border-border shadow-sm">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
+          {/* Logo - Izquierda */}
           <Link to="/" className="flex items-center gap-2 group">
-            <Calendar className="h-6 w-6 text-accent transition-transform group-hover:scale-110" />
-            <span className="text-xl font-bold">ZebraTime</span>
+            <Calendar className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
+            <span className="text-2xl font-bold text-foreground">ZebraTime</span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          {/* Botones - Derecha */}
+          <div className="flex items-center gap-3">
             {user ? (
               <>
-                {isEmployee && !employeeLoading && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate("/employee-portal")}
-                    className="gap-2"
-                  >
-                    <Briefcase className="h-4 w-4" />
-                    Portal de Empleado
-                  </Button>
-                )}
+                {/* Botón de Perfil del Cliente (siempre visible si está logueado) */}
                 {!businessLoading && (
                   <Button
                     variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/profile")}
+                    className="gap-2"
+                  >
+                    <User className="h-4 w-4" />
+                    Mi perfil
+                  </Button>
+                )}
+
+                {/* Botón Condicional: Mi negocio / Registrar negocio */}
+                {!businessLoading && (
+                  <Button
+                    variant={hasBusinesses ? "default" : "outline"}
                     size="sm"
                     onClick={() => hasBusinesses ? navigate("/dashboard") : setShowCreateBusinessDialog(true)}
                     className="gap-2"
@@ -114,30 +119,33 @@ export const Navbar = () => {
                     ) : (
                       <>
                         <PlusCircle className="h-4 w-4" />
-                        Registrar mi negocio
+                        ¿Tienes un negocio?
                       </>
                     )}
                   </Button>
                 )}
-                {(!hasBusinesses || isEmployee) && !employeeLoading && !businessLoading && (
+
+                {/* Portal de Empleado (solo si es empleado) */}
+                {isEmployee && !employeeLoading && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => navigate("/profile")}
+                    onClick={() => navigate("/employee-portal")}
                     className="gap-2"
                   >
-                    <User className="h-4 w-4" />
-                    Perfil
+                    <Briefcase className="h-4 w-4" />
+                    Portal Empleado
                   </Button>
                 )}
+
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowLogoutDialog(true)}
-                  className="gap-2"
+                  className="gap-2 text-muted-foreground hover:text-foreground"
                 >
                   <LogOut className="h-4 w-4" />
-                  Cerrar sesión
+                  Salir
                 </Button>
               </>
             ) : (
@@ -152,7 +160,6 @@ export const Navbar = () => {
                 <Button
                   size="sm"
                   onClick={() => navigate("/auth?mode=signup")}
-                  className="bg-accent hover:bg-accent/90"
                 >
                   Registrarse
                 </Button>

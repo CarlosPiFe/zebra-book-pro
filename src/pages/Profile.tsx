@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as SupabaseUser } from "@supabase/supabase-js";
 import { MyBookings } from "@/components/profile/MyBookings";
+import { MyReviews } from "@/components/profile/MyReviews";
+import { MyFavorites } from "@/components/profile/MyFavorites";
 import { ProfileSettings } from "@/components/profile/ProfileSettings";
 import { AccountSecurity } from "@/components/profile/AccountSecurity";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -87,14 +89,24 @@ export default function Profile() {
 
           {/* Tabs for different sections */}
           <Tabs defaultValue="bookings" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="bookings">Mis reservas</TabsTrigger>
+              <TabsTrigger value="reviews">Mis opiniones</TabsTrigger>
+              <TabsTrigger value="favorites">Favoritos</TabsTrigger>
               <TabsTrigger value="settings">Configuración</TabsTrigger>
               <TabsTrigger value="security">Seguridad</TabsTrigger>
             </TabsList>
 
             <TabsContent value="bookings" className="mt-6">
               <MyBookings userId={user?.id || ""} />
+            </TabsContent>
+
+            <TabsContent value="reviews" className="mt-6">
+              <MyReviews userId={user?.id || ""} />
+            </TabsContent>
+
+            <TabsContent value="favorites" className="mt-6">
+              <MyFavorites userId={user?.id || ""} />
             </TabsContent>
 
             <TabsContent value="settings" className="mt-6">
