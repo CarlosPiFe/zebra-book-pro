@@ -1,8 +1,8 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut, Briefcase, Store, PlusCircle, User } from "lucide-react";
-import zebraLogo from "@/assets/zebra-logo.png";
-import zebraLogoManager from "@/assets/zebra-logo-manager.png";
+import zebraLogo from "@/assets/zebra-logo.svg";
+import zebraLogoManager from "@/assets/zebra-logo-manager.svg";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { User as SupabaseUser } from "@supabase/supabase-js";
