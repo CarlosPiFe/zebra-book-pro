@@ -90,8 +90,10 @@ export type Database = {
       bookings: {
         Row: {
           booking_date: string
+          business_confirmation_token: string | null
           business_id: string
           business_phone: string | null
+          client_confirmation_token: string | null
           client_email: string | null
           client_id: string | null
           client_name: string
@@ -101,6 +103,7 @@ export type Database = {
           id: string
           notes: string | null
           party_size: number
+          rejection_reason: string | null
           room_id: string | null
           start_time: string
           status: string
@@ -110,8 +113,10 @@ export type Database = {
         }
         Insert: {
           booking_date: string
+          business_confirmation_token?: string | null
           business_id: string
           business_phone?: string | null
+          client_confirmation_token?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string
@@ -121,6 +126,7 @@ export type Database = {
           id?: string
           notes?: string | null
           party_size?: number
+          rejection_reason?: string | null
           room_id?: string | null
           start_time: string
           status?: string
@@ -130,8 +136,10 @@ export type Database = {
         }
         Update: {
           booking_date?: string
+          business_confirmation_token?: string | null
           business_id?: string
           business_phone?: string | null
+          client_confirmation_token?: string | null
           client_email?: string | null
           client_id?: string | null
           client_name?: string
@@ -141,6 +149,7 @@ export type Database = {
           id?: string
           notes?: string | null
           party_size?: number
+          rejection_reason?: string | null
           room_id?: string | null
           start_time?: string
           status?: string
@@ -182,6 +191,41 @@ export type Database = {
             columns: ["time_slot_id"]
             isOneToOne: false
             referencedRelation: "time_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_photos: {
+        Row: {
+          business_id: string
+          created_at: string
+          display_order: number
+          id: string
+          is_main: boolean
+          photo_url: string
+        }
+        Insert: {
+          business_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_main?: boolean
+          photo_url: string
+        }
+        Update: {
+          business_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_main?: boolean
+          photo_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_photos_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
             referencedColumns: ["id"]
           },
         ]
@@ -231,10 +275,12 @@ export type Database = {
           auto_complete_delayed: boolean | null
           auto_complete_in_progress: boolean | null
           auto_mark_in_progress: boolean | null
+          average_rating: number | null
           booking_additional_message: string | null
           booking_mode: string
           booking_slot_duration_minutes: number
           category: string
+          confirmation_mode: string
           created_at: string
           description: string | null
           email: string | null
@@ -245,8 +291,10 @@ export type Database = {
           name: string
           owner_id: string
           phone: string | null
+          price_range: string | null
           schedule_view_mode: string
           social_media: Json | null
+          special_offer: string | null
           updated_at: string
           website: string | null
         }
@@ -256,10 +304,12 @@ export type Database = {
           auto_complete_delayed?: boolean | null
           auto_complete_in_progress?: boolean | null
           auto_mark_in_progress?: boolean | null
+          average_rating?: number | null
           booking_additional_message?: string | null
           booking_mode?: string
           booking_slot_duration_minutes?: number
           category: string
+          confirmation_mode?: string
           created_at?: string
           description?: string | null
           email?: string | null
@@ -270,8 +320,10 @@ export type Database = {
           name: string
           owner_id: string
           phone?: string | null
+          price_range?: string | null
           schedule_view_mode?: string
           social_media?: Json | null
+          special_offer?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -281,10 +333,12 @@ export type Database = {
           auto_complete_delayed?: boolean | null
           auto_complete_in_progress?: boolean | null
           auto_mark_in_progress?: boolean | null
+          average_rating?: number | null
           booking_additional_message?: string | null
           booking_mode?: string
           booking_slot_duration_minutes?: number
           category?: string
+          confirmation_mode?: string
           created_at?: string
           description?: string | null
           email?: string | null
@@ -295,8 +349,10 @@ export type Database = {
           name?: string
           owner_id?: string
           phone?: string | null
+          price_range?: string | null
           schedule_view_mode?: string
           social_media?: Json | null
+          special_offer?: string | null
           updated_at?: string
           website?: string | null
         }
@@ -519,6 +575,32 @@ export type Database = {
           },
         ]
       }
+      favorites: {
+        Row: {
+          business_id: string
+          client_id: string
+          created_at: string
+        }
+        Insert: {
+          business_id: string
+          client_id: string
+          created_at?: string
+        }
+        Update: {
+          business_id?: string
+          client_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       menu_items: {
         Row: {
           business_id: string
@@ -701,6 +783,61 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          booking_id: string | null
+          business_id: string
+          client_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          rating: number
+          updated_at: string
+        }
+        Insert: {
+          booking_id?: string | null
+          business_id: string
+          client_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating: number
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string | null
+          business_id?: string
+          client_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          rating?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "booking_availability"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schedule_cleanup_log: {
         Row: {
@@ -1040,12 +1177,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      cleanup_old_schedules: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_old_schedules: { Args: never; Returns: undefined }
       get_public_businesses: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           address: string
           category: string

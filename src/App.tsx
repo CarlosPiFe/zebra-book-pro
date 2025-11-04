@@ -14,6 +14,7 @@ import EmployeePortal from "./pages/EmployeePortal";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import Search from "./pages/Search";
 import ScrollToTop from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/search" element={<Search />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
