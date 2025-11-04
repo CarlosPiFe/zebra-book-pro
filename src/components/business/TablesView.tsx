@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Users, Trash2, Edit, Receipt } from "lucide-react";
+import { Plus, Users, Trash2, Edit, Receipt, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -19,12 +19,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OrdersDialog } from "./OrdersDialog";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 import { addMinutes } from "date-fns";
 import { getTimeSlotId } from "@/lib/timeSlots";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Room {
   id: string;
@@ -761,236 +761,227 @@ export function TablesView({ businessId }: TablesViewProps) {
 
   return (
     <div className="space-y-4 bg-background min-h-screen">
-      <h1 className="text-xl font-semibold">Gestión de Mesas</h1>
+      {/* Header con título, botón filtros y botón añadir mesa */}
+      <div className="flex items-center justify-between gap-4 pt-1">
+        <div className="flex items-center gap-3">
+          <h1 className="text-xl font-semibold">Gestión de Mesas</h1>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[400px] p-4" align="start">
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Filtros</h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Fecha</Label>
+                    <DatePicker
+                      date={filterDate}
+                      onDateChange={(date) => date && setFilterDate(date)}
+                      placeholder="Seleccionar fecha"
+                      onPreviousDay={() => {
+                        const newDate = new Date(filterDate);
+                        newDate.setDate(newDate.getDate() - 1);
+                        setFilterDate(newDate);
+                      }}
+                      onNextDay={() => {
+                        const newDate = new Date(filterDate);
+                        newDate.setDate(newDate.getDate() + 1);
+                        setFilterDate(newDate);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Hora (opcional)</Label>
+                    <TimePicker
+                      time={filterTime}
+                      onTimeChange={setFilterTime}
+                      placeholder="Ver todas las horas"
+                      allowClear={true}
+                    />
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <h3 className="text-sm font-medium">Filtros</h3>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Fecha</Label>
-              <DatePicker
-                date={filterDate}
-                onDateChange={(date) => date && setFilterDate(date)}
-                placeholder="Seleccionar fecha"
-                onPreviousDay={() => {
-                  const newDate = new Date(filterDate);
-                  newDate.setDate(newDate.getDate() - 1);
-                  setFilterDate(newDate);
-                }}
-                onNextDay={() => {
-                  const newDate = new Date(filterDate);
-                  newDate.setDate(newDate.getDate() + 1);
-                  setFilterDate(newDate);
-                }}
-              />
+        <Dialog open={isAddTableDialogOpen} onOpenChange={setIsAddTableDialogOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Añadir Mesa
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Añadir Nueva Mesa</DialogTitle>
+              <DialogDescription>
+                Completa la información de la mesa
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="table-number">Número de Mesa</Label>
+                <Input
+                  id="table-number"
+                  type="number"
+                  placeholder="Ej: 1"
+                  value={tableNumber}
+                  onChange={(e) => setTableNumber(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="min-capacity">Capacidad Mínima</Label>
+                <Input
+                  id="min-capacity"
+                  type="number"
+                  placeholder="Ej: 1"
+                  value={minCapacity}
+                  onChange={(e) => setMinCapacity(e.target.value)}
+                  min="1"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Número mínimo de personas que pueden usar esta mesa
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max-capacity">Capacidad Máxima</Label>
+                <Input
+                  id="max-capacity"
+                  type="number"
+                  placeholder="Ej: 4"
+                  value={maxCapacity}
+                  onChange={(e) => setMaxCapacity(e.target.value)}
+                  min="1"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Número máximo de personas que pueden usar esta mesa
+                </p>
+              </div>
+              {rooms.length > 0 && (
+                <div className="space-y-2">
+                  <Label htmlFor="room">Sala (opcional)</Label>
+                  <Select value={selectedRoomForTable || "no-room"} onValueChange={(value) => setSelectedRoomForTable(value === "no-room" ? "" : value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar sala" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="no-room">Sin sala específica</SelectItem>
+                      {rooms.map((room) => (
+                        <SelectItem key={room.id} value={room.id}>
+                          {room.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label>Hora (opcional)</Label>
-              <TimePicker
-                time={filterTime}
-                onTimeChange={setFilterTime}
-                placeholder="Ver todas las horas"
-                allowClear={true}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Sala</Label>
-              <Select value={selectedRoomId || "all"} onValueChange={(value) => setSelectedRoomId(value === "all" ? null : value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas las salas" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las salas</SelectItem>
-                  {rooms.map((room) => (
-                    <SelectItem key={room.id} value={room.id}>
-                      {room.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAddTableDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleAddTable}>Añadir Mesa</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
 
+      {/* Selector de salas (siempre visible) */}
+      {rooms.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant={selectedRoomId === null ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedRoomId(null)}
+          >
+            Todas las salas
+          </Button>
+          {rooms.map((room) => (
+            <Button
+              key={room.id}
+              variant={selectedRoomId === room.id ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedRoomId(room.id)}
+            >
+              {room.name}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {/* Grid de mesas */}
       {tables.length === 0 ? (
         <div className="flex items-center justify-center min-h-[400px]">
-          <Dialog open={isAddTableDialogOpen} onOpenChange={setIsAddTableDialogOpen}>
-            <DialogTrigger asChild>
-              <button className="flex flex-col items-center justify-center gap-4 p-12 border-2 border-dashed border-muted-foreground/25 rounded-lg hover:border-muted-foreground/50 transition-colors bg-card">
-                <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                  <Plus className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <span className="text-lg font-medium text-muted-foreground">Añadir Mesa</span>
-              </button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Añadir Nueva Mesa</DialogTitle>
-                <DialogDescription>
-                  Completa la información de la mesa
-                </DialogDescription>
-              </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="table-number">Número de Mesa</Label>
-                    <Input
-                      id="table-number"
-                      type="number"
-                      placeholder="Ej: 1"
-                      value={tableNumber}
-                      onChange={(e) => setTableNumber(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max-capacity">Capacidad Máxima</Label>
-                    <Input
-                      id="max-capacity"
-                      type="number"
-                      placeholder="Ej: 4"
-                      value={maxCapacity}
-                      onChange={(e) => setMaxCapacity(e.target.value)}
-                    />
-                  </div>
-                  {rooms.length > 0 && (
-                    <div className="space-y-2">
-                      <Label htmlFor="room">Sala (opcional)</Label>
-                      <Select value={selectedRoomForTable || "no-room"} onValueChange={(value) => setSelectedRoomForTable(value === "no-room" ? "" : value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar sala" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="no-room">Sin sala específica</SelectItem>
-                          {rooms.map((room) => (
-                            <SelectItem key={room.id} value={room.id}>
-                              {room.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddTableDialogOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleAddTable}>Añadir Mesa</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <div className="text-center">
+            <p className="text-muted-foreground">No hay mesas creadas</p>
+            <p className="text-sm text-muted-foreground">Haz clic en "Añadir Mesa" para crear una</p>
+          </div>
         </div>
       ) : (
         <>
-          <div className="flex justify-between items-center gap-4">
-            {rooms.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium whitespace-nowrap">Filtrar por sala:</Label>
-                <Select 
-                  value={selectedRoomId || "all-rooms"} 
-                  onValueChange={(value) => setSelectedRoomId(value === "all-rooms" ? null : value)}
+          {/* Mostrar mesas filtradas por sala seleccionada */}
+          {selectedRoomId ? (
+            <div className="grid gap-3 grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
+              {filteredTables.map((table) => (
+              <button
+                key={table.id}
+                onClick={() => handleTableClick(table)}
+                className={`relative aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-between hover:shadow-md transition-all group ${getTableColor(table)}`}
+              >
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setDeleteTableId(table.id);
+                  }}
+                  className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded"
                 >
-                  <SelectTrigger className="w-[200px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all-rooms">Todos</SelectItem>
-                    {rooms.map((room) => (
-                      <SelectItem key={room.id} value={room.id}>
-                        {room.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <Dialog open={isAddTableDialogOpen} onOpenChange={setIsAddTableDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Añadir Mesa
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Añadir Nueva Mesa</DialogTitle>
-                  <DialogDescription>
-                    Completa la información de la mesa
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="table-number">Número de Mesa</Label>
-                    <Input
-                      id="table-number"
-                      type="number"
-                      placeholder="Ej: 1"
-                      value={tableNumber}
-                      onChange={(e) => setTableNumber(e.target.value)}
-                    />
+                  <Trash2 className="h-3 w-3 text-destructive" />
+                </button>
+                
+                {/* Estado - parte superior sin recuadro */}
+                {getTableStatusLabel(table) && (
+                  <div className={`text-[9px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
+                    {getTableStatusLabel(table)}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="min-capacity">Capacidad Mínima</Label>
-                    <Input
-                      id="min-capacity"
-                      type="number"
-                      placeholder="Ej: 1"
-                      value={minCapacity}
-                      onChange={(e) => setMinCapacity(e.target.value)}
-                      min="1"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Número mínimo de personas que pueden usar esta mesa
-                    </p>
+                )}
+                
+                {/* Contenido central */}
+                <div className="flex flex-col items-center gap-1 flex-1 justify-center">
+                  {/* Número de mesa */}
+                  <div className="text-lg font-bold text-foreground">
+                    {table.table_number}
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max-capacity">Capacidad Máxima</Label>
-                    <Input
-                      id="max-capacity"
-                      type="number"
-                      placeholder="Ej: 4"
-                      value={maxCapacity}
-                      onChange={(e) => setMaxCapacity(e.target.value)}
-                      min="1"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Número máximo de personas que pueden usar esta mesa
-                    </p>
+                  
+                  {/* Capacidad */}
+                  <div className="flex items-center gap-0.5 text-[10px] text-foreground/80 font-medium">
+                    <Users className="h-3 w-3" />
+                    <span>{table.min_capacity}-{table.max_capacity}</span>
                   </div>
-                  {rooms.length > 0 && (
-                    <div className="space-y-2">
-                      <Label htmlFor="room">Sala (opcional)</Label>
-                      <Select value={selectedRoomForTable || "no-room"} onValueChange={(value) => setSelectedRoomForTable(value === "no-room" ? "" : value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar sala" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="no-room">Sin sala específica</SelectItem>
-                          {rooms.map((room) => (
-                            <SelectItem key={room.id} value={room.id}>
-                              {room.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  
+                  {/* Nombre del reservante */}
+                  {table.current_booking && table.current_booking.client_name && (
+                    <div className="text-[9px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
+                      {table.current_booking.client_name}
                     </div>
                   )}
                 </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddTableDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button onClick={handleAddTable}>Añadir Mesa</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          {/* Mostrar agrupado por salas si no hay filtro */}
-          {selectedRoomId === null && rooms.length > 0 ? (
+                
+                {/* Total gastado - parte inferior */}
+                {table.current_booking?.status === "occupied" && table.total_spent! > 0 && (
+                  <div className="text-xs font-bold text-primary">
+                    ${table.total_spent!.toFixed(2)}
+                  </div>
+                )}
+              </button>
+            ))}
+            </div>
+          ) : (
             <div className="space-y-6">
               {Object.entries(tablesByRoom).map(([roomId, roomTables]) => {
                 const room = rooms.find(r => r.id === roomId);
@@ -1048,61 +1039,6 @@ export function TablesView({ businessId }: TablesViewProps) {
                   </div>
                 );
               })}
-            </div>
-          ) : (
-            <div className="grid gap-3 grid-cols-4 md:grid-cols-6 lg:grid-cols-9">
-              {filteredTables.map((table) => (
-              <button
-                key={table.id}
-                onClick={() => handleTableClick(table)}
-                className={`relative aspect-square border-2 rounded-lg p-2 flex flex-col items-center justify-between hover:shadow-md transition-all group ${getTableColor(table)}`}
-              >
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteTableId(table.id);
-                  }}
-                  className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-destructive/10 rounded"
-                >
-                  <Trash2 className="h-3 w-3 text-destructive" />
-                </button>
-                
-                {/* Estado - parte superior sin recuadro */}
-                {getTableStatusLabel(table) && (
-                  <div className={`text-[9px] font-bold ${getTableStatusLabelColor(table)} w-full text-center`}>
-                    {getTableStatusLabel(table)}
-                  </div>
-                )}
-                
-                {/* Contenido central */}
-                <div className="flex flex-col items-center gap-1 flex-1 justify-center">
-                  {/* Número de mesa */}
-                  <div className="text-lg font-bold text-foreground">
-                    {table.table_number}
-                  </div>
-                  
-                  {/* Capacidad */}
-                  <div className="flex items-center gap-0.5 text-[10px] text-foreground/80 font-medium">
-                    <Users className="h-3 w-3" />
-                    <span>{table.min_capacity}-{table.max_capacity}</span>
-                  </div>
-                  
-                  {/* Nombre del reservante */}
-                  {table.current_booking && table.current_booking.client_name && (
-                    <div className="text-[9px] font-semibold text-foreground/90 text-center truncate w-full px-1 mt-1">
-                      {table.current_booking.client_name}
-                    </div>
-                  )}
-                </div>
-                
-                {/* Total gastado - parte inferior */}
-                {table.current_booking?.status === "occupied" && table.total_spent! > 0 && (
-                  <div className="text-xs font-bold text-primary">
-                    ${table.total_spent!.toFixed(2)}
-                  </div>
-                )}
-              </button>
-            ))}
             </div>
           )}
 
