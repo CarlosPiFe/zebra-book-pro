@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImagePlus, X, ArrowUpDown } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { compressImage, formatFileSize } from "@/lib/imageCompression";
 
 interface Photo {
   id: string;
@@ -62,14 +63,14 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
       "image/bmp",
       "image/svg+xml"
     ];
-    const maxSize = 10 * 1024 * 1024; // 10MB (aumentado de 5MB)
+    const maxSizeBeforeCompression = 20 * 1024 * 1024; // 20MB antes de comprimir
 
     setUploading(true);
     const uploadedUrls: string[] = [];
 
     try {
       for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+        let file = files[i];
         if (!file) continue;
 
         if (!validTypes.includes(file.type)) {
@@ -77,9 +78,30 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
           continue;
         }
 
-        if (file.size > maxSize) {
-          toast.error(`${file.name}: Tamaño máximo 10MB`);
+        if (file.size > maxSizeBeforeCompression) {
+          toast.error(`${file.name}: Tamaño máximo 20MB`);
           continue;
+        }
+
+        // Comprimir imagen automáticamente (excepto SVG)
+        if (file.type !== "image/svg+xml") {
+          try {
+            const originalSize = file.size;
+            const compressedFile = await compressImage(file, 1920, 1920, 0.85);
+            const compressionRatio = Math.round((1 - compressedFile.size / originalSize) * 100);
+            
+            if (compressionRatio > 0) {
+              console.log(
+                `✓ ${file.name}: ${formatFileSize(originalSize)} → ${formatFileSize(compressedFile.size)} (${compressionRatio}% reducción)`
+              );
+            }
+            
+            file = compressedFile;
+          } catch (compressionError) {
+            console.error("Error comprimiendo imagen:", compressionError);
+            // Si falla la compresión, usar la imagen original
+            toast.warning(`${file.name}: No se pudo comprimir, usando imagen original`);
+          }
         }
 
         // Upload to storage
