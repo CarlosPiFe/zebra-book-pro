@@ -96,6 +96,8 @@ export const RestaurantCard = ({ business }: RestaurantCardProps) => {
           <img
             src={business.image_url || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
             alt={business.name}
+            loading="lazy"
+            decoding="async"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
           <Button

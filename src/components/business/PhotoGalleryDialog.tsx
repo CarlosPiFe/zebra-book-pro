@@ -55,6 +55,8 @@ export function PhotoGalleryDialog({
                     <img
                       src={photo.photo_url}
                       alt={`Foto ${index + 1}`}
+                      loading={index < 2 ? "eager" : "lazy"}
+                      decoding="async"
                       className="max-w-full max-h-full object-contain rounded-lg"
                     />
                   </div>

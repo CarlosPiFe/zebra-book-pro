@@ -53,7 +53,6 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    // Formatos permitidos ampliados: JPEG, JPG, PNG, WEBP, GIF, BMP, SVG
     const validTypes = [
       "image/png", 
       "image/jpeg", 
@@ -83,24 +82,22 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
           continue;
         }
 
-        // Comprimir imagen automáticamente (excepto SVG)
+        // Comprimir imagen automáticamente a máximo 250KB (excepto SVG)
         if (file.type !== "image/svg+xml") {
           try {
             const originalSize = file.size;
-            const compressedFile = await compressImage(file, 1920, 1920, 0.85);
+            const compressedFile = await compressImage(file, 250); // 250KB máximo
             const compressionRatio = Math.round((1 - compressedFile.size / originalSize) * 100);
             
-            if (compressionRatio > 0) {
-              console.log(
-                `✓ ${file.name}: ${formatFileSize(originalSize)} → ${formatFileSize(compressedFile.size)} (${compressionRatio}% reducción)`
-              );
-            }
+            console.log(
+              `✓ ${file.name}: ${formatFileSize(originalSize)} → ${formatFileSize(compressedFile.size)} (${compressionRatio}% reducción)`
+            );
             
             file = compressedFile;
           } catch (compressionError) {
             console.error("Error comprimiendo imagen:", compressionError);
-            // Si falla la compresión, usar la imagen original
-            toast.warning(`${file.name}: No se pudo comprimir, usando imagen original`);
+            toast.error(`${file.name}: No se pudo comprimir la imagen`);
+            continue;
           }
         }
 
@@ -214,29 +211,28 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
       setLoading(true);
 
       // Crear un nuevo array con el orden actualizado
-      const updatedPhotos = [...photos];
-      
-      // Las fotos seleccionadas van al principio en el orden que fueron clicadas
       const orderedPhotos = selectedForOrder.map(id => 
-        updatedPhotos.find(p => p.id === id)!
+        photos.find(p => p.id === id)!
       );
       
-      // Las fotos no seleccionadas mantienen su orden relativo al final
-      const unorderedPhotos = updatedPhotos.filter(p => 
+      const unorderedPhotos = photos.filter(p => 
         !selectedForOrder.includes(p.id)
       );
 
       const newOrderedPhotos = [...orderedPhotos, ...unorderedPhotos];
 
-      // Actualizar display_order en la base de datos
-      for (let i = 0; i < newOrderedPhotos.length; i++) {
-        const photo = newOrderedPhotos[i];
-        if (!photo) continue;
+      // Actualizar en batch para mejor rendimiento
+      const updates = newOrderedPhotos.map((photo, i) => ({
+        id: photo.id,
+        display_order: i + 1
+      }));
 
+      // Actualizar todos a la vez
+      for (const update of updates) {
         const { error } = await supabase
           .from("business_photos")
-          .update({ display_order: i + 1 })
-          .eq("id", photo.id);
+          .update({ display_order: update.display_order })
+          .eq("id", update.id);
 
         if (error) throw error;
       }
@@ -357,6 +353,7 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
                     <img
                       src={photo.photo_url}
                       alt={`Foto ${index + 1}`}
+                      loading="lazy"
                       className="w-full h-full object-cover"
                     />
                   </div>

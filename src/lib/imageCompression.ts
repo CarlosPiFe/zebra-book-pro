@@ -1,88 +1,110 @@
 /**
- * Comprime una imagen manteniendo la calidad visual pero reduciendo el tamaño del archivo
+ * Comprime una imagen hasta alcanzar un tamaño máximo en KB
  * @param file - Archivo de imagen original
- * @param maxWidth - Ancho máximo en píxeles (default: 1920)
- * @param maxHeight - Alto máximo en píxeles (default: 1920)
- * @param quality - Calidad de compresión 0-1 (default: 0.85)
+ * @param maxSizeKB - Tamaño máximo en KB (default: 250)
  * @returns Promise con el archivo comprimido
  */
 export async function compressImage(
   file: File,
-  maxWidth: number = 1920,
-  maxHeight: number = 1920,
-  quality: number = 0.85
+  maxSizeKB: number = 250
 ): Promise<File> {
+  const targetBytes = maxSizeKB * 1024;
+  
+  // Si ya es menor al tamaño objetivo, devolver original
+  if (file.size <= targetBytes) {
+    return file;
+  }
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const img = new Image();
       
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let width = img.width;
-        let height = img.height;
-        
-        // Calcular nuevas dimensiones manteniendo el aspect ratio
-        if (width > maxWidth || height > maxHeight) {
-          const aspectRatio = width / height;
+      img.onload = async () => {
+        try {
+          let quality = 0.9;
+          let width = img.width;
+          let height = img.height;
+          let scaleFactor = 1.0;
+          let attempts = 0;
+          const maxAttempts = 10;
           
-          if (width > height) {
-            width = maxWidth;
-            height = Math.round(width / aspectRatio);
+          // Función auxiliar para comprimir con parámetros específicos
+          const tryCompress = async (w: number, h: number, q: number): Promise<Blob | null> => {
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
             
-            if (height > maxHeight) {
-              height = maxHeight;
-              width = Math.round(height * aspectRatio);
-            }
-          } else {
-            height = maxHeight;
-            width = Math.round(height * aspectRatio);
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return null;
             
-            if (width > maxWidth) {
-              width = maxWidth;
-              height = Math.round(width / aspectRatio);
-            }
-          }
-        }
-        
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('No se pudo obtener el contexto del canvas'));
-          return;
-        }
-        
-        // Dibujar imagen con suavizado
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Convertir a blob
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, w, h);
+            
+            return new Promise((resolveBlob) => {
+              canvas.toBlob(
+                (blob) => resolveBlob(blob),
+                file.type || 'image/jpeg',
+                q
+              );
+            });
+          };
+          
+          let resultBlob: Blob | null = null;
+          
+          // Estrategia: primero intentar reducir calidad, luego dimensiones
+          while (attempts < maxAttempts) {
+            const currentWidth = Math.round(width * scaleFactor);
+            const currentHeight = Math.round(height * scaleFactor);
+            
+            resultBlob = await tryCompress(currentWidth, currentHeight, quality);
+            
+            if (!resultBlob) {
               reject(new Error('Error al comprimir la imagen'));
               return;
             }
             
-            // Crear nuevo archivo con el blob comprimido
-            const compressedFile = new File(
-              [blob],
-              file.name,
-              {
-                type: file.type || 'image/jpeg',
-                lastModified: Date.now()
-              }
-            );
+            // Si alcanzamos el tamaño objetivo, terminamos
+            if (resultBlob.size <= targetBytes) {
+              break;
+            }
             
-            resolve(compressedFile);
-          },
-          file.type || 'image/jpeg',
-          quality
-        );
+            // Calcular cuánto necesitamos reducir
+            const ratio = targetBytes / resultBlob.size;
+            
+            // Primero reducir calidad si está por encima de 0.5
+            if (quality > 0.5) {
+              quality = Math.max(0.5, quality * 0.85);
+            } else {
+              // Si la calidad ya es baja, reducir dimensiones
+              scaleFactor = Math.sqrt(ratio) * 0.9; // Factor de seguridad
+              scaleFactor = Math.max(0.3, scaleFactor); // No reducir más del 70%
+            }
+            
+            attempts++;
+          }
+          
+          if (!resultBlob) {
+            reject(new Error('No se pudo comprimir la imagen al tamaño objetivo'));
+            return;
+          }
+          
+          // Crear nuevo archivo con el blob comprimido
+          const compressedFile = new File(
+            [resultBlob],
+            file.name,
+            {
+              type: file.type || 'image/jpeg',
+              lastModified: Date.now()
+            }
+          );
+          
+          resolve(compressedFile);
+        } catch (error) {
+          reject(error);
+        }
       };
       
       img.onerror = () => {

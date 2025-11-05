@@ -846,7 +846,7 @@ export default function BusinessDetails() {
           </Button>
         </div>
 
-        {/* Galería de fotos con carrusel */}
+        {/* Galería de fotos con carrusel optimizado */}
         {photos.length > 0 ? (
           <div className="relative">
             <Carousel className="w-full">
@@ -862,7 +862,9 @@ export default function BusinessDetails() {
                     >
                       <img 
                         src={photo.photo_url} 
-                        alt={`${business.name} - Foto ${index + 1}`} 
+                        alt={`${business.name} - Foto ${index + 1}`}
+                        loading={index < 3 ? "eager" : "lazy"}
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform group-hover:scale-105" 
                       />
                       {index === 4 && photos.length > 5 && (
