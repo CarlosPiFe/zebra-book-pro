@@ -134,9 +134,7 @@ const ManageBusiness = () => {
           />
           
           <main className="flex-1 flex flex-col">
-            <div className="w-full max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6">
-              {renderView()}
-            </div>
+            {renderView()}
           </main>
         </div>
       </SidebarProvider>

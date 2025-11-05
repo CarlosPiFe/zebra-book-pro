@@ -6,17 +6,9 @@ import { RestaurantMap } from "@/components/public/RestaurantMap";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Percent, Utensils, Euro, Star, ChevronRight } from "lucide-react";
 
 interface Business {
   id: string;
@@ -42,11 +34,7 @@ export default function SearchPage() {
   const [restaurantType] = useState(searchParams.get("type") || "");
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [minRating, setMinRating] = useState<number>(0);
-  const [sortBy, setSortBy] = useState<string>("relevance");
-  
-  // Filtros rápidos tipo "pills"
-  const [showOffers, setShowOffers] = useState(false);
+  const [ratingFilter, setRatingFilter] = useState<number[]>([0]);
 
   useEffect(() => {
     loadBusinesses();
@@ -54,7 +42,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [businesses, location, restaurantType, priceFilter, categoryFilter, minRating, showOffers, sortBy]);
+  }, [businesses, location, restaurantType, priceFilter, categoryFilter, ratingFilter]);
 
   const loadBusinesses = async () => {
     setLoading(true);
@@ -105,30 +93,9 @@ export default function SearchPage() {
     }
 
     // Filtro de rating
+    const minRating = ratingFilter?.[0] ?? 0;
     if (minRating > 0) {
       filtered = filtered.filter((b) => (b.average_rating || 0) >= minRating);
-    }
-
-    // Filtro de ofertas
-    if (showOffers) {
-      filtered = filtered.filter((b) => b.special_offer);
-    }
-
-    // Ordenar resultados
-    if (sortBy === "rating") {
-      filtered.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
-    } else if (sortBy === "price_low") {
-      filtered.sort((a, b) => {
-        const priceOrder = { "€": 1, "€€": 2, "€€€": 3, "€€€€": 4 };
-        return (priceOrder[a.price_range as keyof typeof priceOrder] || 0) - 
-               (priceOrder[b.price_range as keyof typeof priceOrder] || 0);
-      });
-    } else if (sortBy === "price_high") {
-      filtered.sort((a, b) => {
-        const priceOrder = { "€": 1, "€€": 2, "€€€": 3, "€€€€": 4 };
-        return (priceOrder[b.price_range as keyof typeof priceOrder] || 0) - 
-               (priceOrder[a.price_range as keyof typeof priceOrder] || 0);
-      });
     }
 
     setFilteredBusinesses(filtered);
@@ -141,174 +108,126 @@ export default function SearchPage() {
   const resetFilters = () => {
     setPriceFilter("all");
     setCategoryFilter("all");
-    setMinRating(0);
-    setShowOffers(false);
-    setSortBy("relevance");
+    setRatingFilter([0]);
   };
 
   // Obtener categorías únicas
   const categories = Array.from(new Set(businesses.map((b) => b.category)));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <main className="pt-16">
-        <div className="flex h-[calc(100vh-4rem)]">
-          {/* Columna Izquierda - Resultados (40%) */}
-          <div className="w-full lg:w-[40%] flex flex-col overflow-hidden border-r">
-            {/* Breadcrumbs y Header */}
-            <div className="p-6 border-b space-y-4">
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink href="/">Inicio</BreadcrumbLink>
-                  </BreadcrumbItem>
-                  <BreadcrumbSeparator>
-                    <ChevronRight className="h-4 w-4" />
-                  </BreadcrumbSeparator>
-                  <BreadcrumbItem>
-                    <BreadcrumbPage>Búsqueda</BreadcrumbPage>
-                  </BreadcrumbItem>
-                  {location && (
-                    <>
-                      <BreadcrumbSeparator>
-                        <ChevronRight className="h-4 w-4" />
-                      </BreadcrumbSeparator>
-                      <BreadcrumbItem>
-                        <BreadcrumbPage>{location}</BreadcrumbPage>
-                      </BreadcrumbItem>
-                    </>
-                  )}
-                </BreadcrumbList>
-              </Breadcrumb>
-
-              <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">
-                    {location ? `Restaurantes en ${location}` : "Todos los Restaurantes"}
-                  </h1>
-                  <p className="text-lg text-muted-foreground">
-                    {filteredBusinesses.length} restaurante{filteredBusinesses.length !== 1 ? "s" : ""} encontrado{filteredBusinesses.length !== 1 ? "s" : ""}
+      <main className="flex-1 pt-16">
+        <div className="h-[calc(100vh-4rem)] flex">
+          {/* Panel Izquierdo - Lista y Filtros */}
+          <div className="w-full lg:w-2/5 flex flex-col overflow-hidden border-r">
+            {/* Header con info de búsqueda */}
+            <div className="p-3 border-b bg-card">
+              <div className="space-y-1">
+                {location && (
+                  <p className="text-xs text-muted-foreground">
+                    📍 <span className="font-medium text-foreground">{location}</span>
                   </p>
-                </div>
-                
-                {/* Ordenación */}
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm whitespace-nowrap">Ordenar por:</Label>
-                  <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue />
+                )}
+                {restaurantType && (
+                  <p className="text-xs text-muted-foreground">
+                    🍽️ <span className="font-medium text-foreground">{restaurantType}</span>
+                  </p>
+                )}
+                <p className="text-base font-bold">
+                  {filteredBusinesses.length} restaurante{filteredBusinesses.length !== 1 ? "s" : ""}
+                </p>
+              </div>
+            </div>
+
+            {/* Filtros */}
+            <div className="p-3 border-b bg-card space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm">Filtros</h3>
+                <Button variant="ghost" size="sm" onClick={resetFilters} className="h-7 text-xs">
+                  Limpiar
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {/* Precio */}
+                <div className="space-y-1">
+                  <Label className="text-xs">Precio</Label>
+                  <Select value={priceFilter} onValueChange={setPriceFilter}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Todos" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="relevance">Relevancia</SelectItem>
-                      <SelectItem value="rating">Valoración</SelectItem>
-                      <SelectItem value="price_low">Precio (bajo)</SelectItem>
-                      <SelectItem value="price_high">Precio (alto)</SelectItem>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="€">€</SelectItem>
+                      <SelectItem value="€€">€€</SelectItem>
+                      <SelectItem value="€€€">€€€</SelectItem>
+                      <SelectItem value="€€€€">€€€€</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Categoría */}
+                <div className="space-y-1">
+                  <Label className="text-xs">Cocina</Label>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Todas" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas</SelectItem>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat} value={cat}>
+                          {cat}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
-              {/* Filtros Rápidos (Pills) */}
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                <Button
-                  variant={showOffers ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setShowOffers(!showOffers)}
-                  className="flex items-center gap-1.5 whitespace-nowrap"
-                >
-                  <Percent className="h-4 w-4" />
-                  Ofertas
-                </Button>
-                
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-auto min-w-[120px] h-9">
-                    <Utensils className="h-4 w-4 mr-1.5" />
-                    <SelectValue placeholder="Tipo de Cocina" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <Select value={priceFilter} onValueChange={setPriceFilter}>
-                  <SelectTrigger className="w-auto min-w-[100px] h-9">
-                    <Euro className="h-4 w-4 mr-1.5" />
-                    <SelectValue placeholder="Precio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="€">€</SelectItem>
-                    <SelectItem value="€€">€€</SelectItem>
-                    <SelectItem value="€€€">€€€</SelectItem>
-                    <SelectItem value="€€€€">€€€€</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={minRating.toString()} onValueChange={(v) => setMinRating(Number(v))}>
-                  <SelectTrigger className="w-auto min-w-[120px] h-9">
-                    <Star className="h-4 w-4 mr-1.5" />
-                    <SelectValue placeholder="Valoración" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="0">Todas</SelectItem>
-                    <SelectItem value="7">7+ estrellas</SelectItem>
-                    <SelectItem value="8">8+ estrellas</SelectItem>
-                    <SelectItem value="9">9+ estrellas</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {(showOffers || categoryFilter !== "all" || priceFilter !== "all" || minRating > 0) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={resetFilters}
-                    className="whitespace-nowrap"
-                  >
-                    Limpiar filtros
-                  </Button>
-                )}
+              {/* Rating */}
+              <div className="space-y-2">
+                <Label className="text-xs">Valoración mínima: {ratingFilter?.[0] ?? 0}/10</Label>
+                <Slider
+                  value={ratingFilter}
+                  onValueChange={setRatingFilter}
+                  max={10}
+                  step={1}
+                  className="py-2"
+                />
               </div>
             </div>
 
-            {/* Lista de Restaurantes */}
-            <div className="flex-1 overflow-y-auto p-6">
+            {/* Lista de Resultados */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-3">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <LoadingSpinner />
                 </div>
               ) : filteredBusinesses.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                  <p className="text-muted-foreground text-lg mb-2">
-                    No se encontraron restaurantes
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Intenta ajustar los filtros de búsqueda
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground text-center text-sm">
+                    No se encontraron restaurantes con estos filtros.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {filteredBusinesses.map((business) => (
-                    <div key={business.id}>
-                      <RestaurantCard 
-                        business={business}
-                        onClick={() => handleBusinessClick(business.id)}
-                      />
-                    </div>
-                  ))}
-                </div>
+                filteredBusinesses.map((business) => (
+                  <div
+                    key={business.id}
+                    className="cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors"
+                    onClick={() => handleBusinessClick(business.id)}
+                  >
+                    <RestaurantCard business={business} />
+                  </div>
+                ))
               )}
             </div>
           </div>
 
-          {/* Columna Derecha - Mapa Sticky (60%) */}
-          <div className="hidden lg:block lg:w-[60%] sticky top-16 h-[calc(100vh-4rem)]">
+          {/* Panel Derecho - Mapa */}
+          <div className="hidden lg:block lg:w-3/5 relative">
             <RestaurantMap 
               businesses={filteredBusinesses}
               onBusinessClick={handleBusinessClick}

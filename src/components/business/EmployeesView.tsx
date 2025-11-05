@@ -267,9 +267,9 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold mb-2">Empleados</h2>
+          <h2 className="text-3xl font-bold">Empleados</h2>
           <p className="text-muted-foreground">Gestiona los empleados de tu negocio</p>
         </div>
 

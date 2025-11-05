@@ -314,14 +314,16 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-3xl font-bold mb-2">Horarios Semanales</h2>
-          <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold">Horarios Semanales</h2>
+            <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
+          </div>
         </div>
 
-        {/* Navegación de semana y botones de acción */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Navegación de semana y botones de acción en la misma línea */}
+        <div className="flex items-center justify-between gap-4">
           {/* Pasador de semana */}
           <div className="flex items-center gap-2">
             <Button

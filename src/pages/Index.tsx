@@ -48,7 +48,7 @@ export default function Index() {
         </div>
 
         {/* Restaurant Carousels */}
-        <div className="space-y-12 py-6">
+        <div className="container mx-auto px-8 md:px-16 lg:px-20 xl:px-28 space-y-12 py-6 max-w-[1280px]">
           <RestaurantCarousel title="Ofertas y descuentos" filter="offers" />
           <RestaurantCarousel title="Los más reservados" filter="featured" />
           <RestaurantCarousel title="Novedades en ZebraTime" filter="newest" />
