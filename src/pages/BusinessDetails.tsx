@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { format, startOfDay, isBefore, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
-import { ArrowLeft, Calendar, Clock, CheckCircle2, Download, Info, Phone, Mail, Heart, Star, MapPin, UtensilsCrossed } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, CheckCircle2, Download, Info, Phone, Mail, Heart, Star, MapPin, UtensilsCrossed, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { PhoneInput } from "react-international-phone";
@@ -1197,28 +1197,30 @@ export default function BusinessDetails() {
         {business && bookingForm.bookingDate && bookingForm.startTime && (
           <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
             <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>
-                  {modalStep === 'auth' ? 'Un último paso para tu reserva' : 'Confirma los detalles'}
+              <DialogHeader className="text-center">
+                <DialogTitle className="text-center">
+                  TU RESERVA - {business.name}
                 </DialogTitle>
+                <DialogDescription className="text-center">
+                  {modalStep === 'auth' ? 'Inicia sesión o regístrate para continuar' : 'Confirma los detalles de tu reserva'}
+                </DialogDescription>
               </DialogHeader>
 
               {/* Resumen de la reserva */}
-              <div className="bg-muted/50 rounded-lg p-4 space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{format(bookingForm.bookingDate, "EEEE, d 'de' MMMM", { locale: es })}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{bookingForm.startTime}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium">{bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? 'persona' : 'personas'}</span>
-                </div>
-                <div className="text-sm font-semibold mt-2 pt-2 border-t border-border">
-                  {business.name}
+              <div className="bg-muted/50 border border-border p-3 rounded-lg my-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>{bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? 'persona' : 'personas'}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>{format(bookingForm.bookingDate, "EEEE, d 'de' MMMM", { locale: es })}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span>{bookingForm.startTime}</span>
+                  </div>
                 </div>
               </div>
 
