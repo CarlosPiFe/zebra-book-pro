@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { RestaurantCard } from "@/components/public/RestaurantCard";
 import { RestaurantMap } from "@/components/public/RestaurantMap";
+import { CompactSearchBar } from "@/components/CompactSearchBar";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -29,20 +30,27 @@ export default function SearchPage() {
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Parámetros de búsqueda
+  const [searchLocation, setSearchLocation] = useState<string>("");
+  const [searchType, setSearchType] = useState<string>("");
+
   // Filtros
-  const [location] = useState(searchParams.get("location") || "");
-  const [restaurantType] = useState(searchParams.get("type") || "");
   const [priceFilter, setPriceFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [ratingFilter, setRatingFilter] = useState<number[]>([0]);
 
   useEffect(() => {
+    // Leer parámetros de la URL al cargar
+    const location = searchParams.get('location') || "";
+    const type = searchParams.get('type') || "";
+    setSearchLocation(location);
+    setSearchType(type);
     loadBusinesses();
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     applyFilters();
-  }, [businesses, location, restaurantType, priceFilter, categoryFilter, ratingFilter]);
+  }, [businesses, searchLocation, searchType, priceFilter, categoryFilter, ratingFilter]);
 
   const loadBusinesses = async () => {
     setLoading(true);
@@ -65,16 +73,16 @@ export default function SearchPage() {
     let filtered = [...businesses];
 
     // Filtro de ubicación
-    if (location) {
-      const loc = location.toLowerCase();
+    if (searchLocation) {
+      const loc = searchLocation.toLowerCase();
       filtered = filtered.filter(
         (b) => b.address?.toLowerCase().includes(loc)
       );
     }
 
     // Filtro de tipo de restaurante
-    if (restaurantType) {
-      const type = restaurantType.toLowerCase();
+    if (searchType) {
+      const type = searchType.toLowerCase();
       filtered = filtered.filter(
         (b) =>
           b.name.toLowerCase().includes(type) ||
@@ -111,6 +119,15 @@ export default function SearchPage() {
     setRatingFilter([0]);
   };
 
+  const handleNewSearch = (location: string, type: string) => {
+    setSearchLocation(location);
+    setSearchType(type);
+    const params = new URLSearchParams();
+    if (location) params.append('location', location);
+    if (type) params.append('type', type);
+    navigate(params.toString() ? `/search?${params.toString()}` : "/search", { replace: true });
+  };
+
   // Obtener categorías únicas
   const categories = Array.from(new Set(businesses.map((b) => b.category)));
 
@@ -118,21 +135,34 @@ export default function SearchPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      <main className="flex-1 pt-16">
-        <div className="h-[calc(100vh-4rem)] flex">
+      {/* Banner con buscador compacto */}
+      <div className="pt-20 bg-card border-b shadow-sm">
+        <div className="container mx-auto px-6 py-4">
+          <div className="max-w-2xl mx-auto">
+            <CompactSearchBar 
+              initialLocation={searchLocation}
+              initialType={searchType}
+              onSearch={handleNewSearch}
+            />
+          </div>
+        </div>
+      </div>
+
+      <main className="flex-1">
+        <div className="h-[calc(100vh-10rem)] flex">
           {/* Panel Izquierdo - Lista y Filtros */}
           <div className="w-full lg:w-2/5 flex flex-col overflow-hidden border-r">
             {/* Header con info de búsqueda */}
             <div className="p-3 border-b bg-card">
               <div className="space-y-1">
-                {location && (
+                {searchLocation && (
                   <p className="text-xs text-muted-foreground">
-                    📍 <span className="font-medium text-foreground">{location}</span>
+                    📍 <span className="font-medium text-foreground">{searchLocation}</span>
                   </p>
                 )}
-                {restaurantType && (
+                {searchType && (
                   <p className="text-xs text-muted-foreground">
-                    🍽️ <span className="font-medium text-foreground">{restaurantType}</span>
+                    🍽️ <span className="font-medium text-foreground">{searchType}</span>
                   </p>
                 )}
                 <p className="text-base font-bold">
