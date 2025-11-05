@@ -243,51 +243,53 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           </p>
         </Card>
       ) : (
-        <div className="flex-1 flex gap-6 min-h-0">
+        <div className="flex-1 flex gap-6 overflow-hidden">
           {/* Employee List - Left Column */}
-          <div className="w-80 flex flex-col space-y-3 overflow-y-auto pr-2">
-            {employees.map((employee) => (
-              <Card 
-                key={employee.id} 
-                className={cn(
-                  "p-4 cursor-pointer transition-all hover:shadow-md",
-                  selectedEmployee?.id === employee.id 
-                    ? "ring-2 ring-primary bg-accent/50" 
-                    : "hover:bg-accent/50"
-                )}
-                onClick={() => handleEmployeeClick(employee)}
-              >
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src="" alt={employee.name} />
-                    <AvatarFallback>{getInitials(employee.name)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{employee.name}</h3>
-                    {employee.position && (
-                      <p className="text-sm text-muted-foreground truncate">
-                        {employee.position}
+          <div className="w-80 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+              {employees.map((employee) => (
+                <Card 
+                  key={employee.id} 
+                  className={cn(
+                    "p-4 cursor-pointer transition-all hover:shadow-md",
+                    selectedEmployee?.id === employee.id 
+                      ? "ring-2 ring-primary bg-accent/50" 
+                      : "hover:bg-accent/50"
+                  )}
+                  onClick={() => handleEmployeeClick(employee)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src="" alt={employee.name} />
+                      <AvatarFallback>{getInitials(employee.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate">{employee.name}</h3>
+                      {employee.position && (
+                        <p className="text-sm text-muted-foreground truncate">
+                          {employee.position}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {employee.vacationCount === 0 
+                          ? "Sin vacaciones" 
+                          : `${employee.vacationCount} vacaciones`}
                       </p>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      {employee.vacationCount === 0 
-                        ? "Sin vacaciones" 
-                        : `${employee.vacationCount} vacaciones`}
-                    </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteEmployeeId(employee.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setDeleteEmployeeId(employee.id);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
           </div>
 
           {/* Employee Detail - Right Column */}
