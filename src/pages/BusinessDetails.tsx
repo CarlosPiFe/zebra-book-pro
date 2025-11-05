@@ -1354,7 +1354,17 @@ export default function BusinessDetails() {
                           defaultCountry="es"
                           value={bookingForm.clientPhone}
                           onChange={(phone) => setBookingForm(prev => ({ ...prev, clientPhone: phone }))}
-                          inputClassName="h-10"
+                          inputClassName="!h-10"
+                          inputStyle={{
+                            height: '40px',
+                            width: '100%',
+                          }}
+                          countrySelectorStyleProps={{
+                            buttonStyle: {
+                              height: '40px',
+                              padding: '0 8px',
+                            }
+                          }}
                         />
                       </div>
                     </div>
