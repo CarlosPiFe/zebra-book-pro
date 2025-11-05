@@ -864,22 +864,13 @@ export default function BusinessDetails() {
                     <p className="text-xs text-foreground font-medium">{business.booking_additional_message}</p>
                   </div>}
 
-                {!user && (
-                  <Alert variant="info" className="mb-3">
-                    <Info className="h-4 w-4" />
-                    <AlertDescription className="text-xs font-medium">
-                      Debes <Link to="/auth" className="underline font-bold hover:text-accent-blue/80">iniciar sesión</Link> para hacer una reserva
-                    </AlertDescription>
-                  </Alert>
-                )}
-
                 {/* PASO 1: Detalles (Qué, Cuándo, Turno) */}
                 {step === 'details' && (
                   <div className="space-y-4">
                     {/* 1. Número de personas */}
                     <div>
                       <Label className="text-sm">Número de personas *</Label>
-                      <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange} disabled={!user}>
+                      <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange}>
                         <SelectTrigger className="h-10">
                           <SelectValue />
                         </SelectTrigger>
@@ -904,7 +895,6 @@ export default function BusinessDetails() {
                             variant={bookingForm.bookingDate?.toDateString() === date.toDateString() ? "default" : "outline"}
                             className="flex-shrink-0 flex-col h-auto py-2 px-3"
                             onClick={() => handleDateChange(date)}
-                            disabled={!user}
                           >
                             <span className="text-xs">{label}</span>
                             <span className="text-lg font-semibold">{dayNumber}</span>
@@ -916,7 +906,7 @@ export default function BusinessDetails() {
                         date={bookingForm.bookingDate} 
                         onDateChange={handleDateChange} 
                         placeholder="O selecciona otra fecha" 
-                        disabled={!user ? () => true : (date => {
+                        disabled={(date => {
                           const todayStart = startOfDay(new Date());
                           const isBeforeToday = date < todayStart;
                           const isClosedDay = !isDateAvailable(date);
@@ -960,7 +950,7 @@ export default function BusinessDetails() {
                       type="button"
                       className="w-full" 
                       onClick={() => setStep('time')}
-                      disabled={!canProceedToTimeStep || !user}
+                      disabled={!canProceedToTimeStep}
                     >
                       Continuar
                     </Button>
