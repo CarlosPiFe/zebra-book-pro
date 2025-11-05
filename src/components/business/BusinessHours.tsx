@@ -168,11 +168,11 @@ export function BusinessHours({ businessId }: BusinessHoursProps) {
           {hours.length === 0 ? (
             <p className="text-sm text-muted-foreground">No hay horarios configurados</p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {hours.map((entry, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-3 border rounded-lg bg-muted/50"
+                  className="flex items-center justify-between py-4 px-3 border rounded-lg bg-muted/50"
                 >
                   <div className="flex items-center gap-4">
                     <span className="font-medium">{getDaysLabel(entry.days)}</span>
