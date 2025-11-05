@@ -25,6 +25,7 @@ import jsPDF from "jspdf";
 import { formatPhoneNumber } from "@/lib/utils";
 import { BusinessTabs } from "@/components/business/BusinessTabs";
 import { useFavorites } from "@/hooks/useFavorites";
+import { BookingAuthDialog } from "@/components/business/BookingAuthDialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 interface Business {
   id: string;
@@ -68,6 +69,9 @@ export default function BusinessDetails() {
   // Estado para el wizard multi-paso
   const [step, setStep] = useState<'details' | 'time' | 'contact'>('details');
   const [selectedShift, setSelectedShift] = useState<'lunch' | 'dinner' | null>(null);
+  const [showAllTimeSlots, setShowAllTimeSlots] = useState(false);
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
 
   // Booking form state (sin clientEmail porque se obtiene del usuario autenticado)
   const [bookingForm, setBookingForm] = useState({
@@ -599,7 +603,7 @@ export default function BusinessDetails() {
     });
   };
 
-  const filteredTimeSlots = getFilteredTimeSlotsByShift();
+  
   
   // Validar si se puede avanzar al siguiente paso
   const canProceedToTimeStep = bookingForm.partySize && bookingForm.bookingDate && (
@@ -905,7 +909,7 @@ export default function BusinessDetails() {
                       <DatePicker 
                         date={bookingForm.bookingDate} 
                         onDateChange={handleDateChange} 
-                        placeholder="O selecciona otra fecha" 
+                        placeholder="Selecciona otra fecha"
                         disabled={(date => {
                           const todayStart = startOfDay(new Date());
                           const isBeforeToday = date < todayStart;
@@ -972,32 +976,77 @@ export default function BusinessDetails() {
 
                     <div>
                       <Label className="text-sm mb-3 block">Selecciona una hora</Label>
-                      {filteredTimeSlots.length > 0 ? (
-                        <div className="grid grid-cols-3 gap-2">
-                          {filteredTimeSlots.map(time => (
-                            <Button
-                              key={time}
-                              type="button"
-                              variant={bookingForm.startTime === time ? "default" : "outline"}
-                              className="h-12"
-                              onClick={() => {
-                                setBookingForm({ ...bookingForm, startTime: time });
-                                setStep('contact');
-                              }}
-                            >
-                              {time}
-                            </Button>
-                          ))}
-                        </div>
-                      ) : (
-                        <Alert>
-                          <Info className="h-4 w-4" />
-                          <AlertDescription>
-                            No hay horarios disponibles para esta fecha y número de personas.
-                          </AlertDescription>
-                        </Alert>
-                      )}
+                      {(() => {
+                        const allSlots = getFilteredTimeSlotsByShift();
+                        const maxSlotsToShow = 16; // 4 filas x 4 columnas
+                        const displayedSlots = showAllTimeSlots ? allSlots : allSlots.slice(0, maxSlotsToShow);
+                        
+                        return (
+                          <>
+                            {allSlots.length > 0 ? (
+                              <>
+                                <div className="grid grid-cols-4 gap-2">
+                                  {displayedSlots.map((time) => (
+                                    <Button
+                                      key={time}
+                                      type="button"
+                                      variant={selectedTimeSlot === time ? "default" : "outline"}
+                                      className="h-10"
+                                      onClick={() => {
+                                        setSelectedTimeSlot(time);
+                                        setBookingForm(prev => ({ ...prev, startTime: time }));
+                                      }}
+                                    >
+                                      {time}
+                                    </Button>
+                                  ))}
+                                </div>
+                                
+                                {allSlots.length > maxSlotsToShow && !showAllTimeSlots && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full mt-2"
+                                    onClick={() => setShowAllTimeSlots(true)}
+                                  >
+                                    Ver más horas ↓
+                                  </Button>
+                                )}
+                                
+                                {showAllTimeSlots && allSlots.length > maxSlotsToShow && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="w-full mt-2"
+                                    onClick={() => setShowAllTimeSlots(false)}
+                                  >
+                                    Ver menos ↑
+                                  </Button>
+                                )}
+                              </>
+                            ) : (
+                              <Alert>
+                                <Info className="h-4 w-4" />
+                                <AlertDescription>
+                                  No hay horarios disponibles para esta fecha y número de personas.
+                                </AlertDescription>
+                              </Alert>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
+
+                    <Button
+                      type="button"
+                      className="w-full"
+                      disabled={!selectedTimeSlot}
+                      onClick={() => setShowAuthDialog(true)}
+                    >
+                      Continuar
+                    </Button>
                   </div>
                 )}
 
@@ -1142,6 +1191,27 @@ export default function BusinessDetails() {
             </Card>
           </div>
         </div>
+
+        {/* Dialog de autenticación */}
+        {business && bookingForm.bookingDate && bookingForm.startTime && (
+          <BookingAuthDialog
+            open={showAuthDialog}
+            onOpenChange={setShowAuthDialog}
+            businessName={business.name}
+            bookingDate={bookingForm.bookingDate}
+            startTime={bookingForm.startTime}
+            partySize={bookingForm.partySize}
+            onAuthSuccess={(authenticatedUser: User, userProfile: any) => {
+              setUser(authenticatedUser);
+              setBookingForm(prev => ({
+                ...prev,
+                clientName: userProfile?.full_name || '',
+                clientPhone: userProfile?.phone || '',
+              }));
+              setStep('contact');
+            }}
+          />
+        )}
       </div>
     </div>
   </>;
