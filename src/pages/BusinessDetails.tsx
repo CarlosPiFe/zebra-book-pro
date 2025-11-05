@@ -1197,7 +1197,7 @@ export default function BusinessDetails() {
         {/* Pop-up de autenticación y confirmación */}
         {business && bookingForm.bookingDate && bookingForm.startTime && (
           <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
               <DialogHeader className="text-center">
                 <DialogTitle className="text-center">
                   TU RESERVA - {business.name}
