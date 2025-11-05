@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RestaurantCard } from "./RestaurantCard";
+import { RestaurantCardCompact } from "./RestaurantCardCompact";
 import { supabase } from "@/integrations/supabase/client";
 interface Business {
   id: string;
@@ -134,7 +134,7 @@ export const RestaurantCarousel = ({
         msOverflowStyle: "none"
       }} onScroll={handleScroll}>
           {businesses.map(business => <div key={business.id} className="flex-none w-[260px]">
-              <RestaurantCard business={business} />
+              <RestaurantCardCompact business={business} />
             </div>)}
         </div>
       </div>
