@@ -1321,7 +1321,7 @@ export default function BusinessDetails() {
               {modalStep === 'contact' && user && (
                 <>
                   {/* Sección de perfil */}
-                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                  <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg">
                     <Avatar>
                       <AvatarImage src={user.user_metadata?.avatar_url} />
                       <AvatarFallback>
