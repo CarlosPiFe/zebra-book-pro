@@ -119,7 +119,6 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
 
       toast.success(`${uploadedUrls.length} foto(s) subida(s) correctamente`);
       await loadPhotos();
-      await updateBusinessMainImage();
     } catch (error) {
       console.error("Error subiendo fotos:", error);
       toast.error("Error al subir las fotos");
@@ -153,7 +152,6 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
 
       toast.success("Foto eliminada");
       await loadPhotos();
-      await updateBusinessMainImage();
     } catch (error) {
       console.error("Error eliminando foto:", error);
       toast.error("Error al eliminar la foto");
@@ -225,7 +223,6 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
       setOrderingMode(false);
       setSelectedForOrder([]);
       await loadPhotos();
-      await updateBusinessMainImage();
     } catch (error) {
       console.error("Error guardando orden:", error);
       toast.error("Error al guardar el orden");
@@ -237,31 +234,6 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
   const getPhotoOrderNumber = (photoId: string) => {
     const index = selectedForOrder.indexOf(photoId);
     return index >= 0 ? index + 1 : null;
-  };
-
-  const updateBusinessMainImage = async () => {
-    try {
-      // Obtener la primera foto del negocio (ordenada por display_order)
-      const { data: firstPhoto, error: photoError } = await supabase
-        .from("business_photos")
-        .select("photo_url")
-        .eq("business_id", businessId)
-        .order("display_order", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      if (photoError) throw photoError;
-
-      // Actualizar la imagen principal del negocio
-      const { error: updateError } = await supabase
-        .from("businesses")
-        .update({ image_url: firstPhoto?.photo_url || null })
-        .eq("id", businessId);
-
-      if (updateError) throw updateError;
-    } catch (error) {
-      console.error("Error actualizando imagen principal:", error);
-    }
   };
 
   return (
