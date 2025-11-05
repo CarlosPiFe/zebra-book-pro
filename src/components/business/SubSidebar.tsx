@@ -8,7 +8,8 @@ import {
   CalendarCheck,
   Info,
   Image,
-  Globe
+  Globe,
+  Utensils
 } from "lucide-react";
 
 interface SubSidebarProps {
@@ -31,6 +32,12 @@ export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange
       id: "business-info",
       label: "Información del negocio",
       icon: Info,
+      section: "settings",
+    },
+    {
+      id: "restaurant-type",
+      label: "Tipo de restaurante",
+      icon: Utensils,
       section: "settings",
     },
     {

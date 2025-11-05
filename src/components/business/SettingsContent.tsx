@@ -13,7 +13,8 @@ import {
   MessageSquare, 
   CalendarCheck,
   Info,
-  Globe
+  Globe,
+  Utensils
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -42,6 +43,7 @@ interface Business {
   booking_additional_message?: string | null;
   schedule_view_mode?: string;
   booking_mode?: string;
+  cuisine_type?: string | null;
 }
 
 interface SettingsContentProps {
@@ -78,6 +80,38 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
   const [bookingConfirmationType, setBookingConfirmationType] = useState<string>(
     business.booking_mode || "automatic"
   );
+
+  const cuisineTypes = [
+    "Chino",
+    "Japonés",
+    "Español",
+    "Italiano",
+    "Mexicano",
+    "Indio",
+    "Mediterráneo",
+    "Otro"
+  ];
+
+  // Determinar si el tipo de cocina actual es personalizado
+  const isCustomType = Boolean(business.cuisine_type && !cuisineTypes.slice(0, -1).includes(business.cuisine_type));
+  
+  const [selectedCuisineType, setSelectedCuisineType] = useState<string>(
+    isCustomType ? "Otro" : (business.cuisine_type || "")
+  );
+  const [customCuisineType, setCustomCuisineType] = useState<string>(
+    isCustomType ? business.cuisine_type || "" : ""
+  );
+  const [showCustomInput, setShowCustomInput] = useState<boolean>(isCustomType);
+
+  const handleCuisineTypeChange = (value: string) => {
+    setSelectedCuisineType(value);
+    if (value === "Otro") {
+      setShowCustomInput(true);
+    } else {
+      setShowCustomInput(false);
+      setCustomCuisineType("");
+    }
+  };
 
   const handleSubmitBasicInfo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -216,6 +250,35 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
     }
   };
 
+  const handleSubmitCuisineType = async () => {
+    setLoading(true);
+    try {
+      const finalCuisineType = showCustomInput ? customCuisineType : selectedCuisineType;
+      
+      if (showCustomInput && !customCuisineType.trim()) {
+        toast.error("Por favor, especifica el tipo de restaurante");
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("businesses")
+        .update({
+          cuisine_type: finalCuisineType,
+        })
+        .eq("id", business.id);
+
+      if (error) throw error;
+      toast.success("Tipo de restaurante actualizado correctamente");
+      onUpdate();
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error al actualizar el tipo de restaurante");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderContent = () => {
     switch (activeSubSection) {
       case "business-info":
@@ -290,6 +353,57 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
                   {loading ? "Guardando..." : "Guardar Cambios"}
                 </Button>
               </form>
+            </CardContent>
+          </Card>
+        );
+
+      case "restaurant-type":
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Utensils className="h-5 w-5" />
+                Tipo de Restaurante
+              </CardTitle>
+              <CardDescription>
+                Selecciona el tipo de cocina que ofrece tu restaurante
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="cuisine-type">Tipo de cocina</Label>
+                <Select
+                  value={selectedCuisineType}
+                  onValueChange={handleCuisineTypeChange}
+                >
+                  <SelectTrigger className="w-full bg-background">
+                    <SelectValue placeholder="Selecciona un tipo de cocina" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background z-50">
+                    {cuisineTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {showCustomInput && (
+                <div className="space-y-2">
+                  <Label htmlFor="custom-cuisine">Especifica el tipo de cocina</Label>
+                  <Input
+                    id="custom-cuisine"
+                    placeholder="Ej: Fusión asiática, Vegano, etc."
+                    value={customCuisineType}
+                    onChange={(e) => setCustomCuisineType(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <Button onClick={handleSubmitCuisineType} disabled={loading}>
+                {loading ? "Guardando..." : "Guardar Tipo de Cocina"}
+              </Button>
             </CardContent>
           </Card>
         );
