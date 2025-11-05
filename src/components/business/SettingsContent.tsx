@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,7 @@ import {
   MessageSquare, 
   CalendarCheck,
   Info,
-  Globe,
-  X
+  Globe
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -53,10 +52,6 @@ interface SettingsContentProps {
 
 export function SettingsContent({ business, activeSubSection, onUpdate }: SettingsContentProps) {
   const [loading, setLoading] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: business.name,
     address: business.address || "",
@@ -84,91 +79,11 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
     business.booking_mode || "automatic"
   );
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/gif"];
-    if (!validTypes.includes(file.type)) {
-      toast.error("Por favor selecciona una imagen válida (PNG, JPG, JPEG o GIF)");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("La imagen no debe superar los 5MB");
-      return;
-    }
-
-    setSelectedFile(file);
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-    setFormData({ ...formData, image_url: "" });
-  };
-
-  const handleRemoveFile = () => {
-    setSelectedFile(null);
-    setPreviewUrl("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const uploadImageToStorage = async (file: File): Promise<string | null> => {
-    try {
-      setUploadingImage(true);
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuario no autenticado");
-
-      if (business.image_url && business.image_url.includes('business-images')) {
-        const oldPath = business.image_url.split('business-images/')[1];
-        if (oldPath) {
-          await supabase.storage.from('business-images').remove([oldPath]);
-        }
-      }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${business.id}-${Date.now()}.${fileExt}`;
-
-      const { data, error } = await supabase.storage
-        .from('business-images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('business-images')
-        .getPublicUrl(data.path);
-
-      return publicUrl;
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      toast.error("Error al subir la imagen");
-      return null;
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
   const handleSubmitBasicInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      let finalImageUrl = formData.image_url;
-
-      if (selectedFile) {
-        const uploadedUrl = await uploadImageToStorage(selectedFile);
-        if (uploadedUrl) {
-          finalImageUrl = uploadedUrl;
-        } else {
-          throw new Error("Error al subir la imagen");
-        }
-      }
-
       const { error } = await supabase
         .from("businesses")
         .update({
@@ -177,15 +92,12 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
           phone: formData.phone,
           email: formData.email,
           description: formData.description,
-          image_url: finalImageUrl,
         })
         .eq("id", business.id);
 
       if (error) throw error;
 
       toast.success("Información actualizada correctamente");
-      setSelectedFile(null);
-      setPreviewUrl("");
       onUpdate();
     } catch (error) {
       console.error("Error updating business:", error);
@@ -320,43 +232,6 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmitBasicInfo} className="space-y-6">
-                {/* Imagen */}
-                <div className="space-y-2">
-                  <Label>Imagen del Negocio</Label>
-                  <div className="flex gap-4">
-                    {(previewUrl || formData.image_url) && (
-                      <div className="relative w-32 h-32">
-                        <img
-                          src={previewUrl || formData.image_url}
-                          alt="Preview"
-                          className="w-full h-full object-cover rounded-lg"
-                        />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute -top-2 -right-2 h-6 w-6"
-                          onClick={handleRemoveFile}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <Input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        className="cursor-pointer"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        PNG, JPG, JPEG o GIF (máx. 5MB)
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
                 {/* Nombre */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Nombre del Negocio</Label>
@@ -411,8 +286,8 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
                   />
                 </div>
 
-                <Button type="submit" disabled={loading || uploadingImage}>
-                  {loading || uploadingImage ? "Guardando..." : "Guardar Cambios"}
+                <Button type="submit" disabled={loading}>
+                  {loading ? "Guardando..." : "Guardar Cambios"}
                 </Button>
               </form>
             </CardContent>
