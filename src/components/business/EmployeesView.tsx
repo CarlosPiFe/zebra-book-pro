@@ -174,9 +174,9 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex-shrink-0 flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold">Empleados</h2>
           <p className="text-muted-foreground">Gestiona los empleados de tu negocio</p>
@@ -235,7 +235,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
       </div>
 
       {employees.length === 0 ? (
-        <Card className="p-8 text-center">
+        <Card className="p-8 text-center flex-shrink-0">
           <UserPlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="text-lg font-semibold mb-2">No hay empleados</h3>
           <p className="text-muted-foreground mb-4">
@@ -243,15 +243,15 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           </p>
         </Card>
       ) : (
-        <div className="flex-1 flex gap-6 overflow-hidden">
+        <div className="flex-1 flex gap-6 overflow-hidden min-h-0">
           {/* Employee List - Left Column */}
-          <div className="w-80 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto space-y-3 pr-2">
+          <div className="w-80 flex flex-col overflow-hidden flex-shrink-0">
+            <div className="overflow-y-auto space-y-3 pr-2">
               {employees.map((employee) => (
                 <Card 
                   key={employee.id} 
                   className={cn(
-                    "p-4 cursor-pointer transition-all hover:shadow-md",
+                    "p-4 cursor-pointer transition-all hover:shadow-md flex-shrink-0",
                     selectedEmployee?.id === employee.id 
                       ? "ring-2 ring-primary bg-accent/50" 
                       : "hover:bg-accent/50"
@@ -259,7 +259,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                   onClick={() => handleEmployeeClick(employee)}
                 >
                   <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
+                    <Avatar className="h-12 w-12 flex-shrink-0">
                       <AvatarImage src="" alt={employee.name} />
                       <AvatarFallback>{getInitials(employee.name)}</AvatarFallback>
                     </Avatar>
@@ -279,6 +279,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="flex-shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         setDeleteEmployeeId(employee.id);
@@ -293,7 +294,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           </div>
 
           {/* Employee Detail - Right Column */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-w-0">
             {selectedEmployee ? (
               <EmployeeDetailView
                 employee={selectedEmployee}
