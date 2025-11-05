@@ -60,26 +60,31 @@ export const RestaurantCarousel = ({
   const loadBusinesses = async () => {
     setLoading(true);
     try {
+      // Aumentar el límite para tener más variedad y luego aleatorizar
       let query = supabase.from("businesses").select("*").eq("is_active", true);
       if (filter === "newest") {
         query = query.order("created_at", {
           ascending: false
-        }).limit(10);
+        }).limit(20);
       } else if (filter === "offers") {
-        query = query.not("special_offer", "is", null).limit(10);
+        query = query.not("special_offer", "is", null).limit(20);
       } else if (filter === "featured") {
         query = query.order("average_rating", {
           ascending: false
-        }).limit(10);
+        }).limit(20);
       } else {
-        query = query.limit(10);
+        query = query.limit(20);
       }
       const {
         data,
         error
       } = await query;
       if (error) throw error;
-      setBusinesses(data || []);
+      
+      // Aleatorizar el orden para dar más variedad
+      const shuffled = (data || []).sort(() => Math.random() - 0.5);
+      // Tomar solo 10 después de mezclar
+      setBusinesses(shuffled.slice(0, 10));
     } catch (error) {
       console.error("Error loading businesses:", error);
     } finally {
