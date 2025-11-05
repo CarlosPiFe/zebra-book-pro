@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { BusinessSidebar } from "@/components/BusinessSidebar";
 import { Navbar } from "@/components/Navbar";
 import { CalendarView } from "@/components/business/CalendarView";
 import { BookingsView } from "@/components/business/BookingsView";
@@ -11,8 +9,10 @@ import { TablesView } from "@/components/business/TablesView";
 import { MenuView } from "@/components/business/MenuView";
 import { EmployeesView } from "@/components/business/EmployeesView";
 import { WeeklyScheduleView } from "@/components/business/WeeklyScheduleView";
-import { BusinessSettings } from "@/components/business/BusinessSettings";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
+import { MainSidebar } from "@/components/business/MainSidebar";
+import { SubSidebar } from "@/components/business/SubSidebar";
+import { SettingsContent } from "@/components/business/SettingsContent";
 
 interface Business {
   id: string;
@@ -38,6 +38,7 @@ const ManageBusiness = () => {
   const [activeView, setActiveView] = useState(() => {
     return searchParams.get("view") || "calendar";
   });
+  const [activeSubSection, setActiveSubSection] = useState<string>("business-info");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -89,6 +90,13 @@ const ManageBusiness = () => {
     }
   };
 
+  const handleSectionChange = (section: string) => {
+    setActiveView(section);
+    if (section === "settings") {
+      setActiveSubSection("business-info");
+    }
+  };
+
   const renderView = () => {
     if (!business) return null;
 
@@ -106,7 +114,13 @@ const ManageBusiness = () => {
       case "schedules":
         return <WeeklyScheduleView businessId={business.id} scheduleViewMode={business.schedule_view_mode || 'editable'} />;
       case "settings":
-        return <BusinessSettings business={business} onUpdate={loadBusiness} />;
+        return <SettingsContent business={business} activeSubSection={activeSubSection} onUpdate={loadBusiness} />;
+      case "statistics":
+        return (
+          <div className="flex items-center justify-center h-96">
+            <p className="text-muted-foreground">Estadísticas - Próximamente</p>
+          </div>
+        );
       default:
         return <CalendarView businessId={business.id} />;
     }
@@ -125,21 +139,27 @@ const ManageBusiness = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full pt-24">
-          <BusinessSidebar
-            business={business}
-            activeView={activeView}
-            onViewChange={setActiveView}
+      <div className="flex h-screen pt-16">
+        <MainSidebar
+          activeSection={activeView}
+          onSectionChange={handleSectionChange}
+          businessCategory={business?.category || ""}
+        />
+        
+        {activeView === "settings" && (
+          <SubSidebar
+            activeSection={activeView}
+            activeSubSection={activeSubSection}
+            onSubSectionChange={setActiveSubSection}
           />
-          
-          <main className="flex-1 flex flex-col">
-            <div className="w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-6">
-              {renderView()}
-            </div>
-          </main>
-        </div>
-      </SidebarProvider>
+        )}
+        
+        <main className="flex-1 overflow-y-auto">
+          <div className="w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-6">
+            {renderView()}
+          </div>
+        </main>
+      </div>
     </div>
   );
 };
