@@ -36,6 +36,18 @@ export function MainSidebar({ activeSection, onSectionChange, businessCategory }
       hasSubmenu: false,
     },
     {
+      id: "employees",
+      label: "Empleados",
+      icon: Users,
+      hasSubmenu: false,
+    },
+    {
+      id: "schedules",
+      label: "Horarios",
+      icon: Clock,
+      hasSubmenu: false,
+    },
+    {
       id: "tables",
       label: "Mesas",
       icon: TableProperties,
@@ -47,18 +59,6 @@ export function MainSidebar({ activeSection, onSectionChange, businessCategory }
       label: "Menú",
       icon: UtensilsCrossed,
       showForCategory: ["restaurante", "bar", "cafetería"],
-      hasSubmenu: false,
-    },
-    {
-      id: "employees",
-      label: "Empleados",
-      icon: Users,
-      hasSubmenu: false,
-    },
-    {
-      id: "schedules",
-      label: "Horarios",
-      icon: Clock,
       hasSubmenu: false,
     },
     {
