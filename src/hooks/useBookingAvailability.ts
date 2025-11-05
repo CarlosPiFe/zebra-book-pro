@@ -558,5 +558,6 @@ export function useBookingAvailability(businessId: string | undefined, roomId?: 
     loading,
     slotDuration,
     tables,
+    availabilitySlots,
   };
 }

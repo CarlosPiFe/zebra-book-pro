@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
-import { format, startOfDay, isBefore } from "date-fns";
+import { format, startOfDay, isBefore, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
 import { ArrowLeft, Calendar, Clock, CheckCircle2, Download, Info, Phone, Mail, Heart, Star, MapPin, UtensilsCrossed } from "lucide-react";
@@ -25,6 +25,7 @@ import jsPDF from "jspdf";
 import { formatPhoneNumber } from "@/lib/utils";
 import { BusinessTabs } from "@/components/business/BusinessTabs";
 import { useFavorites } from "@/hooks/useFavorites";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 interface Business {
   id: string;
   name: string;
@@ -64,6 +65,10 @@ export default function BusinessDetails() {
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState<any>(null);
 
+  // Estado para el wizard multi-paso
+  const [step, setStep] = useState<'details' | 'time' | 'contact'>('details');
+  const [selectedShift, setSelectedShift] = useState<'lunch' | 'dinner' | null>(null);
+
   // Booking form state (sin clientEmail porque se obtiene del usuario autenticado)
   const [bookingForm, setBookingForm] = useState({
     clientName: "",
@@ -81,46 +86,11 @@ export default function BusinessDetails() {
     isDateAvailable,
     getAvailableTimeSlots,
     refreshAvailability,
-    loading: availabilityLoading,
     tables: allTables,
-    slotDuration
+    availabilitySlots
   } = useBookingAvailability(businessId, undefined);
   
   const maxTableCapacity = allTables.length > 0 ? Math.max(...allTables.map(t => t.max_capacity)) : 20;
-
-  // Cargar reservas para verificar disponibilidad por sala
-  const [bookings, setBookings] = useState<Array<{
-    id: string;
-    booking_date: string;
-    start_time: string;
-    end_time: string;
-    party_size: number;
-    table_id: string;
-  }>>([]);
-
-  useEffect(() => {
-    if (!businessId) return;
-    
-    const loadBookings = async () => {
-      const today = new Date().toISOString().split("T")[0];
-      const futureDate = new Date();
-      futureDate.setDate(futureDate.getDate() + 30);
-      const future = futureDate.toISOString().split("T")[0];
-
-      const { data } = await supabase
-        .from("bookings")
-        .select("*")
-        .eq("business_id", businessId)
-        .gte("booking_date", today)
-        .lte("booking_date", future)
-        .neq("status", "cancelled")
-        .neq("status", "completed");
-
-      setBookings(data as any || []);
-    };
-
-    loadBookings();
-  }, [businessId]);
 
   // 🔐 Verificar autenticación y cargar perfil
   useEffect(() => {
@@ -238,13 +208,6 @@ export default function BusinessDetails() {
     });
   };
 
-  // 🏠 Cambiar sala
-  const handleRoomChange = (value: string) => {
-    setBookingForm({
-      ...bookingForm,
-      roomId: value === "all-rooms" ? undefined : value
-    });
-  };
 
   // Validar teléfono
   const validatePhone = (phone: string): boolean => {
@@ -538,84 +501,112 @@ export default function BusinessDetails() {
   };
   const availableTimeSlots = getAvailableTimeSlotsForForm();
 
-  // 🏠 Filtrar salas que tienen mesas disponibles
-  const getAvailableRooms = (): Room[] => {
-    if (!bookingForm.bookingDate || !bookingForm.startTime || !bookingForm.partySize) {
-      // Si no hay fecha/hora/personas seleccionadas, mostrar todas las salas que tengan mesas
-      return rooms.filter(room => {
-        const roomTables = allTables.filter(t => t.room_id === room.id);
-        return roomTables.length > 0;
-      });
+
+  // Función para detectar turnos basado en availability_slots
+  const detectShifts = (date: Date): { hasShifts: boolean; lunch?: { start: string; end: string }; dinner?: { start: string; end: string } } => {
+    const dayOfWeek = date.getDay();
+    const daySlots = availabilitySlots.filter(slot => slot.day_of_week === dayOfWeek);
+    
+    if (daySlots.length === 0) {
+      return { hasShifts: false };
     }
 
-    const dateStr = format(bookingForm.bookingDate, "yyyy-MM-dd");
-    const partySize = parseInt(bookingForm.partySize);
-    const selectedStartTime = bookingForm.startTime;
+    // Ordenar los slots por hora de inicio
+    const sortedSlots = daySlots.sort((a, b) => {
+      const aMinutes = parseInt(a.start_time?.split(':')[0] || '0') * 60 + parseInt(a.start_time?.split(':')[1] || '0');
+      const bMinutes = parseInt(b.start_time?.split(':')[0] || '0') * 60 + parseInt(b.start_time?.split(':')[1] || '0');
+      return aMinutes - bMinutes;
+    });
 
-    if (!selectedStartTime) return [];
+    // Detectar si hay un gran hueco (más de 2 horas) entre grupos de slots
+    let gaps: number[] = [];
+    for (let i = 0; i < sortedSlots.length - 1; i++) {
+      const endMinutes = parseInt(sortedSlots[i]?.end_time?.split(':')[0] || '0') * 60 + parseInt(sortedSlots[i]?.end_time?.split(':')[1] || '0');
+      const nextStartMinutes = parseInt(sortedSlots[i + 1]?.start_time?.split(':')[0] || '0') * 60 + parseInt(sortedSlots[i + 1]?.start_time?.split(':')[1] || '0');
+      const gap = nextStartMinutes - endMinutes;
+      if (gap > 120) {
+        gaps.push(i);
+      }
+    }
 
-    // Calcular hora de fin del slot
-    const [hour = 0, minute = 0] = selectedStartTime.split(":").map(Number);
-    const endMinutes = hour * 60 + minute + slotDuration;
-    const endHour = Math.floor(endMinutes / 60) % 24;
-    const endMinute = endMinutes % 60;
-    const endTime = `${String(endHour).padStart(2, "0")}:${String(endMinute).padStart(2, "0")}`;
-
-    // Función para verificar superposición de horarios
-    const isTimeOverlapping = (
-      bookingStart: string,
-      bookingEnd: string,
-      slotStart: string,
-      slotEnd: string
-    ): boolean => {
-      const bookingStartMin = parseInt(bookingStart.split(":")[0] || "0") * 60 + parseInt(bookingStart.split(":")[1] || "0");
-      const bookingEndMin = parseInt(bookingEnd.split(":")[0] || "0") * 60 + parseInt(bookingEnd.split(":")[1] || "0");
-      const slotStartMin = parseInt(slotStart.split(":")[0] || "0") * 60 + parseInt(slotStart.split(":")[1] || "0");
-      const slotEndMin = parseInt(slotEnd.split(":")[0] || "0") * 60 + parseInt(slotEnd.split(":")[1] || "0");
-      return !(bookingEndMin <= slotStartMin || bookingStartMin >= slotEndMin);
-    };
-
-    // Filtrar salas que tengan al menos una mesa disponible
-    return rooms.filter(room => {
-      const roomTables = allTables.filter(t => t.room_id === room.id);
+    // Si hay un hueco grande, hay turnos
+    if (gaps.length > 0 && gaps[0] !== undefined) {
+      const splitIndex = gaps[0];
+      const firstSlot = sortedSlots[0];
+      const splitSlot = sortedSlots[splitIndex];
+      const nextSlot = sortedSlots[splitIndex + 1];
+      const lastSlot = sortedSlots[sortedSlots.length - 1];
       
-      // Verificar que la sala tenga mesas
-      if (roomTables.length === 0) return false;
+      if (!firstSlot || !splitSlot || !nextSlot || !lastSlot) {
+        return { hasShifts: false };
+      }
 
-      // Buscar mesas que puedan acomodar al grupo
-      const suitableTables = roomTables.filter((table) => {
-        const meetsMinCapacity = table.min_capacity <= partySize;
-        const meetsMaxCapacity = table.max_capacity >= partySize;
-        return meetsMinCapacity && meetsMaxCapacity;
-      });
+      return {
+        hasShifts: true,
+        lunch: {
+          start: firstSlot.start_time,
+          end: splitSlot.end_time,
+        },
+        dinner: {
+          start: nextSlot.start_time,
+          end: lastSlot.end_time,
+        },
+      };
+    }
 
-      if (suitableTables.length === 0) return false;
+    return { hasShifts: false };
+  };
 
-      // Verificar si al menos una mesa está disponible (no tiene reservas superpuestas)
-      return suitableTables.some((table) => {
-        const tableBookings = bookings.filter(
-          (b) => b.booking_date === dateStr && b.table_id === table.id
-        );
-        
-        // Si no hay reservas para esta mesa, está disponible
-        if (tableBookings.length === 0) return true;
+  // Generar botones de acceso rápido para los próximos 7 días
+  const generateQuickDateButtons = () => {
+    const buttons = [];
+    for (let i = 0; i < 7; i++) {
+      const date = addDays(new Date(), i);
+      const isAvailable = isDateAvailable(date);
+      if (isAvailable) {
+        buttons.push({
+          date,
+          label: i === 0 ? 'Hoy' : format(date, 'EEE', { locale: es }),
+          dayNumber: format(date, 'd'),
+        });
+      }
+    }
+    return buttons;
+  };
 
-        // Verificar si alguna reserva se superpone con el horario seleccionado
-        const hasOverlap = tableBookings.some((booking) =>
-          isTimeOverlapping(
-            booking.start_time,
-            booking.end_time,
-            selectedStartTime,
-            endTime
-          )
-        );
+  const quickDateButtons = generateQuickDateButtons();
 
-        return !hasOverlap; // Mesa disponible si NO hay superposición
-      });
+  // Obtener los slots filtrados por turno si se ha seleccionado
+  const getFilteredTimeSlotsByShift = (): string[] => {
+    if (!bookingForm.bookingDate || !bookingForm.partySize) return [];
+    
+    const allSlots = availableTimeSlots;
+    
+    if (!selectedShift) return allSlots;
+    
+    const shifts = detectShifts(bookingForm.bookingDate);
+    if (!shifts.hasShifts) return allSlots;
+
+    const shiftInfo = selectedShift === 'lunch' ? shifts.lunch : shifts.dinner;
+    if (!shiftInfo) return allSlots;
+
+    // Filtrar slots que caen dentro del rango del turno
+    return allSlots.filter(time => {
+      const timeMinutes = parseInt(time?.split(':')[0] || '0') * 60 + parseInt(time?.split(':')[1] || '0');
+      const startMinutes = parseInt(shiftInfo.start?.split(':')[0] || '0') * 60 + parseInt(shiftInfo.start?.split(':')[1] || '0');
+      const endMinutes = parseInt(shiftInfo.end?.split(':')[0] || '0') * 60 + parseInt(shiftInfo.end?.split(':')[1] || '0');
+      return timeMinutes >= startMinutes && timeMinutes <= endMinutes;
     });
   };
 
-  const availableRooms = getAvailableRooms();
+  const filteredTimeSlots = getFilteredTimeSlotsByShift();
+  
+  // Validar si se puede avanzar al siguiente paso
+  const canProceedToTimeStep = bookingForm.partySize && bookingForm.bookingDate && (
+    !bookingForm.bookingDate || 
+    !detectShifts(bookingForm.bookingDate).hasShifts || 
+    selectedShift !== null
+  );
 
   // Debug: Log para ver qué horarios están disponibles
   console.log("=== DEBUG DISPONIBILIDAD ===");
@@ -882,172 +873,262 @@ export default function BusinessDetails() {
                   </Alert>
                 )}
 
-                <form onSubmit={handleBookingSubmit} className="space-y-3">
-                  <div>
-                    <Label className="text-sm">Nombre *</Label>
-                    <Input 
-                      value={bookingForm.clientName} 
-                      onChange={e => setBookingForm({
-                        ...bookingForm,
-                        clientName: e.target.value
-                      })} 
-                      disabled={!user}
-                      className="h-10 text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-sm">Teléfono *</Label>
-                    <PhoneInput 
-                      defaultCountry="es" 
-                      value={bookingForm.clientPhone} 
-                      onChange={phone => {
-                        setBookingForm({
-                          ...bookingForm,
-                          clientPhone: phone
-                        });
-                        if (phone) {
-                          validatePhone(phone);
-                        } else {
-                          setPhoneError("");
-                        }
-                      }} 
-                      inputClassName={phoneError ? "!border-destructive h-10" : "h-10"} 
-                      className="phone-input-custom text-sm"
-                      disabled={!user}
-                    />
-                    {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
-                  </div>
-
-                  {/* 1. Número de personas */}
-                  <div>
-                    <Label className="text-sm">Número de personas *</Label>
-                    <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange} disabled={!user}>
-                      <SelectTrigger className="h-10">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Array.from({
-                        length: maxTableCapacity
-                      }, (_, i) => i + 1).map(n => <SelectItem key={n} value={String(n)}>
-                            {n} {n === 1 ? "persona" : "personas"}
-                          </SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* 2. Fecha */}
-                  <div>
-                    <Label className="text-sm">Fecha *</Label>
-                    <DatePicker 
-                      date={bookingForm.bookingDate} 
-                      onDateChange={handleDateChange} 
-                      placeholder="Seleccionar fecha" 
-                      disabled={!user ? () => true : (date => {
-                        const todayStart = startOfDay(new Date());
-                        const isBeforeToday = date < todayStart;
-                        const isClosedDay = !isDateAvailable(date);
-                        return isBeforeToday || isClosedDay;
-                      })} 
-                    />
-                  </div>
-
-                  {/* 3. Hora */}
-                  <div>
-                    <Label className="text-sm">Hora *</Label>
-                    <Select 
-                      value={bookingForm.startTime ?? undefined} 
-                      onValueChange={v => setBookingForm({
-                        ...bookingForm,
-                        startTime: v
-                      })} 
-                      disabled={!user || !bookingForm.bookingDate || availabilityLoading}
-                    >
-                      <SelectTrigger className="h-10">
-                        <SelectValue placeholder={!bookingForm.bookingDate ? "Selecciona una fecha primero" : availableTimeSlots.length === 0 ? "No hay horarios disponibles" : "Seleccionar hora"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableTimeSlots.length > 0 ? availableTimeSlots.map(time => <SelectItem key={time} value={time}>
-                              {time}
-                            </SelectItem>) : bookingForm.bookingDate ? <SelectItem disabled value="no-slots">
-                            No hay horarios disponibles
-                          </SelectItem> : null}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* 4. Selector de sala - Siempre visible, deshabilitado hasta seleccionar personas, fecha y hora */}
-                  {rooms.length > 0 && (
+                {/* PASO 1: Detalles (Qué, Cuándo, Turno) */}
+                {step === 'details' && (
+                  <div className="space-y-4">
+                    {/* 1. Número de personas */}
                     <div>
-                      <Label className={`text-sm ${!bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime ? "text-muted-foreground" : ""}`}>
-                        Elegir sala (opcional)
-                      </Label>
-                      <Select 
-                        value={bookingForm.roomId || "all-rooms"} 
-                        onValueChange={handleRoomChange} 
-                        disabled={!user || !bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime}
-                      >
-                        <SelectTrigger className={`h-10 ${!bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime ? "opacity-50" : ""}`}>
-                          <SelectValue placeholder={
-                            !bookingForm.partySize || !bookingForm.bookingDate || !bookingForm.startTime 
-                              ? "Selecciona personas, fecha y hora primero" 
-                              : availableRooms.length === 0 
-                                ? "No hay salas disponibles" 
-                                : "Todas las salas"
-                          } />
+                      <Label className="text-sm">Número de personas *</Label>
+                      <Select value={bookingForm.partySize} onValueChange={handlePartySizeChange} disabled={!user}>
+                        <SelectTrigger className="h-10">
+                          <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {bookingForm.partySize && bookingForm.bookingDate && bookingForm.startTime && availableRooms.length > 0 ? (
-                            <>
-                              <SelectItem value="all-rooms">Todas las salas</SelectItem>
-                              {availableRooms.map((room) => (
-                                <SelectItem key={room.id} value={room.id}>
-                                  {room.name}
-                                </SelectItem>
-                              ))}
-                            </>
-                          ) : bookingForm.partySize && bookingForm.bookingDate && bookingForm.startTime ? (
-                            <SelectItem disabled value="no-rooms">
-                              No hay salas disponibles para esta fecha y hora
+                          {Array.from({ length: maxTableCapacity }, (_, i) => i + 1).map(n => (
+                            <SelectItem key={n} value={String(n)}>
+                              {n} {n === 1 ? "persona" : "personas"}
                             </SelectItem>
-                          ) : (
-                            <SelectItem disabled value="disabled">
-                              Selecciona personas, fecha y hora primero
-                            </SelectItem>
-                          )}
+                          ))}
                         </SelectContent>
                       </Select>
-                      {bookingForm.partySize && bookingForm.bookingDate && bookingForm.startTime && availableRooms.length === 0 && (
-                        <p className="text-xs text-destructive mt-1">
-                          No quedan salas disponibles para esta fecha y hora con {bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? "persona" : "personas"}.
-                        </p>
+                    </div>
+
+                    {/* 2. Botones de acceso rápido para fecha */}
+                    <div>
+                      <Label className="text-sm mb-2 block">Fecha *</Label>
+                      <div className="flex gap-2 overflow-x-auto pb-2">
+                        {quickDateButtons.map(({ date, label, dayNumber }) => (
+                          <Button
+                            key={date.toISOString()}
+                            type="button"
+                            variant={bookingForm.bookingDate?.toDateString() === date.toDateString() ? "default" : "outline"}
+                            className="flex-shrink-0 flex-col h-auto py-2 px-3"
+                            onClick={() => handleDateChange(date)}
+                            disabled={!user}
+                          >
+                            <span className="text-xs">{label}</span>
+                            <span className="text-lg font-semibold">{dayNumber}</span>
+                          </Button>
+                        ))}
+                      </div>
+                      {/* Calendario completo */}
+                      <DatePicker 
+                        date={bookingForm.bookingDate} 
+                        onDateChange={handleDateChange} 
+                        placeholder="O selecciona otra fecha" 
+                        disabled={!user ? () => true : (date => {
+                          const todayStart = startOfDay(new Date());
+                          const isBeforeToday = date < todayStart;
+                          const isClosedDay = !isDateAvailable(date);
+                          return isBeforeToday || isClosedDay;
+                        })} 
+                      />
+                    </div>
+
+                    {/* 3. Selector de turno (solo si hay turnos) */}
+                    {bookingForm.bookingDate && detectShifts(bookingForm.bookingDate).hasShifts && (
+                      <div>
+                        <Label className="text-sm mb-2 block">Reservar para *</Label>
+                        <ToggleGroup 
+                          type="single" 
+                          value={selectedShift || undefined}
+                          onValueChange={(value) => setSelectedShift(value as 'lunch' | 'dinner' | null)}
+                          className="justify-stretch"
+                        >
+                          {detectShifts(bookingForm.bookingDate).lunch && (
+                            <ToggleGroupItem 
+                              value="lunch" 
+                              className="flex-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                            >
+                              Comida ({detectShifts(bookingForm.bookingDate).lunch?.start} - {detectShifts(bookingForm.bookingDate).lunch?.end})
+                            </ToggleGroupItem>
+                          )}
+                          {detectShifts(bookingForm.bookingDate).dinner && (
+                            <ToggleGroupItem 
+                              value="dinner" 
+                              className="flex-1 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                            >
+                              Cena ({detectShifts(bookingForm.bookingDate).dinner?.start} - {detectShifts(bookingForm.bookingDate).dinner?.end})
+                            </ToggleGroupItem>
+                          )}
+                        </ToggleGroup>
+                      </div>
+                    )}
+
+                    {/* Botón continuar */}
+                    <Button 
+                      type="button"
+                      className="w-full" 
+                      onClick={() => setStep('time')}
+                      disabled={!canProceedToTimeStep || !user}
+                    >
+                      Continuar
+                    </Button>
+                  </div>
+                )}
+
+                {/* PASO 2: Selección de Hora */}
+                {step === 'time' && (
+                  <div className="space-y-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setStep('details')}
+                      className="mb-2"
+                    >
+                      ← Volver
+                    </Button>
+
+                    <div>
+                      <Label className="text-sm mb-3 block">Selecciona una hora</Label>
+                      {filteredTimeSlots.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-2">
+                          {filteredTimeSlots.map(time => (
+                            <Button
+                              key={time}
+                              type="button"
+                              variant={bookingForm.startTime === time ? "default" : "outline"}
+                              className="h-12"
+                              onClick={() => {
+                                setBookingForm({ ...bookingForm, startTime: time });
+                                setStep('contact');
+                              }}
+                            >
+                              {time}
+                            </Button>
+                          ))}
+                        </div>
+                      ) : (
+                        <Alert>
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            No hay horarios disponibles para esta fecha y número de personas.
+                          </AlertDescription>
+                        </Alert>
                       )}
                     </div>
-                  )}
-
-                  <div>
-                    <Label className="text-sm">Notas adicionales</Label>
-                    <Textarea 
-                      value={bookingForm.notes} 
-                      onChange={e => setBookingForm({
-                        ...bookingForm,
-                        notes: e.target.value
-                      })} 
-                      disabled={!user}
-                      className="text-sm"
-                      rows={3}
-                    />
                   </div>
+                )}
 
-                  <Button 
-                    type="submit" 
-                    className="w-full h-10 text-sm font-semibold" 
-                    disabled={!user || submitting || !bookingForm.bookingDate || !bookingForm.startTime || availabilityLoading || !!phoneError || !bookingForm.clientPhone}
-                  >
-                    <Calendar className="mr-2 h-4 w-4" />
-                    {submitting ? "Enviando..." : "Confirmar reserva"}
-                  </Button>
-                </form>
+                {/* PASO 3: Contacto y Confirmación */}
+                {step === 'contact' && (
+                  <>
+                    {!user ? (
+                      <div className="space-y-4">
+                        <Alert>
+                          <Info className="h-4 w-4" />
+                          <AlertDescription>
+                            Ya casi lo tienes. Inicia sesión o crea una cuenta para confirmar tu reserva.
+                          </AlertDescription>
+                        </Alert>
+                        <div className="flex gap-2">
+                          <Link to="/auth" className="flex-1">
+                            <Button variant="default" className="w-full">
+                              Iniciar Sesión
+                            </Button>
+                          </Link>
+                          <Link to="/auth?register=true" className="flex-1">
+                            <Button variant="outline" className="w-full">
+                              Registrarse
+                            </Button>
+                          </Link>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setStep('time')}
+                          className="w-full"
+                        >
+                          ← Volver
+                        </Button>
+                      </div>
+                    ) : (
+                      <form onSubmit={handleBookingSubmit} className="space-y-3">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setStep('time')}
+                          className="mb-2"
+                        >
+                          ← Volver
+                        </Button>
+
+                        {/* Email (solo lectura) */}
+                        <div>
+                          <Label className="text-sm">Email</Label>
+                          <Input 
+                            value={user.email || ''} 
+                            disabled
+                            className="h-10 text-sm bg-muted"
+                          />
+                        </div>
+
+                        {/* Nombre (editable) */}
+                        <div>
+                          <Label className="text-sm">Nombre *</Label>
+                          <Input 
+                            value={bookingForm.clientName} 
+                            onChange={e => setBookingForm({
+                              ...bookingForm,
+                              clientName: e.target.value
+                            })} 
+                            className="h-10 text-sm"
+                          />
+                        </div>
+
+                        {/* Teléfono (editable) */}
+                        <div>
+                          <Label className="text-sm">Teléfono *</Label>
+                          <PhoneInput 
+                            defaultCountry="es" 
+                            value={bookingForm.clientPhone} 
+                            onChange={phone => {
+                              setBookingForm({
+                                ...bookingForm,
+                                clientPhone: phone
+                              });
+                              if (phone) {
+                                validatePhone(phone);
+                              } else {
+                                setPhoneError("");
+                              }
+                            }} 
+                            inputClassName={phoneError ? "!border-destructive h-10" : "h-10"} 
+                            className="phone-input-custom text-sm"
+                          />
+                          {phoneError && <p className="text-xs text-destructive mt-1">{phoneError}</p>}
+                        </div>
+
+                        {/* Notas adicionales */}
+                        <div>
+                          <Label className="text-sm">Notas adicionales</Label>
+                          <Textarea 
+                            value={bookingForm.notes} 
+                            onChange={e => setBookingForm({
+                              ...bookingForm,
+                              notes: e.target.value
+                            })} 
+                            className="text-sm"
+                            rows={3}
+                          />
+                        </div>
+
+                        {/* Botón de confirmación */}
+                        <Button 
+                          type="submit" 
+                          className="w-full h-10 text-sm font-semibold" 
+                          disabled={submitting || !bookingForm.clientName || !bookingForm.clientPhone || !!phoneError}
+                        >
+                          <Calendar className="mr-2 h-4 w-4" />
+                          {submitting ? "Enviando..." : "Confirmar reserva"}
+                        </Button>
+                      </form>
+                    )}
+                  </>
+                )}
 
                 {/* Botones de contacto - Alineados horizontalmente con separación */}
                 {(business.phone || business.email) && <div className="mt-4 pt-3 border-t">
