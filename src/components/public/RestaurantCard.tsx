@@ -11,7 +11,7 @@ interface RestaurantCardProps {
   business: {
     id: string;
     name: string;
-    category: string;
+    cuisine_type: string | null;
     description?: string | null;
     address?: string | null;
     image_url?: string | null;
@@ -131,7 +131,7 @@ export const RestaurantCard = ({ business }: RestaurantCardProps) => {
               </span>
             )}
           </div>
-          <p className="text-sm text-muted-foreground/90">{business.category}</p>
+          <p className="text-sm text-muted-foreground/90">{business.cuisine_type || "Restaurante"}</p>
           {business.address && (
             <div className="flex items-center gap-1.5 text-sm text-muted-foreground/80">
               <MapPin className="h-3.5 w-3.5" />

@@ -51,7 +51,6 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [slotDuration, setSlotDuration] = useState(60);
-  const [businessCategory, setBusinessCategory] = useState("");
   const [openDays, setOpenDays] = useState<number[]>([]);
   const [availabilityError, setAvailabilityError] = useState("");
   const [isClosedDay, setIsClosedDay] = useState(false);
@@ -79,13 +78,12 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     const loadBusinessSettings = async () => {
       const { data, error } = await supabase
         .from("businesses")
-        .select("booking_slot_duration_minutes, category")
+        .select("booking_slot_duration_minutes")
         .eq("id", businessId)
         .single();
 
       if (!error && data) {
         setSlotDuration(data.booking_slot_duration_minutes);
-        setBusinessCategory(data.category);
       }
 
       // Load availability slots to determine open days
@@ -130,10 +128,10 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
 
   // Check availability when relevant fields change
   useEffect(() => {
-    if (bookingDate && startTime && endTime && partySize && businessCategory) {
+    if (bookingDate && startTime && endTime && partySize) {
       checkAvailability();
     }
-  }, [bookingDate, startTime, endTime, partySize, businessCategory]);
+  }, [bookingDate, startTime, endTime, partySize]);
 
   // Check if selected date is a closed day
   useEffect(() => {
@@ -186,8 +184,8 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
   };
 
   const checkAvailability = async () => {
-    const isHospitality = businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar";
-    if (!isHospitality || !bookingDate || !startTime || !endTime) {
+    // Todos los negocios son restaurantes ahora
+    if (!bookingDate || !startTime || !endTime) {
       setAvailabilityError("");
       return;
     }
@@ -337,17 +335,14 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
     try {
       setLoading(true);
 
-      const isHospitality = businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar";
-
+      // Todos los negocios son restaurantes ahora
       // Check availability before creating booking
-      if (isHospitality) {
-        const dateString = format(bookingDate, "yyyy-MM-dd");
-        const hasAvailability = await hasAvailableTables(dateString, startTime, parseInt(partySize));
-        
-        if (!hasAvailability) {
-          toast.error("No hay disponibilidad para esta hora y número de comensales");
-          return;
-        }
+      const dateString = format(bookingDate, "yyyy-MM-dd");
+      const hasAvailability = await hasAvailableTables(dateString, startTime, parseInt(partySize));
+      
+      if (!hasAvailability) {
+        toast.error("No hay disponibilidad para esta hora y número de comensales");
+        return;
       }
 
       // Validate form data
@@ -609,16 +604,15 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
               </div>
             </div>
 
-            {(businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar") && (
-              <div className="space-y-2">
-                <Label htmlFor="table_id" className="flex items-center gap-2">
-                  <Armchair className="h-4 w-4 text-primary" />
-                  Mesa (opcional)
-                </Label>
-                <Select value={selectedTableId} onValueChange={setSelectedTableId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Asignación automática" />
-                  </SelectTrigger>
+            <div className="space-y-2">
+              <Label htmlFor="table_id" className="flex items-center gap-2">
+                <Armchair className="h-4 w-4 text-primary" />
+                Mesa (opcional)
+              </Label>
+              <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Asignación automática" />
+                </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="auto">Asignación automática</SelectItem>
                     {tables.length > 0 && (
@@ -653,14 +647,13 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 </Select>
                 {tables.length === 0 && startTime && endTime && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Info className="h-3 w-3" />
-                    Selecciona fecha y hora para ver mesas disponibles
-                  </p>
-                )}
-              </div>
-            )}
+              <Info className="h-3 w-3" />
+              Selecciona fecha y hora para ver mesas disponibles
+            </p>
+          )}
+        </div>
 
-            <div className="space-y-2">
+        <div className="space-y-2">
               <Label htmlFor="notes" className="flex items-center gap-2">
                 <ClipboardList className="h-4 w-4 text-primary" />
                 Observaciones

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 interface Business {
   id: string;
   name: string;
-  category: string;
+  cuisine_type: string | null;
   description?: string | null;
   address?: string | null;
   image_url?: string | null;
@@ -35,7 +35,7 @@ export default function SearchPage() {
 
   // Filtros
   const [priceFilter, setPriceFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [cuisineFilter, setCuisineFilter] = useState<string>("all");
   const [ratingFilter, setRatingFilter] = useState<number[]>([0]);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [businesses, searchLocation, searchType, priceFilter, categoryFilter, ratingFilter]);
+  }, [businesses, searchLocation, searchType, priceFilter, cuisineFilter, ratingFilter]);
 
   const loadBusinesses = async () => {
     setLoading(true);
@@ -85,7 +85,8 @@ export default function SearchPage() {
       filtered = filtered.filter(
         (b) =>
           b.name.toLowerCase().includes(type) ||
-          b.category?.toLowerCase().includes(type)
+          b.cuisine_type?.toLowerCase().includes(type) ||
+          b.description?.toLowerCase().includes(type)
       );
     }
 
@@ -94,9 +95,9 @@ export default function SearchPage() {
       filtered = filtered.filter((b) => b.price_range === priceFilter);
     }
 
-    // Filtro de categoría
-    if (categoryFilter !== "all") {
-      filtered = filtered.filter((b) => b.category === categoryFilter);
+    // Filtro de tipo de cocina
+    if (cuisineFilter !== "all") {
+      filtered = filtered.filter((b) => b.cuisine_type === cuisineFilter);
     }
 
     // Filtro de rating
@@ -114,12 +115,12 @@ export default function SearchPage() {
 
   const resetFilters = () => {
     setPriceFilter("all");
-    setCategoryFilter("all");
+    setCuisineFilter("all");
     setRatingFilter([0]);
   };
 
-  // Obtener categorías únicas
-  const categories = Array.from(new Set(businesses.map((b) => b.category)));
+  // Obtener tipos de cocina únicos
+  const cuisineTypes = Array.from(new Set(businesses.map((b) => b.cuisine_type).filter(Boolean)));
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -178,15 +179,15 @@ export default function SearchPage() {
                 {/* Categoría */}
                 <div className="space-y-1">
                   <Label className="text-xs">Cocina</Label>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <Select value={cuisineFilter} onValueChange={setCuisineFilter}>
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue placeholder="Todas" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">Todas</SelectItem>
-                      {categories.map((cat) => (
-                        <SelectItem key={cat} value={cat}>
-                          {cat}
+                      {cuisineTypes.map((cuisine) => (
+                        <SelectItem key={cuisine} value={cuisine!}>
+                          {cuisine}
                         </SelectItem>
                       ))}
                     </SelectContent>

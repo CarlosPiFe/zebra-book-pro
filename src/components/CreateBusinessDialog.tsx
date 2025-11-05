@@ -77,7 +77,7 @@ export const CreateBusinessDialog = ({ open, onOpenChange }: CreateBusinessDialo
         .insert({
           owner_id: session.user.id,
           name: data.name,
-          category: "restaurante",
+          cuisine_type: null,
           description: data.description || null,
           email: data.email || null,
           phone: data.phone || null,

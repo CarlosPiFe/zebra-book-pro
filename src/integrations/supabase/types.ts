@@ -279,9 +279,9 @@ export type Database = {
           booking_additional_message: string | null
           booking_mode: string
           booking_slot_duration_minutes: number
-          category: string
           confirmation_mode: string
           created_at: string
+          cuisine_type: string | null
           description: string | null
           email: string | null
           id: string
@@ -308,9 +308,9 @@ export type Database = {
           booking_additional_message?: string | null
           booking_mode?: string
           booking_slot_duration_minutes?: number
-          category: string
           confirmation_mode?: string
           created_at?: string
+          cuisine_type?: string | null
           description?: string | null
           email?: string | null
           id?: string
@@ -337,9 +337,9 @@ export type Database = {
           booking_additional_message?: string | null
           booking_mode?: string
           booking_slot_duration_minutes?: number
-          category?: string
           confirmation_mode?: string
           created_at?: string
+          cuisine_type?: string | null
           description?: string | null
           email?: string | null
           id?: string

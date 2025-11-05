@@ -33,7 +33,7 @@ interface Room {
 interface Business {
   id: string;
   name: string;
-  category: string;
+  cuisine_type: string | null;
   description: string;
   email: string;
   phone: string;
@@ -64,6 +64,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: business.name,
+    cuisine_type: business.cuisine_type || "",
     address: business.address || "",
     phone: business.phone || "",
     email: business.email || "",
@@ -430,6 +431,7 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
         .from("businesses")
         .update({
           name: formData.name,
+          cuisine_type: formData.cuisine_type || null,
           address: formData.address,
           phone: formData.phone,
           email: formData.email,
@@ -1127,6 +1129,19 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                 placeholder="Nombre de tu negocio"
                 required
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cuisine_type">Tipo de Cocina</Label>
+              <Input
+                id="cuisine_type"
+                value={formData.cuisine_type}
+                onChange={(e) => setFormData({ ...formData, cuisine_type: e.target.value })}
+                placeholder="Ej: Italiana, Mexicana, Mediterránea, Japonesa, De Autor..."
+              />
+              <p className="text-sm text-muted-foreground">
+                Especifica el tipo de cocina de tu restaurante para que los clientes puedan encontrarte más fácilmente
+              </p>
             </div>
 
             <div className="space-y-2">

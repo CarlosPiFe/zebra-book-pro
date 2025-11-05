@@ -12,7 +12,7 @@ interface MyFavoritesProps {
 interface Business {
   id: string;
   name: string;
-  category: string;
+  cuisine_type: string | null;
   description?: string | null;
   address?: string | null;
   image_url?: string | null;

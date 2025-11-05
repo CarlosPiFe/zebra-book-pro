@@ -7,10 +7,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-interface MainSidebarProps {
+export interface MainSidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
-  businessCategory: string;
 }
 
 interface NavItem {
@@ -21,7 +20,7 @@ interface NavItem {
   hasSubmenu?: boolean;
 }
 
-export function MainSidebar({ activeSection, onSectionChange, businessCategory }: MainSidebarProps) {
+export function MainSidebar({ activeSection, onSectionChange }: MainSidebarProps) {
   const navItems: NavItem[] = [
     {
       id: "calendar",
@@ -51,14 +50,12 @@ export function MainSidebar({ activeSection, onSectionChange, businessCategory }
       id: "tables",
       label: "Mesas",
       icon: TableProperties,
-      showForCategory: ["restaurante", "bar", "cafetería"],
       hasSubmenu: false,
     },
     {
       id: "menu",
       label: "Menú",
       icon: UtensilsCrossed,
-      showForCategory: ["restaurante", "bar", "cafetería"],
       hasSubmenu: false,
     },
     {
@@ -75,9 +72,7 @@ export function MainSidebar({ activeSection, onSectionChange, businessCategory }
     },
   ];
 
-  const visibleItems = navItems.filter(
-    (item) => !item.showForCategory || item.showForCategory.includes(businessCategory.toLowerCase())
-  );
+  const visibleItems = navItems;
 
   return (
     <div className="w-[70px] h-full bg-card border-r border-border flex flex-col items-center py-6 gap-2">

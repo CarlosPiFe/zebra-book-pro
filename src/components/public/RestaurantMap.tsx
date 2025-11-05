@@ -5,7 +5,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 interface Business {
   id: string;
   name: string;
-  category: string;
+  cuisine_type: string | null;
   address?: string | null;
   image_url?: string | null;
   price_range?: string | null;
@@ -76,8 +76,8 @@ export const RestaurantMap = ({ businesses, onBusinessClick }: RestaurantMapProp
       const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
         <div class="p-2" style="min-width: 200px;">
           ${business.image_url ? `<img src="${business.image_url}" alt="${business.name}" class="w-full h-32 object-cover rounded-lg mb-2" />` : ""}
-          <h3 class="font-bold text-base mb-1">${business.name}</h3>
-          <p class="text-sm text-gray-600 mb-2">${business.category}</p>
+          <h3 class="font-semibold text-base mb-1">${business.name}</h3>
+          <p class="text-sm text-muted-foreground">${business.cuisine_type || 'Restaurante'}</p>
           <div class="flex items-center gap-2 text-sm">
             <div class="flex items-center gap-1">
               <span class="text-yellow-500">⭐</span>

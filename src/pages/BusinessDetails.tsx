@@ -38,7 +38,7 @@ import {
 interface Business {
   id: string;
   name: string;
-  category: string;
+  cuisine_type: string | null;
   description: string | null;
   address: string | null;
   email: string | null;
@@ -824,7 +824,7 @@ export default function BusinessDetails() {
               )}
               <p className="flex items-center gap-1">
                 <UtensilsCrossed className="h-3 w-3" />
-                {business.category}
+                {business.cuisine_type || "Restaurante"}
                 {business.price_range && ` · ${business.price_range}`}
               </p>
               {business.average_rating && (

@@ -143,7 +143,6 @@ const ManageBusiness = () => {
         <MainSidebar
           activeSection={activeView}
           onSectionChange={handleSectionChange}
-          businessCategory={business?.category || ""}
         />
         
         {activeView === "settings" && (

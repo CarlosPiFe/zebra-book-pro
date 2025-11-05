@@ -12,7 +12,7 @@ import { formatPhoneNumber } from "@/lib/utils";
 interface Business {
   id: string;
   name: string;
-  category: string;
+  cuisine_type: string | null;
   description: string | null;
   address: string | null;
   email: string | null;
