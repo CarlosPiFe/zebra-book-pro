@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -68,11 +68,6 @@ export const EmployeeDetailView = ({ employee, onUpdate }: EmployeeDetailViewPro
   const [deleteVacationId, setDeleteVacationId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("general");
 
-  useState(() => {
-    loadVacations();
-    loadPayrolls();
-  });
-
   const loadVacations = async () => {
     try {
       const { data, error } = await supabase
@@ -102,6 +97,11 @@ export const EmployeeDetailView = ({ employee, onUpdate }: EmployeeDetailViewPro
       console.error("Error loading payrolls:", error);
     }
   };
+
+  useEffect(() => {
+    loadVacations();
+    loadPayrolls();
+  }, [employee.id]);
 
   const handleUpdateEmployee = async () => {
     if (!editName.trim()) {
