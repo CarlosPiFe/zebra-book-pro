@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BusinessHours } from "./BusinessHours";
+import { PhotoGalleryManager } from "./PhotoGalleryManager";
 import { cn } from "@/lib/utils";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -1373,6 +1374,8 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
           </form>
         </CardContent>
       </Card>
+
+      <PhotoGalleryManager businessId={business.id} />
     </div>
   );
 }

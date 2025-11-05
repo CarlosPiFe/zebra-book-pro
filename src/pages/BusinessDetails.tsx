@@ -24,9 +24,17 @@ import "react-international-phone/style.css";
 import jsPDF from "jspdf";
 import { formatPhoneNumber } from "@/lib/utils";
 import { BusinessTabs } from "@/components/business/BusinessTabs";
+import { PhotoGalleryDialog } from "@/components/business/PhotoGalleryDialog";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 interface Business {
   id: string;
   name: string;
@@ -61,6 +69,11 @@ export default function BusinessDetails() {
   const [user, setUser] = useState<User | null>(null);
   const [isFavorite, setIsFavorite] = useState(false);
   const { toggleFavorite, loading: favoriteLoading } = useFavorites();
+  
+  // Estados para fotos y galería
+  const [photos, setPhotos] = useState<{ id: string; photo_url: string }[]>([]);
+  const [showGalleryDialog, setShowGalleryDialog] = useState(false);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   
   // Estados para el modal de confirmación
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
@@ -187,6 +200,19 @@ export default function BusinessDetails() {
         
         if (roomsError) throw roomsError;
         setRooms(roomsData || []);
+
+        // Cargar fotos del negocio
+        const {
+          data: photosData,
+          error: photosError
+        } = await supabase
+          .from("business_photos")
+          .select("id, photo_url")
+          .eq("business_id", businessId)
+          .order("display_order", { ascending: true });
+        
+        if (photosError) throw photosError;
+        setPhotos(photosData || []);
       } catch (error) {
         console.error("Error cargando datos:", error);
         toast.error("No se pudo cargar la información del negocio");
@@ -820,32 +846,56 @@ export default function BusinessDetails() {
           </Button>
         </div>
 
-        {/* Galería de fotos estilo grid */}
-        <div className="grid grid-cols-4 grid-rows-2 gap-1 h-[350px] rounded-lg overflow-hidden">
-          {business.image_url ? (
-            <>
-              <div className="col-span-2 row-span-2">
-                <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
-              </div>
-              <div className="col-span-2 row-span-1">
-                <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
-              </div>
-              <div className="col-span-1 row-span-1">
-                <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
-              </div>
-              <div className="col-span-1 row-span-1 relative">
-                <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">Ver más fotos</span>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="col-span-4 row-span-2 bg-muted flex items-center justify-center">
-              <p className="text-muted-foreground">Sin fotos disponibles</p>
-            </div>
-          )}
-        </div>
+        {/* Galería de fotos con carrusel */}
+        {photos.length > 0 ? (
+          <div className="relative">
+            <Carousel className="w-full">
+              <CarouselContent>
+                {photos.slice(0, 5).map((photo, index) => (
+                  <CarouselItem key={photo.id} className="md:basis-1/2 lg:basis-1/3">
+                    <div 
+                      className="aspect-square rounded-lg overflow-hidden cursor-pointer relative group"
+                      onClick={() => {
+                        setSelectedPhotoIndex(index);
+                        setShowGalleryDialog(true);
+                      }}
+                    >
+                      <img 
+                        src={photo.photo_url} 
+                        alt={`${business.name} - Foto ${index + 1}`} 
+                        className="w-full h-full object-cover transition-transform group-hover:scale-105" 
+                      />
+                      {index === 4 && photos.length > 5 && (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <span className="text-white text-lg font-semibold">+{photos.length - 5} fotos</span>
+                        </div>
+                      )}
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="left-2" />
+              <CarouselNext className="right-2" />
+            </Carousel>
+            {photos.length > 3 && (
+              <Button
+                variant="outline"
+                className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm"
+                onClick={() => setShowGalleryDialog(true)}
+              >
+                Ver más fotos ({photos.length})
+              </Button>
+            )}
+          </div>
+        ) : business.image_url ? (
+          <div className="aspect-video rounded-lg overflow-hidden">
+            <img src={business.image_url} alt={business.name} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
+            <p className="text-muted-foreground">Sin fotos disponibles</p>
+          </div>
+        )}
       </div>
 
       {/* Contenido principal - 2 columnas */}
@@ -1398,6 +1448,13 @@ export default function BusinessDetails() {
           </Dialog>
         )}
       </div>
+
+      <PhotoGalleryDialog
+        photos={photos}
+        open={showGalleryDialog}
+        onOpenChange={setShowGalleryDialog}
+        initialIndex={selectedPhotoIndex}
+      />
     </div>
   </>;
 }
