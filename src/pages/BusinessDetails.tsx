@@ -422,7 +422,7 @@ export default function BusinessDetails() {
     const formattedDate = format(new Date(confirmedBooking.booking_date), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es });
     doc.text(`Fecha: ${formattedDate}`, 25, yPos);
     yPos += 6;
-    doc.text(`Hora: ${confirmedBooking.start_time} - ${confirmedBooking.end_time}`, 25, yPos);
+    doc.text(`Hora: ${confirmedBooking.start_time.substring(0, 5)} - ${confirmedBooking.end_time.substring(0, 5)}`, 25, yPos);
     yPos += 6;
     doc.text(`Número de personas: ${confirmedBooking.party_size}`, 25, yPos);
     yPos += 6;
@@ -725,7 +725,7 @@ export default function BusinessDetails() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Hora:</span>
-                      <span className="font-medium">{confirmedBooking.start_time} - {confirmedBooking.end_time}</span>
+                      <span className="font-medium">{confirmedBooking.start_time.substring(0, 5)} - {confirmedBooking.end_time.substring(0, 5)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Personas:</span>
