@@ -1,17 +1,10 @@
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, MapPin, Clock } from "lucide-react";
+import { Heart } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 interface RestaurantCardProps {
   business: {
@@ -32,6 +25,7 @@ export const RestaurantCard = ({ business, onClick }: RestaurantCardProps) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [photos, setPhotos] = useState<string[]>([]);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
   useEffect(() => {
     checkAuth();
@@ -105,23 +99,14 @@ export const RestaurantCard = ({ business, onClick }: RestaurantCardProps) => {
     }
   };
 
-  // Extraer ciudad y barrio del address
-  const getLocationParts = (address: string | null | undefined) => {
-    if (!address) return { neighborhood: "", city: "" };
-    const parts = address.split(",").map(p => p.trim());
-    if (parts.length >= 2) {
-      return {
-        neighborhood: parts[parts.length - 2] || "",
-        city: parts[parts.length - 1] || ""
-      };
-    }
-    return { neighborhood: "", city: parts[0] || "" };
-  };
-
-  const location = getLocationParts(business.address);
-  
-  // Slots de tiempo de ejemplo (esto debería venir de la API)
-  const availableSlots = ["14:30", "20:00", "20:30"];
+  // Slots de tiempo de ejemplo con descuentos
+  const availableSlots = [
+    { time: "20:00", discount: "-50%" },
+    { time: "20:15", discount: "-50%" },
+    { time: "20:30", discount: "-50%" },
+    { time: "20:45", discount: "-50%" },
+    { time: "21:00", discount: "-50%" }
+  ];
 
   const handleCardClick = () => {
     if (onClick) {
@@ -129,129 +114,170 @@ export const RestaurantCard = ({ business, onClick }: RestaurantCardProps) => {
     }
   };
 
+  const nextPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentPhotoIndex((prev) => (prev + 1) % photos.length);
+  };
+
+  const prevPhoto = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentPhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+  };
+
   return (
     <Card 
-      className="group overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer"
+      className="group overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer border-border"
       onClick={handleCardClick}
     >
-      {/* Carousel de Imágenes */}
-      <div className="relative aspect-[16/9] overflow-hidden">
-        {photos.length > 1 ? (
-          <Carousel className="w-full h-full">
-            <CarouselContent>
-              {photos.map((photo, index) => (
-                <CarouselItem key={index}>
-                  <img
-                    src={photo}
-                    alt={`${business.name} - imagen ${index + 1}`}
-                    loading={index === 0 ? "eager" : "lazy"}
-                    decoding="async"
-                    className="w-full h-full object-cover"
-                  />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-2" />
-            <CarouselNext className="right-2" />
-          </Carousel>
-        ) : (
+      <div className="flex gap-0">
+        {/* Imagen Cuadrada a la Izquierda */}
+        <div className="relative w-64 h-64 flex-shrink-0 overflow-hidden">
           <img
-            src={photos[0] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
+            src={photos[currentPhotoIndex] || photos[0] || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4"}
             alt={business.name}
             loading="eager"
             decoding="async"
             className="w-full h-full object-cover"
           />
-        )}
-        
-        {/* Icono de Favorito - Superpuesto */}
-        <Button
-          size="icon"
-          variant="ghost"
-          className="absolute top-2 right-2 bg-background/90 hover:bg-background backdrop-blur-sm h-9 w-9 rounded-full z-10"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite(e);
-          }}
-        >
-          <Heart
-            className={`h-4 w-4 transition-colors ${
-              isFavorite ? "fill-red-500 text-red-500" : "text-muted-foreground"
-            }`}
-          />
-        </Button>
+          
+          {/* Indicadores de foto (dots) */}
+          {photos.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {photos.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentPhotoIndex(index);
+                  }}
+                  className={`w-1.5 h-1.5 rounded-full transition-all ${
+                    index === currentPhotoIndex 
+                      ? "bg-white w-3" 
+                      : "bg-white/60"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
 
-        {/* Badge de Oferta - Superpuesto */}
-        {business.special_offer && (
-          <div className="absolute top-2 left-2 z-10">
-            <Badge className="bg-primary text-primary-foreground font-semibold">
-              {business.special_offer}
-            </Badge>
-          </div>
-        )}
-      </div>
-
-      {/* Contenido de la Tarjeta */}
-      <CardContent className="p-4 space-y-3">
-        {/* Título */}
-        <h3 className="font-bold text-lg leading-tight line-clamp-1 group-hover:text-primary transition-colors">
-          {business.name}
-        </h3>
-
-        {/* Valoración y Opiniones */}
-        {business.average_rating !== null && business.average_rating !== undefined && business.average_rating > 0 && (
-          <div className="flex items-center gap-2">
-            <Badge className="bg-primary text-primary-foreground font-semibold px-2 py-0.5">
-              {business.average_rating.toFixed(1)}/10
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              (120 opiniones)
-            </span>
-          </div>
-        )}
-
-        {/* Categoría y Precio */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>{business.category}</span>
-          {business.price_range && (
+          {/* Botones de navegación */}
+          {photos.length > 1 && (
             <>
-              <span>·</span>
-              <span className="font-medium">{business.price_range}</span>
+              <button
+                onClick={prevPhoto}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/90 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              >
+                <span className="text-lg">‹</span>
+              </button>
+              <button
+                onClick={nextPhoto}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/90 hover:bg-background flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+              >
+                <span className="text-lg">›</span>
+              </button>
             </>
           )}
+          
+          {/* Icono de Favorito */}
+          <Button
+            size="icon"
+            variant="ghost"
+            className="absolute top-3 right-3 bg-background/90 hover:bg-background backdrop-blur-sm h-9 w-9 rounded-full z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleFavorite(e);
+            }}
+          >
+            <Heart
+              className={`h-4 w-4 transition-colors ${
+                isFavorite ? "fill-red-500 text-red-500" : "text-foreground"
+              }`}
+            />
+          </Button>
         </div>
 
-        {/* Ubicación */}
-        {business.address && (
-          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="line-clamp-1">
-              {location.neighborhood && `${location.neighborhood}, `}{location.city}
-            </span>
-          </div>
-        )}
+        {/* Contenido a la Derecha */}
+        <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+          {/* Header con Título y Rating */}
+          <div>
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <h3 className="font-bold text-xl leading-tight group-hover:text-primary transition-colors flex-1 min-w-0">
+                {business.name}
+              </h3>
+              
+              {/* Rating Score a la derecha */}
+              {business.average_rating !== null && business.average_rating !== undefined && business.average_rating > 0 && (
+                <div className="flex flex-col items-end flex-shrink-0">
+                  <span className="text-2xl font-bold text-primary">
+                    {business.average_rating.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    (941)
+                  </span>
+                </div>
+              )}
+            </div>
 
-        {/* Slots de Disponibilidad */}
-        <div className="pt-2 border-t">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            {/* Dirección completa */}
+            {business.address && (
+              <p className="text-sm text-muted-foreground mb-1">
+                {business.address}
+              </p>
+            )}
+
+            {/* Categoría y Precio */}
+            <div className="flex items-center gap-2 text-sm mb-3">
+              <span className="font-medium">{business.category}</span>
+              {business.price_range && (
+                <>
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">Precio medio {business.price_range}</span>
+                </>
+              )}
+            </div>
+
+            {/* Badges de Ofertas */}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              {business.special_offer && (
+                <Badge variant="secondary" className="bg-foreground text-background font-semibold px-3 py-1">
+                  {business.special_offer}
+                </Badge>
+              )}
+              <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100 font-medium px-3 py-1">
+                🔥 Yums x3
+              </Badge>
+            </div>
+
+            {/* Descripción destacada */}
+            {business.description && (
+              <p className="text-sm italic text-foreground mb-4 line-clamp-2">
+                "{business.description}"
+              </p>
+            )}
+          </div>
+
+          {/* Slots de Tiempo */}
+          <div className="flex items-start gap-2 flex-wrap">
             {availableSlots.map((slot, index) => (
-              <Button
-                key={index}
-                variant="outline"
-                size="sm"
-                className="h-7 px-3 text-xs"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Aquí iría la lógica de reserva
-                }}
-              >
-                {slot}
-              </Button>
+              <div key={index} className="flex flex-col items-center gap-1">
+                <Button
+                  size="sm"
+                  className="bg-teal-700 hover:bg-teal-800 text-white font-semibold px-4 h-8 rounded"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    // Lógica de reserva
+                  }}
+                >
+                  {slot.time}
+                </Button>
+                <Badge variant="secondary" className="bg-foreground text-background text-[10px] font-bold px-1.5 py-0 h-4">
+                  {slot.discount}
+                </Badge>
+              </div>
             ))}
           </div>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 };

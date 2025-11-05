@@ -155,8 +155,8 @@ export default function SearchPage() {
       
       <main className="pt-16">
         <div className="flex h-[calc(100vh-4rem)]">
-          {/* Columna Izquierda - Resultados (60%) */}
-          <div className="w-full lg:w-[60%] flex flex-col overflow-hidden">
+          {/* Columna Izquierda - Resultados (40%) */}
+          <div className="w-full lg:w-[40%] flex flex-col overflow-hidden border-r">
             {/* Breadcrumbs y Header */}
             <div className="p-6 border-b space-y-4">
               <Breadcrumb>
@@ -307,8 +307,8 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Columna Derecha - Mapa Sticky (40%) */}
-          <div className="hidden lg:block lg:w-[40%] sticky top-16 h-[calc(100vh-4rem)]">
+          {/* Columna Derecha - Mapa Sticky (60%) */}
+          <div className="hidden lg:block lg:w-[60%] sticky top-16 h-[calc(100vh-4rem)]">
             <RestaurantMap 
               businesses={filteredBusinesses}
               onBusinessClick={handleBusinessClick}
