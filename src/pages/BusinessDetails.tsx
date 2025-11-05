@@ -1378,7 +1378,7 @@ export default function BusinessDetails() {
                         className="w-full"
                         disabled={submitting || !bookingForm.clientName || !bookingForm.clientPhone}
                       >
-                        {submitting ? 'ENVIANDO...' : 'CONFIRMAR RESERVA'}
+                        {submitting ? 'Enviando...' : 'Confirmar reserva'}
                       </Button>
                     </DialogFooter>
                   </form>
