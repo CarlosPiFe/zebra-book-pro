@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Loader2, CheckCircle, XCircle } from "lucide-react";
-import { createDemoBusinesses } from "@/utils/createDemoBusinesses";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function CreateDemoBusinesses() {
   const [isCreating, setIsCreating] = useState(false);
@@ -15,14 +15,20 @@ export default function CreateDemoBusinesses() {
 
     try {
       toast.info("Iniciando creación de 20 negocios demo...");
-      const result = await createDemoBusinesses();
       
-      setResults(result);
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('create-demo-businesses', {
+        body: {}
+      });
+
+      if (error) throw error;
       
-      if (result.successful === result.total) {
-        toast.success(`¡Éxito! ${result.successful} negocios creados correctamente`);
+      setResults(data);
+      
+      if (data.successful === data.total) {
+        toast.success(`¡Éxito! ${data.successful} negocios creados correctamente. Todos tienen contraseña "holahola"`);
       } else {
-        toast.warning(`${result.successful} negocios creados, ${result.failed} fallaron`);
+        toast.warning(`${data.successful} negocios creados, ${data.failed} fallaron. Contraseña para todos: "holahola"`);
       }
     } catch (error: any) {
       console.error("Error:", error);
@@ -39,8 +45,9 @@ export default function CreateDemoBusinesses() {
           <CardHeader>
             <CardTitle>Crear Negocios Demo</CardTitle>
             <CardDescription>
-              Esta herramienta creará 20 negocios de prueba con sus imágenes comprimidas
-              y datos ficticios. Los negocios se pueden eliminar fácilmente después.
+              Esta herramienta creará 20 negocios de prueba con datos ficticios. 
+              Cada negocio tendrá una cuenta con email = nombre del negocio y contraseña = "holahola".
+              Las fotos se pueden agregar manualmente después.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -83,6 +90,14 @@ export default function CreateDemoBusinesses() {
                   </Card>
                 </div>
 
+                <div className="mb-4 p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium mb-2">Credenciales de acceso:</p>
+                  <ul className="text-sm space-y-1 text-muted-foreground">
+                    <li>• Email: Nombre del negocio (exactamente como aparece)</li>
+                    <li>• Contraseña: <span className="font-mono font-semibold">holahola</span></li>
+                  </ul>
+                </div>
+
                 <div className="max-h-96 overflow-y-auto space-y-2">
                   {results.results.map((result: any, index: number) => (
                     <div
@@ -94,7 +109,14 @@ export default function CreateDemoBusinesses() {
                       ) : (
                         <XCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
                       )}
-                      <span className="font-medium">{result.business}</span>
+                      <div className="flex-1">
+                        <span className="font-medium block">{result.business}</span>
+                        {result.success && result.email && (
+                          <span className="text-xs text-muted-foreground">
+                            Email: {result.email}
+                          </span>
+                        )}
+                      </div>
                       {!result.success && (
                         <span className="text-sm text-muted-foreground ml-auto">
                           Error
