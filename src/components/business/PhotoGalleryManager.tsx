@@ -52,8 +52,17 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const validTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
-    const maxSize = 5 * 1024 * 1024; // 5MB
+    // Formatos permitidos ampliados: JPEG, JPG, PNG, WEBP, GIF, BMP, SVG
+    const validTypes = [
+      "image/png", 
+      "image/jpeg", 
+      "image/jpg", 
+      "image/webp",
+      "image/gif",
+      "image/bmp",
+      "image/svg+xml"
+    ];
+    const maxSize = 10 * 1024 * 1024; // 10MB (aumentado de 5MB)
 
     setUploading(true);
     const uploadedUrls: string[] = [];
@@ -64,12 +73,12 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
         if (!file) continue;
 
         if (!validTypes.includes(file.type)) {
-          toast.error(`${file.name}: Formato no válido`);
+          toast.error(`${file.name}: Formato no válido. Use: JPG, PNG, WEBP, GIF, BMP o SVG`);
           continue;
         }
 
         if (file.size > maxSize) {
-          toast.error(`${file.name}: Tamaño máximo 5MB`);
+          toast.error(`${file.name}: Tamaño máximo 10MB`);
           continue;
         }
 
@@ -279,7 +288,7 @@ export function PhotoGalleryManager({ businessId }: PhotoGalleryManagerProps) {
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/png,image/jpeg,image/jpg,image/webp"
+          accept="image/png,image/jpeg,image/jpg,image/webp,image/gif,image/bmp,image/svg+xml"
           multiple
           onChange={handleFileSelect}
           className="hidden"
