@@ -33,6 +33,9 @@ export const Navbar = () => {
 
   // Detectar si estamos en la página principal
   const isHomePage = location.pathname === '/';
+  
+  // Detectar si estamos en la página de búsqueda
+  const isSearchPage = location.pathname === '/search';
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({
@@ -66,6 +69,20 @@ export const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [isHomePage]);
+
+  // Leer parámetros de búsqueda cuando estamos en /search
+  useEffect(() => {
+    if (isSearchPage) {
+      const params = new URLSearchParams(location.search);
+      const loc = params.get('location') || '';
+      const type = params.get('type') || '';
+      setSearchLocation(loc);
+      setSearchType(type);
+    }
+  }, [isSearchPage, location.search]);
+
+  const [searchLocation, setSearchLocation] = useState("");
+  const [searchType, setSearchType] = useState("");
   
   const handleLogout = async () => {
     try {
@@ -113,10 +130,21 @@ export const Navbar = () => {
             <img src={isManagerPage ? zebraLogoManager : zebraLogo} alt="ZebraTime Logo" className="h-16 transition-transform group-hover:scale-105" />
           </Link>
 
-          {/* Buscador Compacto - Centro (solo visible al hacer scroll en home) */}
-          {isScrolled && isHomePage && (
+          {/* Buscador Compacto - Centro (visible al hacer scroll en home O en página de búsqueda) */}
+          {((isScrolled && isHomePage) || isSearchPage) && (
             <div className="flex-1 max-w-xl mx-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <CompactSearchBar />
+              <CompactSearchBar 
+                initialLocation={searchLocation}
+                initialType={searchType}
+                onSearch={(loc, type) => {
+                  setSearchLocation(loc);
+                  setSearchType(type);
+                  const params = new URLSearchParams();
+                  if (loc) params.append('location', loc);
+                  if (type) params.append('type', type);
+                  navigate(params.toString() ? `/search?${params.toString()}` : "/search");
+                }}
+              />
             </div>
           )}
 

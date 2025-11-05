@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
 import { RestaurantCard } from "@/components/public/RestaurantCard";
 import { RestaurantMap } from "@/components/public/RestaurantMap";
-import { CompactSearchBar } from "@/components/CompactSearchBar";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -119,15 +118,6 @@ export default function SearchPage() {
     setRatingFilter([0]);
   };
 
-  const handleNewSearch = (location: string, type: string) => {
-    setSearchLocation(location);
-    setSearchType(type);
-    const params = new URLSearchParams();
-    if (location) params.append('location', location);
-    if (type) params.append('type', type);
-    navigate(params.toString() ? `/search?${params.toString()}` : "/search", { replace: true });
-  };
-
   // Obtener categorías únicas
   const categories = Array.from(new Set(businesses.map((b) => b.category)));
 
@@ -135,21 +125,8 @@ export default function SearchPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       
-      {/* Banner con buscador compacto */}
-      <div className="pt-20 bg-card border-b shadow-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="max-w-2xl mx-auto">
-            <CompactSearchBar 
-              initialLocation={searchLocation}
-              initialType={searchType}
-              onSearch={handleNewSearch}
-            />
-          </div>
-        </div>
-      </div>
-
-      <main className="flex-1">
-        <div className="h-[calc(100vh-10rem)] flex">
+      <main className="flex-1 pt-20">
+        <div className="h-[calc(100vh-5rem)] flex">
           {/* Panel Izquierdo - Lista y Filtros */}
           <div className="w-full lg:w-2/5 flex flex-col overflow-hidden border-r">
             {/* Header con info de búsqueda */}
