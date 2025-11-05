@@ -189,38 +189,38 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   }
 
   return (
-    <div className="space-y-4 flex flex-col h-full">
+    <div className="space-y-6 flex flex-col h-full">
       <div>
-        <h1 className="text-3xl font-bold mb-1">Calendario</h1>
-        <p className="text-muted-foreground text-sm">
+        <h1 className="text-3xl font-bold mb-2">Calendario</h1>
+        <p className="text-muted-foreground">
           Navega por el calendario y haz clic en un día para ver sus eventos, horarios o reservas
         </p>
       </div>
 
       <Card className="flex-1 flex flex-col min-h-0">
-        <CardContent className="p-4 flex-1 flex flex-col">
+        <CardContent className="p-6 flex-1 flex flex-col">
           {/* Navigation Controls */}
-          <div className="flex items-center justify-center gap-2 mb-3">
+          <div className="flex items-center justify-center gap-4 mb-6">
             <Button
               variant="outline"
               size="sm"
               onClick={previousYear}
-              className="h-7 px-2 text-xs"
+              className="h-9 px-4"
             >
               {year - 1}
             </Button>
             
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="icon"
                 onClick={previousMonth}
-                className="h-6 w-6"
+                className="h-9 w-9"
               >
-                <ChevronLeft className="h-3 w-3" />
+                <ChevronLeft className="h-4 w-4" />
               </Button>
               
-              <h2 className="text-lg font-bold min-w-[180px] text-center">
+              <h2 className="text-2xl font-bold min-w-[220px] text-center">
                 {MONTHS[month]} {year}
               </h2>
               
@@ -228,9 +228,9 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                 variant="outline"
                 size="icon"
                 onClick={nextMonth}
-                className="h-6 w-6"
+                className="h-9 w-9"
               >
-                <ChevronRight className="h-3 w-3" />
+                <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
 
@@ -238,20 +238,20 @@ export function CalendarView({ businessId }: CalendarViewProps) {
               variant="outline"
               size="sm"
               onClick={nextYear}
-              className="h-7 px-2 text-xs"
+              className="h-9 px-4"
             >
               {year + 1}
             </Button>
           </div>
 
           {/* Calendar Grid - Flex grow para usar todo el espacio disponible */}
-          <div className="flex-1 flex flex-col space-y-0.5">
+          <div className="flex-1 flex flex-col gap-2">
             {/* Days of week header */}
-            <div className="grid grid-cols-7 gap-0.5">
+            <div className="grid grid-cols-7 gap-2">
               {DAYS_OF_WEEK.map((day) => (
                 <div
                   key={day}
-                  className="text-center text-[10px] font-semibold text-muted-foreground py-1"
+                  className="text-center text-sm font-bold text-muted-foreground py-3 bg-muted/30 rounded-lg"
                 >
                   {day}
                 </div>
@@ -259,10 +259,10 @@ export function CalendarView({ businessId }: CalendarViewProps) {
             </div>
 
             {/* Calendar days - Grid que crece para llenar el espacio */}
-            <div className="grid grid-cols-7 gap-0.5 flex-1">
+            <div className="grid grid-cols-7 gap-2 flex-1">
               {calendarDays.map((day, index) => {
                 if (day === null) {
-                  return <div key={`empty-${index}`} />;
+                  return <div key={`empty-${index}`} className="rounded-lg" />;
                 }
 
                 const closed = isClosedDay(day);
@@ -274,32 +274,38 @@ export function CalendarView({ businessId }: CalendarViewProps) {
                     key={day}
                     onClick={() => handleDayClick(day)}
                     className={cn(
-                      "w-full p-1 rounded text-center transition-all text-xs min-h-[60px]",
-                      "hover:bg-primary/10 hover:scale-105",
-                      closed && "bg-muted opacity-70 hover:bg-muted/80",
-                      today && !closed && "bg-primary text-primary-foreground font-bold",
-                      !closed && !today && "bg-background border border-border hover:border-primary"
+                      "w-full p-4 rounded-lg text-center transition-all text-base min-h-[100px] flex flex-col",
+                      "hover:shadow-lg hover:scale-[1.02] hover:z-10",
+                      closed && "bg-muted/50 opacity-60 hover:bg-muted/60",
+                      today && !closed && "bg-primary text-primary-foreground font-bold shadow-md",
+                      !closed && !today && "bg-card border-2 border-border hover:border-primary"
                     )}
                   >
-                    <div className="flex flex-col items-center justify-center h-full gap-0.5">
-                      <span className={cn("text-xs", today && "font-bold")}>
+                    <div className="flex flex-col items-center justify-between h-full gap-2">
+                      <span className={cn(
+                        "text-2xl font-bold",
+                        today && "text-primary-foreground",
+                        !today && !closed && "text-foreground"
+                      )}>
                         {day}
                       </span>
                       {closed ? (
-                        <span className="text-[8px] text-muted-foreground">
+                        <span className="text-xs text-muted-foreground font-medium">
                           Cerrado
                         </span>
                       ) : dayEvents.length > 0 ? (
-                        <div className="flex gap-0.5 flex-wrap justify-center">
-                          {dayEvents.slice(0, 2).map((event) => (
+                        <div className="flex gap-1 flex-wrap justify-center">
+                          {dayEvents.slice(0, 3).map((event) => (
                             <div
                               key={event.id}
-                              className="w-1 h-1 rounded-full"
+                              className="w-2 h-2 rounded-full shadow-sm"
                               style={{ backgroundColor: event.color }}
                             />
                           ))}
-                          {dayEvents.length > 2 && (
-                            <span className="text-[7px] text-muted-foreground">+{dayEvents.length - 2}</span>
+                          {dayEvents.length > 3 && (
+                            <span className="text-xs text-muted-foreground font-medium">
+                              +{dayEvents.length - 3}
+                            </span>
                           )}
                         </div>
                       ) : null}
@@ -311,19 +317,19 @@ export function CalendarView({ businessId }: CalendarViewProps) {
           </div>
 
           {/* Legend */}
-          <div className="mt-3 pt-3 border-t border-border">
-            <div className="flex flex-wrap gap-2 text-[10px]">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded bg-primary" />
-                <span>Día actual</span>
+          <div className="mt-6 pt-4 border-t border-border">
+            <div className="flex flex-wrap gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-primary shadow-sm" />
+                <span className="font-medium">Día actual</span>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded bg-background border border-border" />
-                <span>Día disponible</span>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-card border-2 border-border" />
+                <span className="font-medium">Día disponible</span>
               </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded bg-muted" />
-                <span>Local cerrado</span>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-muted/50" />
+                <span className="font-medium">Local cerrado</span>
               </div>
             </div>
           </div>
