@@ -20,6 +20,7 @@ import { Plus, Trash2, UserPlus } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmployeeDetailView } from "./EmployeeDetailView";
+import { EmployeesOverview } from "./EmployeesOverview";
 import { cn } from "@/lib/utils";
 
 interface Employee {
@@ -297,12 +298,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
                 onUpdate={loadEmployees}
               />
             ) : (
-              <Card className="h-full flex items-center justify-center">
-                <div className="text-center text-muted-foreground p-8">
-                  <UserPlus className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>Selecciona un empleado para ver sus detalles</p>
-                </div>
-              </Card>
+              <EmployeesOverview employees={employees} />
             )}
           </div>
         </div>
