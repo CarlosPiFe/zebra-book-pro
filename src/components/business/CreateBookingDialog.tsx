@@ -337,8 +337,8 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
 
       // Todos los negocios son restaurantes ahora
       // Check availability before creating booking
-      const dateString = format(bookingDate, "yyyy-MM-dd");
-      const hasAvailability = await hasAvailableTables(dateString, startTime, parseInt(partySize));
+      const bookingDateString = format(bookingDate, "yyyy-MM-dd");
+      const hasAvailability = await hasAvailableTables(bookingDateString, startTime, parseInt(partySize));
       
       if (!hasAvailability) {
         toast.error("No hay disponibilidad para esta hora y número de comensales");
@@ -346,7 +346,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
       }
 
       // Validate form data
-      const bookingSchema = createBookingSchema(isHospitality);
+      const bookingSchema = createBookingSchema(true);
       const formData = bookingSchema.parse({
         client_name: clientName,
         client_email: clientEmail || undefined,
@@ -354,7 +354,7 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
         booking_date: bookingDate,
         start_time: startTime,
         end_time: endTime,
-        party_size: isHospitality ? parseInt(partySize) : undefined,
+        party_size: parseInt(partySize),
         notes: notes || undefined,
       });
 
@@ -364,30 +364,28 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
       let tableId: string | null = null;
       let status: "reserved" | "pending" = "reserved";
 
-      // Only handle table assignment for hospitality businesses
-      if (isHospitality) {
-        // Check if manual table selection was made
-        if (selectedTableId !== "auto") {
-          // Verify the selected table is still available
-          const selectedTable = tables.find(t => t.id === selectedTableId);
-          if (selectedTable && selectedTable.isAvailable) {
-            tableId = selectedTableId;
-            status = "reserved";
-          } else {
-            toast.error("La mesa seleccionada ya no está disponible");
-            return;
-          }
+      // Handle table assignment for restaurants
+      // Check if manual table selection was made
+      if (selectedTableId !== "auto") {
+        // Verify the selected table is still available
+        const selectedTable = tables.find(t => t.id === selectedTableId);
+        if (selectedTable && selectedTable.isAvailable) {
+          tableId = selectedTableId;
+          status = "reserved";
         } else {
-          // Use automatic assignment
-          const result = await findAvailableTable(
-            dateString,
-            formData.start_time,
-            formData.end_time,
-            formData.party_size || 1
-          );
-          tableId = result.tableId;
-          status = result.status;
+          toast.error("La mesa seleccionada ya no está disponible");
+          return;
         }
+      } else {
+        // Use automatic assignment
+        const result = await findAvailableTable(
+          dateString,
+          formData.start_time,
+          formData.end_time,
+          formData.party_size || 1
+        );
+        tableId = result.tableId;
+        status = result.status;
       }
 
       // Obtener time_slot_id
@@ -471,20 +469,18 @@ export function CreateBookingDialog({ businessId, onBookingCreated }: CreateBook
                 />
               </div>
               
-              {(businessCategory.toLowerCase() === "restaurante" || businessCategory.toLowerCase() === "bar") && (
-                <div className="space-y-2">
-                  <Label htmlFor="party_size">Número de personas *</Label>
-                  <Input
-                    id="party_size"
-                    type="number"
-                    min="1"
-                    max="50"
-                    value={partySize}
-                    onChange={(e) => setPartySize(e.target.value)}
-                    required
-                  />
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="party_size">Número de personas *</Label>
+                <Input
+                  id="party_size"
+                  type="number"
+                  min="1"
+                  max="50"
+                  value={partySize}
+                  onChange={(e) => setPartySize(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
