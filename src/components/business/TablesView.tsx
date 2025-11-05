@@ -760,11 +760,14 @@ export function TablesView({ businessId }: TablesViewProps) {
   }, {} as Record<string, Table[]>);
 
   return (
-    <div className="space-y-4 bg-background min-h-screen">
+    <div className="space-y-6">
       {/* Header con título, botón filtros y botón añadir mesa */}
-      <div className="flex items-center justify-between gap-4 pt-1">
-        <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold">Gestión de Mesas</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Gestión de Mesas</h1>
+            <p className="text-muted-foreground">Gestiona las mesas y reservas de tu negocio</p>
+          </div>
           
           <Popover>
             <PopoverTrigger asChild>

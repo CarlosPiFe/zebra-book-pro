@@ -189,16 +189,16 @@ export function CalendarView({ businessId }: CalendarViewProps) {
   }
 
   return (
-    <div className="space-y-4 flex flex-col h-full">
+    <div className="space-y-6 flex flex-col h-full">
       <div>
-        <h1 className="text-3xl font-bold mb-1">Calendario</h1>
-        <p className="text-muted-foreground text-sm">
+        <h1 className="text-3xl font-bold mb-2">Calendario</h1>
+        <p className="text-muted-foreground">
           Navega por el calendario y haz clic en un día para ver sus eventos, horarios o reservas
         </p>
       </div>
 
       <Card className="flex-1 flex flex-col min-h-0">
-        <CardContent className="p-4 flex-1 flex flex-col">
+        <CardContent className="p-6 flex-1 flex flex-col">
           {/* Navigation Controls */}
           <div className="flex items-center justify-center gap-2 mb-3">
             <Button
