@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Search from "./pages/Search";
+import CreateDemoBusinesses from "./pages/CreateDemoBusinesses";
 import ScrollToTop from "./components/ScrollToTop";
 import { ThemeManager } from "./components/ThemeManager";
 
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/waiter/:token" element={<WaiterInterface />} />
           <Route path="/employee-portal" element={<EmployeePortal />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/create-demo-businesses" element={<CreateDemoBusinesses />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
