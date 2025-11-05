@@ -25,7 +25,6 @@ import jsPDF from "jspdf";
 import { formatPhoneNumber } from "@/lib/utils";
 import { BusinessTabs } from "@/components/business/BusinessTabs";
 import { useFavorites } from "@/hooks/useFavorites";
-import { BookingAuthDialog } from "@/components/business/BookingAuthDialog";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 interface Business {
   id: string;
@@ -70,7 +69,10 @@ export default function BusinessDetails() {
   const [step, setStep] = useState<'details' | 'time' | 'contact'>('details');
   const [selectedShift, setSelectedShift] = useState<'lunch' | 'dinner' | null>(null);
   const [showAllTimeSlots, setShowAllTimeSlots] = useState(false);
-  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [modalStep, setModalStep] = useState<'auth' | 'contact'>('auth');
+  const [password, setPassword] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
 
   // Booking form state (sin clientEmail porque se obtiene del usuario autenticado)
@@ -995,6 +997,13 @@ export default function BusinessDetails() {
                                       onClick={() => {
                                         setSelectedTimeSlot(time);
                                         setBookingForm(prev => ({ ...prev, startTime: time }));
+                                        // Abrir modal según autenticación
+                                        if (user) {
+                                          setModalStep('contact');
+                                        } else {
+                                          setModalStep('auth');
+                                        }
+                                        setShowBookingModal(true);
                                       }}
                                     >
                                       {time}
@@ -1039,14 +1048,6 @@ export default function BusinessDetails() {
                       })()}
                     </div>
 
-                    <Button
-                      type="button"
-                      className="w-full"
-                      disabled={!selectedTimeSlot}
-                      onClick={() => setShowAuthDialog(true)}
-                    >
-                      Continuar
-                    </Button>
                   </div>
                 )}
 
@@ -1192,25 +1193,180 @@ export default function BusinessDetails() {
           </div>
         </div>
 
-        {/* Dialog de autenticación */}
+        {/* Pop-up de autenticación y confirmación */}
         {business && bookingForm.bookingDate && bookingForm.startTime && (
-          <BookingAuthDialog
-            open={showAuthDialog}
-            onOpenChange={setShowAuthDialog}
-            businessName={business.name}
-            bookingDate={bookingForm.bookingDate}
-            startTime={bookingForm.startTime}
-            partySize={bookingForm.partySize}
-            onAuthSuccess={(authenticatedUser: User, userProfile: any) => {
-              setUser(authenticatedUser);
-              setBookingForm(prev => ({
-                ...prev,
-                clientName: userProfile?.full_name || '',
-                clientPhone: userProfile?.phone || '',
-              }));
-              setStep('contact');
-            }}
-          />
+          <Dialog open={showBookingModal} onOpenChange={setShowBookingModal}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>
+                  {modalStep === 'auth' ? 'Un último paso para tu reserva' : 'Confirma los detalles'}
+                </DialogTitle>
+              </DialogHeader>
+
+              {/* Resumen de la reserva */}
+              <div className="bg-muted/50 rounded-lg p-4 space-y-2 mb-4">
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{format(bookingForm.bookingDate, "EEEE, d 'de' MMMM", { locale: es })}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{bookingForm.startTime}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{bookingForm.partySize} {parseInt(bookingForm.partySize) === 1 ? 'persona' : 'personas'}</span>
+                </div>
+                <div className="text-sm font-semibold mt-2 pt-2 border-t border-border">
+                  {business.name}
+                </div>
+              </div>
+
+              {/* Paso: Autenticación */}
+              {modalStep === 'auth' && (
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!authEmail || !password) {
+                    toast.error('Por favor completa todos los campos');
+                    return;
+                  }
+
+                  try {
+                    // Intentar iniciar sesión
+                    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                      email: authEmail,
+                      password,
+                    });
+
+                    if (signInError) {
+                      // Si falla, intentar registrar
+                      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+                        email: authEmail,
+                        password,
+                        options: {
+                          emailRedirectTo: `${window.location.origin}/`,
+                        },
+                      });
+
+                      if (signUpError) throw signUpError;
+                      
+                      if (signUpData.user) {
+                        setUser(signUpData.user);
+                        toast.success('¡Cuenta creada!');
+                        setModalStep('contact');
+                      }
+                    } else {
+                      // Login exitoso
+                      if (signInData.user) {
+                        setUser(signInData.user);
+                        
+                        // Cargar perfil
+                        const { data: profile } = await supabase
+                          .from('profiles')
+                          .select('*')
+                          .eq('id', signInData.user.id)
+                          .single();
+                        
+                        // Autocompletar datos
+                        if (profile) {
+                          setBookingForm(prev => ({
+                            ...prev,
+                            clientName: profile.full_name || '',
+                            clientPhone: profile.phone || '',
+                          }));
+                        }
+                        
+                        toast.success('¡Sesión iniciada!');
+                        setModalStep('contact');
+                      }
+                    }
+                  } catch (error: any) {
+                    console.error('Error:', error);
+                    toast.error(error.message || 'Error al procesar');
+                  }
+                }} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="auth-email">Correo electrónico</Label>
+                    <Input
+                      id="auth-email"
+                      type="email"
+                      placeholder="tu@email.com"
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="auth-password">Contraseña</Label>
+                    <Input
+                      id="auth-password"
+                      type="password"
+                      placeholder="Mínimo 6 caracteres"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    Continuar
+                  </Button>
+                </form>
+              )}
+
+              {/* Paso: Contacto */}
+              {modalStep === 'contact' && user && (
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  await handleBookingSubmit(e);
+                  setShowBookingModal(false);
+                }} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input 
+                      value={user.email || ''} 
+                      disabled
+                      className="bg-muted"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-name">Nombre completo *</Label>
+                    <Input
+                      id="contact-name"
+                      value={bookingForm.clientName}
+                      onChange={(e) => setBookingForm(prev => ({ ...prev, clientName: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-phone">Teléfono *</Label>
+                    <PhoneInput
+                      defaultCountry="es"
+                      value={bookingForm.clientPhone}
+                      onChange={(phone) => setBookingForm(prev => ({ ...prev, clientPhone: phone }))}
+                      inputClassName="h-10"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="contact-notes">Notas adicionales</Label>
+                    <Textarea
+                      id="contact-notes"
+                      value={bookingForm.notes}
+                      onChange={(e) => setBookingForm(prev => ({ ...prev, notes: e.target.value }))}
+                      rows={3}
+                    />
+                  </div>
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={submitting || !bookingForm.clientName || !bookingForm.clientPhone}
+                  >
+                    {submitting ? 'Enviando...' : 'Confirmar reserva'}
+                  </Button>
+                </form>
+              )}
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </div>
