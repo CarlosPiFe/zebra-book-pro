@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useBookingAvailability } from "@/hooks/useBookingAvailability";
 import { PhoneInput } from "react-international-phone";
@@ -26,6 +26,7 @@ import { formatPhoneNumber } from "@/lib/utils";
 import { BusinessTabs } from "@/components/business/BusinessTabs";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 interface Business {
   id: string;
   name: string;
@@ -1318,54 +1319,70 @@ export default function BusinessDetails() {
 
               {/* Paso: Contacto */}
               {modalStep === 'contact' && user && (
-                <form onSubmit={async (e) => {
-                  e.preventDefault();
-                  await handleBookingSubmit(e);
-                  setShowBookingModal(false);
-                }} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <Input 
-                      value={user.email || ''} 
-                      disabled
-                      className="bg-muted"
-                    />
+                <>
+                  {/* Sección de perfil */}
+                  <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                    <Avatar>
+                      <AvatarImage src={user.user_metadata?.avatar_url} />
+                      <AvatarFallback>
+                        {user.email?.substring(0, 2).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm text-muted-foreground">{user.email}</span>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contact-name">Nombre completo *</Label>
-                    <Input
-                      id="contact-name"
-                      value={bookingForm.clientName}
-                      onChange={(e) => setBookingForm(prev => ({ ...prev, clientName: e.target.value }))}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contact-phone">Teléfono *</Label>
-                    <PhoneInput
-                      defaultCountry="es"
-                      value={bookingForm.clientPhone}
-                      onChange={(phone) => setBookingForm(prev => ({ ...prev, clientPhone: phone }))}
-                      inputClassName="h-10"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contact-notes">Notas adicionales</Label>
-                    <Textarea
-                      id="contact-notes"
-                      value={bookingForm.notes}
-                      onChange={(e) => setBookingForm(prev => ({ ...prev, notes: e.target.value }))}
-                      rows={3}
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={submitting || !bookingForm.clientName || !bookingForm.clientPhone}
-                  >
-                    {submitting ? 'Enviando...' : 'Confirmar reserva'}
-                  </Button>
-                </form>
+
+                  <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    await handleBookingSubmit(e);
+                    setShowBookingModal(false);
+                  }} className="space-y-4">
+                    {/* Grid de Nombre y Teléfono */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="contact-name">Nombre *</Label>
+                        <Input
+                          id="contact-name"
+                          value={bookingForm.clientName}
+                          onChange={(e) => setBookingForm(prev => ({ ...prev, clientName: e.target.value }))}
+                          required
+                          placeholder="Tu nombre completo"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contact-phone">Teléfono *</Label>
+                        <PhoneInput
+                          defaultCountry="es"
+                          value={bookingForm.clientPhone}
+                          onChange={(phone) => setBookingForm(prev => ({ ...prev, clientPhone: phone }))}
+                          inputClassName="h-10"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Notas adicionales */}
+                    <div className="space-y-2">
+                      <Label htmlFor="contact-notes">Notas adicionales</Label>
+                      <Textarea
+                        id="contact-notes"
+                        value={bookingForm.notes}
+                        onChange={(e) => setBookingForm(prev => ({ ...prev, notes: e.target.value }))}
+                        rows={3}
+                        placeholder="Alergias, preferencias de mesa, ocasión especial..."
+                      />
+                    </div>
+
+                    <DialogFooter>
+                      <Button 
+                        type="submit" 
+                        size="lg"
+                        className="w-full"
+                        disabled={submitting || !bookingForm.clientName || !bookingForm.clientPhone}
+                      >
+                        {submitting ? 'ENVIANDO...' : 'CONFIRMAR RESERVA'}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </>
               )}
             </DialogContent>
           </Dialog>
