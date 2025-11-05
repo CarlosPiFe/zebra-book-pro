@@ -447,7 +447,7 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
           <table className="w-full">
             <thead>
               <tr className="border-b">
-                <th className="p-3 text-left font-semibold w-32 sticky left-0 bg-card z-10">
+                <th className="py-4 px-3 text-left font-semibold w-32 sticky left-0 bg-card z-10">
                   Empleado
                 </th>
                 {weekDays.map((day) => {
@@ -457,7 +457,7 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
                     <th 
                       key={day.toISOString()} 
                       className={cn(
-                        "p-2 text-center font-semibold w-28 transition-all duration-300",
+                        "py-3 px-2 text-center font-semibold w-28 transition-all duration-300",
                         isHighlighted && "bg-primary/15 shadow-[0_0_15px_rgba(var(--primary),0.3)]"
                       )}
                     >
@@ -473,7 +473,7 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
             <tbody>
               {employees.map((employee) => (
                 <tr key={employee.id} className="border-b hover:bg-muted/50">
-                  <td className="p-3 sticky left-0 bg-card z-10">
+                  <td className="py-4 px-3 sticky left-0 bg-card z-10">
                     <div>
                       <div className="font-medium text-sm">{employee.name}</div>
                       {employee.position && (
@@ -496,7 +496,7 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
                       <td 
                         key={`${employee.id}-${day.toISOString()}`} 
                         className={cn(
-                          "p-1 transition-all duration-300",
+                          "py-2 px-1 transition-all duration-300",
                           isHighlighted && "bg-primary/15 shadow-[0_0_15px_rgba(var(--primary),0.3)]"
                         )}
                       >
