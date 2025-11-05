@@ -88,7 +88,7 @@ export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange
   if (visibleItems.length === 0) return null;
 
   return (
-    <div className="w-[220px] h-full bg-card border-r border-border flex flex-col py-6 animate-slide-in-right">
+    <div className="w-[280px] h-full bg-card border-r border-border flex flex-col py-6 animate-slide-in-right">
       <div className="px-4 mb-4">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
           Configuración
@@ -110,7 +110,7 @@ export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange
               )}
             >
               <Icon className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span>{item.label}</span>
             </button>
           );
         })}
