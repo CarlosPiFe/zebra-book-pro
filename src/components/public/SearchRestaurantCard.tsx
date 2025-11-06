@@ -140,10 +140,10 @@ export const SearchRestaurantCard = ({ business, onClick }: SearchRestaurantCard
 
         {/* Contenido Inferior: Botones de Hora */}
         <div className="flex flex-wrap gap-2 pt-4">
-          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">14:00</Button>
-          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">14:30</Button>
-          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">21:00</Button>
-          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">21:30</Button>
+          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30">14:00</Button>
+          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30">14:30</Button>
+          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30">21:00</Button>
+          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20 border border-primary/30">21:30</Button>
         </div>
       </div>
     </Card>
