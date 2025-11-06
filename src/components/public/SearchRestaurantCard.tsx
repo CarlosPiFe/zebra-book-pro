@@ -130,14 +130,12 @@ export const SearchRestaurantCard = ({ business, onClick }: SearchRestaurantCard
           {business.address && (
             <p className="text-sm text-foreground mt-1">{business.address}</p>
           )}
-          {business.price_range && (
-            <div className="flex items-center gap-1.5 text-sm text-muted-foreground pt-1">
-              <span>∼</span>
-              <span>{business.price_range}</span>
-              <span>/</span>
-              <User size={14} className="mt-0.5" />
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground pt-1">
+            <span>∼</span>
+            <span>{business.price_range || "-"}</span>
+            <span>/</span>
+            <User size={14} className="mt-0.5" />
+          </div>
         </div>
 
         {/* Contenido Inferior: Botones de Hora */}
