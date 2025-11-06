@@ -61,8 +61,8 @@ export default function SearchPage() {
     "A la Carta", "Menú del Día", "Menú Degustación", "Buffet Libre", "Rodizio", 
     "Fast Food", "Fast Casual", "Gastrobar", "Asador", "Marisquería", "Freiduría", 
     "Bar de Tapas", "Coctelería", "Cervecería", "Vinoteca / Bodega", "Pub", 
-    "Cafetería", "Salón de Té", "Bar", "Brunch", "Churrería / Chocolatería", 
-    "Heladería", "Panadería / Pastelería", "Crepería", "Yogurtería / Zumería", 
+    "Cafetería", "Salón de Té", "Bar", "Brunch", "Churrería", "Chocolatería", 
+    "Heladería", "Pastelería", "Crepería", "Yogurtería / Zumería", 
     "Solo Take Away", "Solo Delivery", "Take Away y Delivery", "Food Truck", "Catering"
   ];
   const dishTypes = ["Sushi", "Paella", "Tortilla", "Croquetas", "Ramen", "Pizza"];
@@ -190,7 +190,7 @@ export default function SearchPage() {
       <Navbar />
       
       <main className="flex-1 pt-20">
-        <div className="container mx-auto max-w-screen-xl px-4 py-6">
+        <div className="container mx-auto px-6 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Columna 1: Filtros */}
             <aside className="lg:col-span-1 lg:sticky top-20 max-h-[calc(100vh-7rem)] overflow-y-auto">
