@@ -255,18 +255,13 @@ export const EmployeeDetailView = ({ employee, onUpdate }: EmployeeDetailViewPro
         <TabsContent value="general">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Información del Empleado</CardTitle>
-                  <CardDescription>
-                    Datos personales y de contacto
-                  </CardDescription>
-                </div>
+              <div className="flex items-center justify-between w-full gap-4">
+                <CardTitle className="flex-1">Información del Empleado</CardTitle>
                 <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Editar Información
+                    <Button variant="outline" size="sm" className="flex-shrink-0 h-8 text-xs">
+                      <Edit className="w-3 h-3 mr-1" />
+                      Editar
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
