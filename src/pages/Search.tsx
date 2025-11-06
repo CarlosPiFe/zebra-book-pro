@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Star } from "lucide-react";
+import { Star, Euro, ChefHat, ConciergeBell, UtensilsCrossed, Leaf } from "lucide-react";
 
 interface Business {
   id: string;
@@ -255,7 +255,10 @@ export default function SearchPage() {
                   {/* Valoración Mínima */}
                   <AccordionItem value="valoracion">
                     <AccordionTrigger className="font-semibold hover:no-underline">
-                      Valoración Mínima
+                      <div className="flex items-center gap-2">
+                        <Star className="h-4 w-4" />
+                        <span>Valoración Mínima</span>
+                      </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
                       <div className="space-y-3">
@@ -278,7 +281,10 @@ export default function SearchPage() {
                   {/* Precio Medio */}
                   <AccordionItem value="precio">
                     <AccordionTrigger className="font-semibold hover:no-underline">
-                      Precio Medio
+                      <div className="flex items-center gap-2">
+                        <Euro className="h-4 w-4" />
+                        <span>Precio Medio</span>
+                      </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
                       <div className="space-y-3">
@@ -298,7 +304,10 @@ export default function SearchPage() {
                   {/* Tipo de Cocina */}
                   <AccordionItem value="cocina">
                     <AccordionTrigger className="font-semibold hover:no-underline">
-                      Tipo de Cocina
+                      <div className="flex items-center gap-2">
+                        <ChefHat className="h-4 w-4" />
+                        <span>Tipo de Cocina</span>
+                      </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
                       <div className="space-y-3">
@@ -333,7 +342,10 @@ export default function SearchPage() {
                   {/* Tipo de Servicio */}
                   <AccordionItem value="servicio">
                     <AccordionTrigger className="font-semibold hover:no-underline">
-                      Tipo de Servicio
+                      <div className="flex items-center gap-2">
+                        <ConciergeBell className="h-4 w-4" />
+                        <span>Tipo de Servicio</span>
+                      </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
                       <div className="space-y-3">
@@ -368,7 +380,10 @@ export default function SearchPage() {
                   {/* Platos */}
                   <AccordionItem value="platos">
                     <AccordionTrigger className="font-semibold hover:no-underline">
-                      Platos
+                      <div className="flex items-center gap-2">
+                        <UtensilsCrossed className="h-4 w-4" />
+                        <span>Platos</span>
+                      </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
                       <div className="space-y-3">
@@ -403,7 +418,10 @@ export default function SearchPage() {
                   {/* Dietas */}
                   <AccordionItem value="dietas">
                     <AccordionTrigger className="font-semibold hover:no-underline">
-                      Dietas
+                      <div className="flex items-center gap-2">
+                        <Leaf className="h-4 w-4" />
+                        <span>Dietas</span>
+                      </div>
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
                       <div className="grid grid-cols-2 gap-x-2 gap-y-4">

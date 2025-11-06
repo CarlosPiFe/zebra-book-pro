@@ -128,7 +128,7 @@ export const SearchRestaurantCard = ({ business, onClick }: SearchRestaurantCard
             {business.cuisine_type || "Restaurante"}
           </p>
           {business.address && (
-            <p className="text-sm text-foreground mt-1">{business.address}</p>
+            <p className="text-sm text-muted-foreground mt-1">{business.address}</p>
           )}
           <div className="flex items-center gap-1.5 text-sm text-muted-foreground pt-1">
             <span>∼</span>
