@@ -434,13 +434,7 @@ export default function SearchPage() {
               ) : (
                 <div className="space-y-4">
                   {filteredBusinesses.map((business) => (
-                    <div
-                      key={business.id}
-                      className="cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors"
-                      onClick={() => handleBusinessClick(business.id)}
-                    >
-                      <RestaurantCard business={business} />
-                    </div>
+                    <RestaurantCard key={business.id} business={business} />
                   ))}
                 </div>
               )}
