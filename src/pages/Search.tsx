@@ -184,10 +184,10 @@ export default function SearchPage() {
       
       <main className="flex-1 pt-20">
         <div className="container mx-auto max-w-7xl px-4 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-13 gap-6">
             {/* Columna 1: Filtros */}
-            <aside className="lg:col-span-1 lg:sticky top-20 h-fit">
-              <div className="bg-card rounded-lg border p-4 space-y-4">
+            <aside className="lg:col-span-3 lg:sticky top-20 h-fit">
+              <div className="bg-card rounded-lg border p-5 space-y-6">
                 {/* Filtros Aplicados */}
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="applied-filters" className="border-none">
@@ -235,7 +235,7 @@ export default function SearchPage() {
                   </AccordionItem>
                 </Accordion>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Valoración Mínima */}
                 <div className="space-y-3">
@@ -254,7 +254,7 @@ export default function SearchPage() {
                   </div>
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Precio Medio */}
                 <div className="space-y-3">
@@ -270,7 +270,7 @@ export default function SearchPage() {
                   <p className="text-xs text-muted-foreground">{getPriceLabel()}</p>
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Tipo de Cocina */}
                 <div className="space-y-3">
@@ -301,7 +301,7 @@ export default function SearchPage() {
                   )}
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Tipo de Servicio */}
                 <div className="space-y-3">
@@ -332,7 +332,7 @@ export default function SearchPage() {
                   )}
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Platos */}
                 <div className="space-y-3">
@@ -353,7 +353,7 @@ export default function SearchPage() {
                   </div>
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Dietas */}
                 <div className="space-y-3">
@@ -377,7 +377,7 @@ export default function SearchPage() {
                 {/* Botón Limpiar Filtros */}
                 {getActiveFiltersCount() > 0 && (
                   <>
-                    <Separator className="my-4" />
+                    <Separator className="my-6" />
                     <Button 
                       variant="outline" 
                       size="sm" 
@@ -392,7 +392,7 @@ export default function SearchPage() {
             </aside>
 
             {/* Columna 2: Tarjetas de Restaurantes */}
-            <main className="lg:col-span-2">
+            <main className="lg:col-span-4">
               {loading ? (
                 <div className="flex items-center justify-center h-64">
                   <LoadingSpinner />
@@ -419,7 +419,7 @@ export default function SearchPage() {
             </main>
 
             {/* Columna 3: Mapa */}
-            <aside className="hidden lg:block lg:col-span-2 lg:sticky top-20 h-fit">
+            <aside className="hidden lg:block lg:col-span-6 lg:sticky top-20 h-fit">
               <div className="h-[calc(100vh-7rem)] rounded-lg overflow-hidden border">
                 <RestaurantMap 
                   businesses={filteredBusinesses}
