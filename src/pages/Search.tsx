@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Navbar } from "@/components/Navbar";
-import { RestaurantCard } from "@/components/public/RestaurantCard";
+import { SearchRestaurantCard } from "@/components/public/SearchRestaurantCard";
 import { RestaurantMap } from "@/components/public/RestaurantMap";
 import { supabase } from "@/integrations/supabase/client";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
@@ -434,13 +434,11 @@ export default function SearchPage() {
               ) : (
                 <div className="space-y-4">
                   {filteredBusinesses.map((business) => (
-                    <div
+                    <SearchRestaurantCard
                       key={business.id}
-                      className="cursor-pointer hover:bg-accent/50 rounded-lg p-2 transition-colors"
+                      business={business}
                       onClick={() => handleBusinessClick(business.id)}
-                    >
-                      <RestaurantCard business={business} />
-                    </div>
+                    />
                   ))}
                 </div>
               )}
