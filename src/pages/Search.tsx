@@ -47,7 +47,16 @@ export default function SearchPage() {
   const [expandedServices, setExpandedServices] = useState(false);
 
   // Datos de filtros
-  const cuisineTypes = ["Asiática", "Peruana", "Española", "Francesa", "Italiana", "Mexicana", "De Autor", "Vegana"];
+  const cuisineTypes = [
+    "Africano", "Alemán", "Americano", "Andaluz", "Árabe", "Argentino", "Arrocería", 
+    "Asador", "Asiático", "Asturiano", "Belga", "Brasileño", "Canario", "Castellano", 
+    "Catalán", "Chino", "Colombiano", "Coreano", "Crepería", "Cubano", "De Fusión", 
+    "Del Norte", "Ecuatoriano", "Español", "Etíope", "Francés", "Gallego", "Griego", 
+    "Indio", "Inglés", "Internacional", "Iraní", "Italiano", "Japonés", "Latino", 
+    "Libanés", "Marisquería", "Marroquí", "Mediterráneo", "Mexicano", "Peruano", 
+    "Portugués", "Ruso", "Suizo", "Tailandés", "Tradicional", "Turco", "Vasco", 
+    "Vegetariano", "Venezolano", "Vietnamita"
+  ];
   const serviceTypes = ["Coctelería", "Buffet Libre", "Menú del Día", "Churrería", "Bar de Tapas", "Restaurante", "Brunch"];
   const dishTypes = ["Sushi", "Paella", "Tortilla", "Croquetas", "Ramen", "Pizza"];
   const dietTypes = ["Vegano", "Vegetariano", "Sin Gluten", "Halal", "Kosher"];
