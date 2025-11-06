@@ -295,7 +295,7 @@ export default function SearchPage() {
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
                       <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-4">
                           {cuisineTypes.slice(0, expandedCuisines ? cuisineTypes.length : 6).map((cuisine) => (
                             <div key={cuisine} className="flex items-center space-x-2">
                               <Checkbox
@@ -330,7 +330,7 @@ export default function SearchPage() {
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
                       <div className="space-y-3">
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-4">
                           {serviceTypes.slice(0, expandedServices ? serviceTypes.length : 6).map((service) => (
                             <div key={service} className="flex items-center space-x-2">
                               <Checkbox
@@ -364,7 +364,7 @@ export default function SearchPage() {
                       Platos
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-4">
                         {dishTypes.map((dish) => (
                           <div key={dish} className="flex items-center space-x-2">
                             <Checkbox
@@ -387,7 +387,7 @@ export default function SearchPage() {
                       Dietas
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-x-2 gap-y-4">
                         {dietTypes.map((diet) => (
                           <div key={diet} className="flex items-center space-x-2">
                             <Checkbox
