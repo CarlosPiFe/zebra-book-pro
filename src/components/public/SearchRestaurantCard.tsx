@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Heart, Star } from "lucide-react";
+import { Heart, Star, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
@@ -83,7 +83,7 @@ export const SearchRestaurantCard = ({ business, onClick }: SearchRestaurantCard
 
   return (
     <Card 
-      className="flex flex-row overflow-hidden shadow-md cursor-pointer hover:shadow-lg transition-all duration-300"
+      className="flex flex-row overflow-hidden shadow-md cursor-pointer hover:shadow-lg transition-all duration-300 min-h-[12rem]"
       onClick={onClick}
     >
       {/* Columna Izquierda: Imagen (1/3) */}
@@ -130,14 +130,22 @@ export const SearchRestaurantCard = ({ business, onClick }: SearchRestaurantCard
           {business.address && (
             <p className="text-sm text-foreground mt-1">{business.address}</p>
           )}
+          {business.price_range && (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground pt-1">
+              <span>∼</span>
+              <span>{business.price_range}</span>
+              <span>/</span>
+              <User size={14} className="mt-0.5" />
+            </div>
+          )}
         </div>
 
         {/* Contenido Inferior: Botones de Hora */}
         <div className="flex flex-wrap gap-2 pt-4">
-          <Button variant="outline" size="sm">14:00</Button>
-          <Button variant="outline" size="sm">14:30</Button>
-          <Button variant="outline" size="sm">21:00</Button>
-          <Button variant="outline" size="sm">21:30</Button>
+          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">14:00</Button>
+          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">14:30</Button>
+          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">21:00</Button>
+          <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">21:30</Button>
         </div>
       </div>
     </Card>
