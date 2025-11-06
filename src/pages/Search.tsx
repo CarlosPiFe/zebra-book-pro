@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Star, Euro, ChefHat, ConciergeBell, UtensilsCrossed, Leaf } from "lucide-react";
+import { Star, Euro, ChefHat, ConciergeBell, UtensilsCrossed, Leaf, SlidersHorizontal } from "lucide-react";
 
 interface Business {
   id: string;
@@ -206,7 +206,10 @@ export default function SearchPage() {
                   <Accordion type="single" collapsible className="w-full">
                     <AccordionItem value="applied-filters" className="border-none">
                       <AccordionTrigger className="text-base font-bold hover:no-underline py-0">
-                        Filtros Aplicados {getActiveFiltersCount() > 0 && `(${getActiveFiltersCount()})`}
+                        <div className="flex items-center gap-2">
+                          <SlidersHorizontal className="h-4 w-4" />
+                          <span>Filtros Aplicados {getActiveFiltersCount() > 0 && `(${getActiveFiltersCount()})`}</span>
+                        </div>
                       </AccordionTrigger>
                       <AccordionContent className="pt-4">
                         {getActiveFiltersCount() === 0 ? (
