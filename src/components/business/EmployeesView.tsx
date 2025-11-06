@@ -245,8 +245,8 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
       ) : (
         <div className="flex-1 flex gap-6 overflow-hidden min-h-0">
           {/* Employee List - Left Column */}
-          <div className="w-80 flex flex-col overflow-hidden flex-shrink-0">
-            <div className="overflow-y-auto space-y-3 pr-2">
+          <div className="w-80 flex-shrink-0">
+            <div className="h-full overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               {employees.map((employee) => (
                 <Card 
                   key={employee.id} 
@@ -294,15 +294,17 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           </div>
 
           {/* Employee Detail - Right Column */}
-          <div className="flex-1 overflow-y-auto min-w-0">
-            {selectedEmployee ? (
+          <div className="flex-1 min-w-0">
+            <div className="h-full overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+              {selectedEmployee ? (
               <EmployeeDetailView
                 employee={selectedEmployee}
                 onUpdate={loadEmployees}
               />
-            ) : (
-              <EmployeesOverview employees={employees} />
-            )}
+              ) : (
+                <EmployeesOverview employees={employees} />
+              )}
+            </div>
           </div>
         </div>
       )}
