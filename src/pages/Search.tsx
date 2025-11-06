@@ -190,7 +190,7 @@ export default function SearchPage() {
       <Navbar />
       
       <main className="flex-1 pt-20">
-        <div className="container mx-auto max-w-7xl px-4 py-6">
+        <div className="container mx-auto max-w-screen-xl px-4 py-6">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             {/* Columna 1: Filtros */}
             <aside className="lg:col-span-1 lg:sticky top-20 max-h-[calc(100vh-7rem)] overflow-y-auto">
@@ -242,7 +242,7 @@ export default function SearchPage() {
                   </AccordionItem>
                 </Accordion>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Valoración Mínima */}
                 <div className="space-y-3">
@@ -261,7 +261,7 @@ export default function SearchPage() {
                   </div>
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Precio Medio */}
                 <div className="space-y-3">
@@ -277,7 +277,7 @@ export default function SearchPage() {
                   <p className="text-xs text-muted-foreground">{getPriceLabel()}</p>
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Tipo de Cocina */}
                 <div className="space-y-3">
@@ -308,7 +308,7 @@ export default function SearchPage() {
                   )}
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Tipo de Servicio */}
                 <div className="space-y-3">
@@ -339,7 +339,7 @@ export default function SearchPage() {
                   )}
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Platos */}
                 <div className="space-y-3">
@@ -360,7 +360,7 @@ export default function SearchPage() {
                   </div>
                 </div>
 
-                <Separator className="my-4" />
+                <Separator className="my-6" />
 
                 {/* Dietas */}
                 <div className="space-y-3">
@@ -384,7 +384,7 @@ export default function SearchPage() {
                 {/* Botón Limpiar Filtros */}
                 {getActiveFiltersCount() > 0 && (
                   <>
-                    <Separator className="my-4" />
+                    <Separator className="my-6" />
                     <Button 
                       variant="outline" 
                       size="sm" 
