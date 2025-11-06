@@ -9,7 +9,6 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Star } from "lucide-react";
 
@@ -191,9 +190,9 @@ export default function SearchPage() {
       
       <main className="flex-1 pt-20">
         <div className="container mx-auto px-6 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-11 gap-6">
             {/* Columna 1: Filtros */}
-            <aside className="lg:col-span-1 lg:sticky top-20 max-h-[calc(100vh-7rem)] overflow-y-auto">
+            <aside className="lg:col-span-3 lg:sticky top-20 max-h-[calc(100vh-7rem)] overflow-y-auto">
               <div className="bg-card rounded-lg border p-4 space-y-4">
                 {/* Filtros Aplicados */}
                 <Accordion type="single" collapsible className="w-full">
@@ -242,164 +241,184 @@ export default function SearchPage() {
                   </AccordionItem>
                 </Accordion>
 
-                <Separator className="my-6" />
-
-                {/* Valoración Mínima */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Valoración Mínima</Label>
-                  <Slider
-                    value={minRating}
-                    onValueChange={setMinRating}
-                    min={3}
-                    max={5}
-                    step={0.5}
-                    className="py-2"
-                  />
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Star className="h-3 w-3 fill-current" />
-                    <span>{getRatingLabel(minRating?.[0] ?? 3)}</span>
-                  </div>
-                </div>
-
-                <Separator className="my-6" />
-
-                {/* Precio Medio */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Precio Medio</Label>
-                  <Slider
-                    value={priceRange}
-                    onValueChange={setPriceRange}
-                    min={0}
-                    max={150}
-                    step={5}
-                    className="py-2"
-                  />
-                  <p className="text-xs text-muted-foreground">{getPriceLabel()}</p>
-                </div>
-
-                <Separator className="my-6" />
-
-                {/* Tipo de Cocina */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Tipo de Cocina</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {cuisineTypes.slice(0, expandedCuisines ? cuisineTypes.length : 6).map((cuisine) => (
-                      <div key={cuisine} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`cuisine-${cuisine}`}
-                          checked={selectedCuisines.includes(cuisine)}
-                          onCheckedChange={() => toggleCheckbox(cuisine, selectedCuisines, setSelectedCuisines)}
+                {/* Todos los filtros en un Accordion múltiple */}
+                <Accordion type="multiple" className="w-full">
+                  {/* Valoración Mínima */}
+                  <AccordionItem value="valoracion">
+                    <AccordionTrigger className="font-semibold hover:no-underline">
+                      Valoración Mínima
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-4">
+                      <div className="space-y-3">
+                        <Slider
+                          value={minRating}
+                          onValueChange={setMinRating}
+                          min={3}
+                          max={5}
+                          step={0.5}
+                          className="py-2"
                         />
-                        <Label htmlFor={`cuisine-${cuisine}`} className="text-xs cursor-pointer">
-                          {cuisine}
-                        </Label>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Star className="h-3 w-3 fill-current" />
+                          <span>{getRatingLabel(minRating?.[0] ?? 3)}</span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                  {cuisineTypes.length > 6 && (
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      className="h-auto p-0 text-xs"
-                      onClick={() => setExpandedCuisines(!expandedCuisines)}
-                    >
-                      {expandedCuisines ? "Ver menos" : "Ver más..."}
-                    </Button>
-                  )}
-                </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <Separator className="my-6" />
-
-                {/* Tipo de Servicio */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Tipo de Servicio</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {serviceTypes.slice(0, expandedServices ? serviceTypes.length : 6).map((service) => (
-                      <div key={service} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`service-${service}`}
-                          checked={selectedServices.includes(service)}
-                          onCheckedChange={() => toggleCheckbox(service, selectedServices, setSelectedServices)}
+                  {/* Precio Medio */}
+                  <AccordionItem value="precio">
+                    <AccordionTrigger className="font-semibold hover:no-underline">
+                      Precio Medio
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-4">
+                      <div className="space-y-3">
+                        <Slider
+                          value={priceRange}
+                          onValueChange={setPriceRange}
+                          min={0}
+                          max={150}
+                          step={5}
+                          className="py-2"
                         />
-                        <Label htmlFor={`service-${service}`} className="text-xs cursor-pointer">
-                          {service}
-                        </Label>
+                        <p className="text-xs text-muted-foreground">{getPriceLabel()}</p>
                       </div>
-                    ))}
-                  </div>
-                  {serviceTypes.length > 6 && (
-                    <Button 
-                      variant="link" 
-                      size="sm" 
-                      className="h-auto p-0 text-xs"
-                      onClick={() => setExpandedServices(!expandedServices)}
-                    >
-                      {expandedServices ? "Ver menos" : "Ver más..."}
-                    </Button>
-                  )}
-                </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <Separator className="my-6" />
-
-                {/* Platos */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Platos</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {dishTypes.map((dish) => (
-                      <div key={dish} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`dish-${dish}`}
-                          checked={selectedDishes.includes(dish)}
-                          onCheckedChange={() => toggleCheckbox(dish, selectedDishes, setSelectedDishes)}
-                        />
-                        <Label htmlFor={`dish-${dish}`} className="text-xs cursor-pointer">
-                          {dish}
-                        </Label>
+                  {/* Tipo de Cocina */}
+                  <AccordionItem value="cocina">
+                    <AccordionTrigger className="font-semibold hover:no-underline">
+                      Tipo de Cocina
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-4">
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          {cuisineTypes.slice(0, expandedCuisines ? cuisineTypes.length : 6).map((cuisine) => (
+                            <div key={cuisine} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`cuisine-${cuisine}`}
+                                checked={selectedCuisines.includes(cuisine)}
+                                onCheckedChange={() => toggleCheckbox(cuisine, selectedCuisines, setSelectedCuisines)}
+                              />
+                              <Label htmlFor={`cuisine-${cuisine}`} className="text-xs cursor-pointer">
+                                {cuisine}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                        {cuisineTypes.length > 6 && (
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="h-auto p-0 text-xs"
+                            onClick={() => setExpandedCuisines(!expandedCuisines)}
+                          >
+                            {expandedCuisines ? "Ver menos" : "Ver más..."}
+                          </Button>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-                <Separator className="my-6" />
-
-                {/* Dietas */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Dietas</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {dietTypes.map((diet) => (
-                      <div key={diet} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`diet-${diet}`}
-                          checked={selectedDiets.includes(diet)}
-                          onCheckedChange={() => toggleCheckbox(diet, selectedDiets, setSelectedDiets)}
-                        />
-                        <Label htmlFor={`diet-${diet}`} className="text-xs cursor-pointer">
-                          {diet}
-                        </Label>
+                  {/* Tipo de Servicio */}
+                  <AccordionItem value="servicio">
+                    <AccordionTrigger className="font-semibold hover:no-underline">
+                      Tipo de Servicio
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-4">
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2">
+                          {serviceTypes.slice(0, expandedServices ? serviceTypes.length : 6).map((service) => (
+                            <div key={service} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`service-${service}`}
+                                checked={selectedServices.includes(service)}
+                                onCheckedChange={() => toggleCheckbox(service, selectedServices, setSelectedServices)}
+                              />
+                              <Label htmlFor={`service-${service}`} className="text-xs cursor-pointer">
+                                {service}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                        {serviceTypes.length > 6 && (
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="h-auto p-0 text-xs"
+                            onClick={() => setExpandedServices(!expandedServices)}
+                          >
+                            {expandedServices ? "Ver menos" : "Ver más..."}
+                          </Button>
+                        )}
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* Platos */}
+                  <AccordionItem value="platos">
+                    <AccordionTrigger className="font-semibold hover:no-underline">
+                      Platos
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        {dishTypes.map((dish) => (
+                          <div key={dish} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`dish-${dish}`}
+                              checked={selectedDishes.includes(dish)}
+                              onCheckedChange={() => toggleCheckbox(dish, selectedDishes, setSelectedDishes)}
+                            />
+                            <Label htmlFor={`dish-${dish}`} className="text-xs cursor-pointer">
+                              {dish}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {/* Dietas */}
+                  <AccordionItem value="dietas">
+                    <AccordionTrigger className="font-semibold hover:no-underline">
+                      Dietas
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-4">
+                      <div className="grid grid-cols-2 gap-2">
+                        {dietTypes.map((diet) => (
+                          <div key={diet} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`diet-${diet}`}
+                              checked={selectedDiets.includes(diet)}
+                              onCheckedChange={() => toggleCheckbox(diet, selectedDiets, setSelectedDiets)}
+                            />
+                            <Label htmlFor={`diet-${diet}`} className="text-xs cursor-pointer">
+                              {diet}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
 
                 {/* Botón Limpiar Filtros */}
                 {getActiveFiltersCount() > 0 && (
-                  <>
-                    <Separator className="my-6" />
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="w-full"
-                      onClick={resetFilters}
-                    >
-                      Limpiar todos los filtros
-                    </Button>
-                  </>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-4"
+                    onClick={resetFilters}
+                  >
+                    Limpiar todos los filtros
+                  </Button>
                 )}
               </div>
             </aside>
 
             {/* Columna 2: Tarjetas de Restaurantes */}
-            <main className="lg:col-span-2">
+            <main className="lg:col-span-4">
               {loading ? (
                 <div className="flex items-center justify-center h-64">
                   <LoadingSpinner />
@@ -426,7 +445,7 @@ export default function SearchPage() {
             </main>
 
             {/* Columna 3: Mapa */}
-            <aside className="hidden lg:block lg:col-span-2 lg:sticky top-20 h-fit">
+            <aside className="hidden lg:block lg:col-span-4 lg:sticky top-20 h-fit">
               <div className="h-[calc(100vh-7rem)] rounded-lg overflow-hidden border">
                 <RestaurantMap 
                   businesses={filteredBusinesses}
