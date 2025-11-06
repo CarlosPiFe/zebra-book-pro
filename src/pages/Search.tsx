@@ -193,56 +193,58 @@ export default function SearchPage() {
           <div className="grid grid-cols-1 lg:grid-cols-11 gap-6">
             {/* Columna 1: Filtros */}
             <aside className="lg:col-span-3 lg:sticky top-20 max-h-[calc(100vh-7rem)] overflow-y-auto">
-              <div className="bg-card rounded-lg border p-4 space-y-4">
-                {/* Filtros Aplicados */}
-                <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value="applied-filters" className="border-none">
-                    <AccordionTrigger className="text-sm font-semibold hover:no-underline py-2">
-                      Filtros Aplicados {getActiveFiltersCount() > 0 && `(${getActiveFiltersCount()})`}
-                    </AccordionTrigger>
-                    <AccordionContent>
-                      {getActiveFiltersCount() === 0 ? (
-                        <p className="text-xs text-muted-foreground">No se ha aplicado ningún filtro.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {(minRating?.[0] ?? 3) > 3 && (
-                            <div className="flex items-center justify-between text-xs">
-                              <span>Valoración: {minRating[0]}+</span>
-                              <Button variant="ghost" size="sm" className="h-5 px-2" onClick={() => setMinRating([3])}>×</Button>
-                            </div>
-                          )}
-                          {((priceRange?.[0] ?? 0) > 0 || (priceRange?.[1] ?? 150) < 150) && (
-                            <div className="flex items-center justify-between text-xs">
-                              <span>Precio: {getPriceLabel()}</span>
-                              <Button variant="ghost" size="sm" className="h-5 px-2" onClick={() => setPriceRange([0, 150])}>×</Button>
-                            </div>
-                          )}
-                          {[...selectedCuisines, ...selectedServices, ...selectedDishes, ...selectedDiets].map((filter) => (
-                            <div key={filter} className="flex items-center justify-between text-xs">
-                              <span>{filter}</span>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="h-5 px-2"
-                                onClick={() => {
-                                  if (selectedCuisines.includes(filter)) setSelectedCuisines(selectedCuisines.filter(c => c !== filter));
-                                  if (selectedServices.includes(filter)) setSelectedServices(selectedServices.filter(s => s !== filter));
-                                  if (selectedDishes.includes(filter)) setSelectedDishes(selectedDishes.filter(d => d !== filter));
-                                  if (selectedDiets.includes(filter)) setSelectedDiets(selectedDiets.filter(d => d !== filter));
-                                }}
-                              >
-                                ×
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
+              <div className="bg-card rounded-lg border p-4 space-y-6">
+                {/* Filtros Aplicados - Destacado */}
+                <div className="bg-accent/50 rounded-lg p-4 border border-accent">
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="applied-filters" className="border-none">
+                      <AccordionTrigger className="text-base font-bold hover:no-underline py-0">
+                        Filtros Aplicados {getActiveFiltersCount() > 0 && `(${getActiveFiltersCount()})`}
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-4">
+                        {getActiveFiltersCount() === 0 ? (
+                          <p className="text-xs text-muted-foreground">No se ha aplicado ningún filtro.</p>
+                        ) : (
+                          <div className="space-y-2">
+                            {(minRating?.[0] ?? 3) > 3 && (
+                              <div className="flex items-center justify-between text-xs">
+                                <span>Valoración: {minRating[0]}+</span>
+                                <Button variant="ghost" size="sm" className="h-5 px-2" onClick={() => setMinRating([3])}>×</Button>
+                              </div>
+                            )}
+                            {((priceRange?.[0] ?? 0) > 0 || (priceRange?.[1] ?? 150) < 150) && (
+                              <div className="flex items-center justify-between text-xs">
+                                <span>Precio: {getPriceLabel()}</span>
+                                <Button variant="ghost" size="sm" className="h-5 px-2" onClick={() => setPriceRange([0, 150])}>×</Button>
+                              </div>
+                            )}
+                            {[...selectedCuisines, ...selectedServices, ...selectedDishes, ...selectedDiets].map((filter) => (
+                              <div key={filter} className="flex items-center justify-between text-xs">
+                                <span>{filter}</span>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-5 px-2"
+                                  onClick={() => {
+                                    if (selectedCuisines.includes(filter)) setSelectedCuisines(selectedCuisines.filter(c => c !== filter));
+                                    if (selectedServices.includes(filter)) setSelectedServices(selectedServices.filter(s => s !== filter));
+                                    if (selectedDishes.includes(filter)) setSelectedDishes(selectedDishes.filter(d => d !== filter));
+                                    if (selectedDiets.includes(filter)) setSelectedDiets(selectedDiets.filter(d => d !== filter));
+                                  }}
+                                >
+                                  ×
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </div>
 
-                {/* Todos los filtros en un Accordion múltiple */}
-                <Accordion type="multiple" className="w-full">
+                {/* Todos los filtros en un Accordion múltiple - Abiertos por defecto */}
+                <Accordion type="multiple" defaultValue={["valoracion", "precio", "cocina", "servicio", "platos", "dietas"]} className="w-full">
                   {/* Valoración Mínima */}
                   <AccordionItem value="valoracion">
                     <AccordionTrigger className="font-semibold hover:no-underline">
