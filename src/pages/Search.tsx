@@ -59,10 +59,10 @@ export default function SearchPage() {
   const serviceTypes = [
     "A la Carta", "Menú del Día", "Menú Degustación", "Buffet Libre", "Rodizio", 
     "Fast Food", "Fast Casual", "Gastrobar", "Asador", "Marisquería", "Freiduría", 
-    "Bar de Tapas", "Coctelería", "Cervecería", "Vinoteca / Bodega", "Pub", 
+    "Bar de Tapas", "Coctelería", "Cervecería", "Vinoteca", "Pub", 
     "Cafetería", "Salón de Té", "Bar", "Brunch", "Churrería", "Chocolatería", 
-    "Heladería", "Pastelería", "Crepería", "Yogurtería / Zumería", 
-    "Solo Take Away", "Solo Delivery", "Take Away y Delivery", "Food Truck", "Catering"
+    "Heladería", "Pastelería", "Crepería", 
+    "Take Away", "Delivery", "Food Truck", "Catering"
   ];
   const dishTypes = ["Sushi", "Paella", "Tortilla", "Croquetas", "Ramen", "Pizza"];
   const dietTypes = ["Vegano", "Vegetariano", "Sin Gluten", "Halal", "Kosher"];
