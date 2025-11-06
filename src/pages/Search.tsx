@@ -64,7 +64,13 @@ export default function SearchPage() {
     "Heladería", "Pastelería", "Crepería", 
     "Take Away", "Delivery", "Food Truck", "Catering"
   ];
-  const dishTypes = ["Sushi", "Paella", "Tortilla", "Croquetas", "Ramen", "Pizza"];
+  const dishTypes = [
+    "Aguacate", "Arepas", "Arroces", "Bacalao", "Burrito", "Cachopo", "Carnes", 
+    "Ceviche", "Chuletón", "Cochinillo", "Cocido", "Cordero", "Couscous", "Croquetas", 
+    "De cuchara", "Fondue", "Hamburguesas", "Huevos Rotos", "Marisco", "Pad Thai", 
+    "Paella", "Pasta", "Pescaíto frito", "Pizza", "Poke", "Pulpo", "Ramen", 
+    "Risotto", "Setas", "Sushi", "Tapas", "Tartar", "Tortilla", "Wok"
+  ];
   const dietTypes = ["Vegano", "Vegetariano", "Sin Gluten", "Halal", "Kosher"];
 
   useEffect(() => {
