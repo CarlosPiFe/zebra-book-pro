@@ -57,7 +57,14 @@ export default function SearchPage() {
     "Portugués", "Ruso", "Suizo", "Tailandés", "Tradicional", "Turco", "Vasco", 
     "Vegetariano", "Venezolano", "Vietnamita"
   ];
-  const serviceTypes = ["Coctelería", "Buffet Libre", "Menú del Día", "Churrería", "Bar de Tapas", "Restaurante", "Brunch"];
+  const serviceTypes = [
+    "A la Carta", "Menú del Día", "Menú Degustación", "Buffet Libre", "Rodizio", 
+    "Fast Food", "Fast Casual", "Gastrobar", "Asador", "Marisquería", "Freiduría", 
+    "Bar de Tapas", "Coctelería", "Cervecería", "Vinoteca / Bodega", "Pub", 
+    "Cafetería", "Salón de Té", "Bar", "Brunch", "Churrería / Chocolatería", 
+    "Heladería", "Panadería / Pastelería", "Crepería", "Yogurtería / Zumería", 
+    "Solo Take Away", "Solo Delivery", "Take Away y Delivery", "Food Truck", "Catering"
+  ];
   const dishTypes = ["Sushi", "Paella", "Tortilla", "Croquetas", "Ramen", "Pizza"];
   const dietTypes = ["Vegano", "Vegetariano", "Sin Gluten", "Halal", "Kosher"];
 
