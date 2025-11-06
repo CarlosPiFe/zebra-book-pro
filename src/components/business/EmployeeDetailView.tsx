@@ -13,6 +13,14 @@ import { DateRange } from "react-day-picker";
 import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -67,6 +75,7 @@ export const EmployeeDetailView = ({ employee, onUpdate }: EmployeeDetailViewPro
   const [loading, setLoading] = useState(false);
   const [deleteVacationId, setDeleteVacationId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("general");
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const loadVacations = async () => {
     try {
@@ -123,6 +132,7 @@ export const EmployeeDetailView = ({ employee, onUpdate }: EmployeeDetailViewPro
       if (error) throw error;
 
       toast.success("Empleado actualizado");
+      setIsEditDialogOpen(false);
       onUpdate();
     } catch (error) {
       console.error("Error updating employee:", error);
@@ -243,106 +253,87 @@ export const EmployeeDetailView = ({ employee, onUpdate }: EmployeeDetailViewPro
 
         {/* General Info Tab */}
         <TabsContent value="general">
-          <div className="space-y-4">
-            {/* Information Display */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Información del Empleado</CardTitle>
-                <CardDescription>
-                  Datos personales y de contacto
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-muted-foreground">Nombre</Label>
-                    <p className="text-lg font-medium">{employee.name}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Cargo</Label>
-                    <p className="text-lg">{employee.position || "No especificado"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Correo Electrónico</Label>
-                    <p className="text-lg">{employee.email || "No especificado"}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Estado</Label>
-                    <p className="text-lg">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        employee.is_active 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {employee.is_active ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Token de Acceso</Label>
-                    <p className="text-sm font-mono bg-muted px-2 py-1 rounded">{employee.token}</p>
-                  </div>
-                  <div>
-                    <Label className="text-muted-foreground">Fecha de Creación</Label>
-                    <p className="text-lg">
-                      {new Date(employee.created_at).toLocaleDateString('es-ES', {
-                        day: '2-digit',
-                        month: 'long',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Información del Empleado</CardTitle>
+                  <CardDescription>
+                    Datos personales y de contacto
+                  </CardDescription>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Edit Form */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Editar Información</CardTitle>
-                <CardDescription>
-                  Actualiza los datos básicos del empleado
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="editName">Nombre</Label>
-                  <Input
-                    id="editName"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Nombre del empleado"
-                  />
+                <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Edit className="w-4 h-4 mr-2" />
+                      Editar Información
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Editar Información</DialogTitle>
+                      <DialogDescription>
+                        Actualiza los datos básicos del empleado
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="editName">Nombre</Label>
+                        <Input
+                          id="editName"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="Nombre del empleado"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="editPosition">Cargo</Label>
+                        <Input
+                          id="editPosition"
+                          value={editPosition}
+                          onChange={(e) => setEditPosition(e.target.value)}
+                          placeholder="Cargo del empleado"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="editEmail">Correo para Portal de Empleado</Label>
+                        <Input
+                          id="editEmail"
+                          type="email"
+                          value={editEmail}
+                          onChange={(e) => setEditEmail(e.target.value)}
+                          placeholder="ejemplo@correo.com"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Si se introduce un correo, el empleado podrá acceder al Portal de Empleado
+                        </p>
+                      </div>
+                      <Button onClick={handleUpdateEmployee} disabled={loading} className="w-full">
+                        <Edit className="w-4 h-4 mr-2" />
+                        Actualizar Información
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-muted-foreground">Nombre</Label>
+                  <p className="text-lg font-medium mt-1">{employee.name}</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="editPosition">Cargo</Label>
-                  <Input
-                    id="editPosition"
-                    value={editPosition}
-                    onChange={(e) => setEditPosition(e.target.value)}
-                    placeholder="Cargo del empleado"
-                  />
+                <div>
+                  <Label className="text-muted-foreground">Cargo</Label>
+                  <p className="text-lg mt-1">{employee.position || "No especificado"}</p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="editEmail">Correo para Portal de Empleado</Label>
-                  <Input
-                    id="editEmail"
-                    type="email"
-                    value={editEmail}
-                    onChange={(e) => setEditEmail(e.target.value)}
-                    placeholder="ejemplo@correo.com"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Si se introduce un correo, el empleado podrá acceder al Portal de Empleado
-                  </p>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Correo Electrónico</Label>
+                  <p className="text-lg mt-1">{employee.email || "No especificado"}</p>
                 </div>
-                <Button onClick={handleUpdateEmployee} disabled={loading}>
-                  <Edit className="w-4 h-4 mr-2" />
-                  Actualizar Información
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* Schedule Tab */}
