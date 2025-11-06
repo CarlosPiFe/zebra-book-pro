@@ -44,6 +44,7 @@ export default function SearchPage() {
   const [selectedDiets, setSelectedDiets] = useState<string[]>([]);
   const [expandedCuisines, setExpandedCuisines] = useState(false);
   const [expandedServices, setExpandedServices] = useState(false);
+  const [expandedDishes, setExpandedDishes] = useState(false);
 
   // Datos de filtros
   const cuisineTypes = [
@@ -370,19 +371,31 @@ export default function SearchPage() {
                       Platos
                     </AccordionTrigger>
                     <AccordionContent className="pt-4">
-                      <div className="grid grid-cols-2 gap-x-2 gap-y-4">
-                        {dishTypes.map((dish) => (
-                          <div key={dish} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`dish-${dish}`}
-                              checked={selectedDishes.includes(dish)}
-                              onCheckedChange={() => toggleCheckbox(dish, selectedDishes, setSelectedDishes)}
-                            />
-                            <Label htmlFor={`dish-${dish}`} className="text-xs cursor-pointer">
-                              {dish}
-                            </Label>
-                          </div>
-                        ))}
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-4">
+                          {dishTypes.slice(0, expandedDishes ? dishTypes.length : 6).map((dish) => (
+                            <div key={dish} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`dish-${dish}`}
+                                checked={selectedDishes.includes(dish)}
+                                onCheckedChange={() => toggleCheckbox(dish, selectedDishes, setSelectedDishes)}
+                              />
+                              <Label htmlFor={`dish-${dish}`} className="text-xs cursor-pointer">
+                                {dish}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                        {dishTypes.length > 6 && (
+                          <Button 
+                            variant="link" 
+                            size="sm" 
+                            className="h-auto p-0 text-xs"
+                            onClick={() => setExpandedDishes(!expandedDishes)}
+                          >
+                            {expandedDishes ? "Ver menos" : "Ver más..."}
+                          </Button>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
