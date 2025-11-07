@@ -78,10 +78,38 @@ export default function SearchPage() {
     // Leer parámetros de la URL al cargar
     const location = searchParams.get('location') || "";
     const type = searchParams.get('type') || "";
+    const q = searchParams.get('q') || "";
+    
     setSearchLocation(location);
     setSearchType(type);
-    loadBusinesses();
+    
+    // Si hay un parámetro 'q', interpretarlo con IA
+    if (q && !location && !type) {
+      interpretNaturalQuery(q);
+    } else {
+      loadBusinesses();
+    }
   }, [searchParams]);
+
+  const interpretNaturalQuery = async (query: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('parse-search-query', {
+        body: { query }
+      });
+
+      if (error) throw error;
+
+      // Actualizar los filtros basados en la interpretación
+      if (data.location) setSearchLocation(data.location);
+      if (data.cuisine) setSearchType(data.cuisine);
+      
+      await loadBusinesses();
+    } catch (error) {
+      console.error("Error interpretando búsqueda:", error);
+      await loadBusinesses();
+    }
+  };
 
   useEffect(() => {
     applyFilters();
