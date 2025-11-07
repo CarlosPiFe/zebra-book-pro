@@ -28,9 +28,12 @@ export const HeroSearch = () => {
       if (error) throw error;
 
       const params = new URLSearchParams();
+      if (data.name) params.append('name', data.name);
       if (data.location) params.append('location', data.location);
-      if (data.cuisine) params.append('type', data.cuisine);
-      if (data.keywords) params.append('q', data.keywords);
+      if (data.cuisine) params.append('cuisine', data.cuisine);
+      if (data.keywords) params.append('keywords', data.keywords);
+      if (data.priceRange) params.append('priceRange', data.priceRange);
+      if (data.minRating) params.append('minRating', data.minRating.toString());
       
       // Añadir filtros de dietas
       if (data.dietaryOptions && data.dietaryOptions.length > 0) {

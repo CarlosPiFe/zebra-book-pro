@@ -76,25 +76,53 @@ export default function SearchPage() {
 
   useEffect(() => {
     // Leer parámetros de la URL al cargar
+    const name = searchParams.get('name') || "";
     const location = searchParams.get('location') || "";
-    const type = searchParams.get('type') || "";
+    const cuisine = searchParams.get('cuisine') || "";
+    const type = searchParams.get('type') || ""; // legacy support
     const q = searchParams.get('q') || "";
+    const minRatingFromURL = searchParams.get('minRating');
+    const priceRangeFromURL = searchParams.get('priceRange');
     
     // Leer filtros de URL
     const dietsFromURL = searchParams.getAll('diet');
     const servicesFromURL = searchParams.getAll('service');
     const dishesFromURL = searchParams.getAll('dish');
+    const cuisinesFromURL = searchParams.getAll('cuisineType');
     
     setSearchLocation(location);
-    setSearchType(type);
+    // Usar name si existe, sino cuisine, sino type (legacy)
+    setSearchType(name || cuisine || type);
     
     // Aplicar filtros de la URL automáticamente
     if (dietsFromURL.length > 0) setSelectedDiets(dietsFromURL);
     if (servicesFromURL.length > 0) setSelectedServices(servicesFromURL);
     if (dishesFromURL.length > 0) setSelectedDishes(dishesFromURL);
+    if (cuisinesFromURL.length > 0) setSelectedCuisines(cuisinesFromURL);
+    
+    // Aplicar rating y precio si vienen de la URL
+    if (minRatingFromURL) {
+      const rating = parseFloat(minRatingFromURL);
+      if (!isNaN(rating) && rating >= 3 && rating <= 5) {
+        setMinRating([rating]);
+      }
+    }
+    if (priceRangeFromURL) {
+      // Convertir €, €€, €€€ a valores numéricos
+      const priceMap: Record<string, [number, number]> = {
+        '€': [0, 15],
+        '€€': [15, 30],
+        '€€€': [30, 60],
+        '€€€€': [60, 150]
+      };
+      const priceValues = priceMap[priceRangeFromURL];
+      if (priceValues) {
+        setPriceRange(priceValues);
+      }
+    }
     
     // Si hay un parámetro 'q', interpretarlo con IA
-    if (q && !location && !type) {
+    if (q && !name && !location && !cuisine && !type) {
       interpretNaturalQuery(q);
     } else {
       loadBusinesses();
@@ -111,8 +139,30 @@ export default function SearchPage() {
       if (error) throw error;
 
       // Actualizar los filtros basados en la interpretación
+      if (data.name) setSearchType(data.name);
       if (data.location) setSearchLocation(data.location);
-      if (data.cuisine) setSearchType(data.cuisine);
+      if (data.cuisine && !data.name) setSearchType(data.cuisine);
+      
+      if (data.minRating) {
+        const rating = parseFloat(data.minRating);
+        if (!isNaN(rating) && rating >= 3 && rating <= 5) {
+          setMinRating([rating]);
+        }
+      }
+      
+      if (data.priceRange) {
+        const priceMap: Record<string, [number, number]> = {
+          '€': [0, 15],
+          '€€': [15, 30],
+          '€€€': [30, 60],
+          '€€€€': [60, 150]
+        };
+        const priceValues = priceMap[data.priceRange];
+        if (priceValues) {
+          setPriceRange(priceValues);
+        }
+      }
+      
       if (data.dietaryOptions && data.dietaryOptions.length > 0) {
         setSelectedDiets(data.dietaryOptions);
       }

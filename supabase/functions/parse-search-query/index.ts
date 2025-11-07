@@ -33,7 +33,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Eres un parser que transforma texto libre en una búsqueda estructurada de restaurantes. Extrae la ubicación, tipo de cocina, rango de precio, palabras clave, opciones dietéticas (vegano, vegetariano, sin gluten, halal, kosher), tipos de servicio (menú del día, buffet, take away, etc.) y especialidades de platos (sushi, pizza, pasta, etc.) de la consulta del usuario. Si no se menciona algo, deja ese campo como null. Responde SOLO con JSON válido.',
+            content: 'Eres un parser que transforma texto libre en una búsqueda estructurada de restaurantes. Extrae: nombre del restaurante (si se menciona un nombre específico), ubicación (ciudad, barrio, dirección), tipo de cocina, rango de precio (€, €€, €€€, €€€€), valoración mínima (número del 3 al 5), palabras clave generales, opciones dietéticas (vegano, vegetariano, sin gluten, halal, kosher), tipos de servicio (menú del día, buffet, take away, delivery, a la carta, etc.) y especialidades de platos (sushi, pizza, pasta, paella, etc.). Si no se menciona algo, deja ese campo como null. Para valoración, si dicen "buena valoración" usa 4, "excelente" usa 4.5. Para precio, usa el formato de euros. Responde SOLO con JSON válido.',
           },
           {
             role: 'user',
@@ -48,9 +48,11 @@ serve(async (req) => {
             schema: {
               type: 'object',
               properties: {
+                name: { type: ['string', 'null'] },
                 location: { type: ['string', 'null'] },
                 cuisine: { type: ['string', 'null'] },
                 priceRange: { type: ['string', 'null'] },
+                minRating: { type: ['number', 'null'] },
                 keywords: { type: ['string', 'null'] },
                 dietaryOptions: { 
                   type: ['array', 'null'],
@@ -65,7 +67,7 @@ serve(async (req) => {
                   items: { type: 'string' }
                 },
               },
-              required: ['location', 'cuisine', 'priceRange', 'keywords', 'dietaryOptions', 'serviceTypes', 'dishSpecialties'],
+              required: ['name', 'location', 'cuisine', 'priceRange', 'minRating', 'keywords', 'dietaryOptions', 'serviceTypes', 'dishSpecialties'],
               additionalProperties: false,
             },
           },
