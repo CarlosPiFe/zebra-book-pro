@@ -40,19 +40,21 @@ serve(async (req) => {
             content: query,
           },
         ],
-        response_format: {
-          type: 'json_schema',
-          json_schema: {
-            name: 'RestaurantSearchQuery',
-            schema: {
-              type: 'object',
-              properties: {
-                location: { type: 'string', nullable: true },
-                cuisine: { type: 'string', nullable: true },
-                priceRange: { type: 'string', nullable: true },
-                keywords: { type: 'string', nullable: true },
+        text: {
+          format: {
+            type: 'json_schema',
+            json_schema: {
+              name: 'RestaurantSearchQuery',
+              schema: {
+                type: 'object',
+                properties: {
+                  location: { type: 'string', nullable: true },
+                  cuisine: { type: 'string', nullable: true },
+                  priceRange: { type: 'string', nullable: true },
+                  keywords: { type: 'string', nullable: true },
+                },
+                required: ['location', 'cuisine', 'priceRange', 'keywords'],
               },
-              required: ['location', 'cuisine', 'priceRange', 'keywords'],
             },
           },
         },
