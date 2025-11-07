@@ -44,6 +44,21 @@ export const CompactSearchBar = ({ initialLocation = "", initialType = "", onSea
       if (data.cuisine) params.append('type', data.cuisine);
       if (data.keywords) params.append('q', data.keywords);
       
+      // Añadir filtros de dietas
+      if (data.dietaryOptions && data.dietaryOptions.length > 0) {
+        data.dietaryOptions.forEach((diet: string) => params.append('diet', diet));
+      }
+      
+      // Añadir filtros de servicios
+      if (data.serviceTypes && data.serviceTypes.length > 0) {
+        data.serviceTypes.forEach((service: string) => params.append('service', service));
+      }
+      
+      // Añadir filtros de platos
+      if (data.dishSpecialties && data.dishSpecialties.length > 0) {
+        data.dishSpecialties.forEach((dish: string) => params.append('dish', dish));
+      }
+      
       if (onSearch && data.location && data.cuisine) {
         onSearch(data.location, data.cuisine);
       }

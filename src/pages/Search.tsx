@@ -80,8 +80,18 @@ export default function SearchPage() {
     const type = searchParams.get('type') || "";
     const q = searchParams.get('q') || "";
     
+    // Leer filtros de URL
+    const dietsFromURL = searchParams.getAll('diet');
+    const servicesFromURL = searchParams.getAll('service');
+    const dishesFromURL = searchParams.getAll('dish');
+    
     setSearchLocation(location);
     setSearchType(type);
+    
+    // Aplicar filtros de la URL automáticamente
+    if (dietsFromURL.length > 0) setSelectedDiets(dietsFromURL);
+    if (servicesFromURL.length > 0) setSelectedServices(servicesFromURL);
+    if (dishesFromURL.length > 0) setSelectedDishes(dishesFromURL);
     
     // Si hay un parámetro 'q', interpretarlo con IA
     if (q && !location && !type) {
@@ -103,6 +113,15 @@ export default function SearchPage() {
       // Actualizar los filtros basados en la interpretación
       if (data.location) setSearchLocation(data.location);
       if (data.cuisine) setSearchType(data.cuisine);
+      if (data.dietaryOptions && data.dietaryOptions.length > 0) {
+        setSelectedDiets(data.dietaryOptions);
+      }
+      if (data.serviceTypes && data.serviceTypes.length > 0) {
+        setSelectedServices(data.serviceTypes);
+      }
+      if (data.dishSpecialties && data.dishSpecialties.length > 0) {
+        setSelectedDishes(data.dishSpecialties);
+      }
       
       await loadBusinesses();
     } catch (error) {
@@ -170,7 +189,29 @@ export default function SearchPage() {
       );
     }
 
-    // TODO: Filtros de servicio, platos y dietas cuando estén en la BD
+    // Filtro de servicios
+    if (selectedServices.length > 0) {
+      filtered = filtered.filter((b: any) => {
+        if (!b.service_types || !Array.isArray(b.service_types)) return false;
+        return selectedServices.some(service => b.service_types.includes(service));
+      });
+    }
+
+    // Filtro de platos
+    if (selectedDishes.length > 0) {
+      filtered = filtered.filter((b: any) => {
+        if (!b.dish_specialties || !Array.isArray(b.dish_specialties)) return false;
+        return selectedDishes.some(dish => b.dish_specialties.includes(dish));
+      });
+    }
+
+    // Filtro de dietas
+    if (selectedDiets.length > 0) {
+      filtered = filtered.filter((b: any) => {
+        if (!b.dietary_options || !Array.isArray(b.dietary_options)) return false;
+        return selectedDiets.some(diet => b.dietary_options.includes(diet));
+      });
+    }
 
     setFilteredBusinesses(filtered);
   };

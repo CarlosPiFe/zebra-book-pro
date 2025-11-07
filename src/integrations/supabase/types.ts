@@ -283,6 +283,8 @@ export type Database = {
           created_at: string
           cuisine_type: string | null
           description: string | null
+          dietary_options: string[] | null
+          dish_specialties: string[] | null
           email: string | null
           id: string
           image_url: string | null
@@ -293,6 +295,7 @@ export type Database = {
           phone: string | null
           price_range: string | null
           schedule_view_mode: string
+          service_types: string[] | null
           social_media: Json | null
           special_offer: string | null
           updated_at: string
@@ -312,6 +315,8 @@ export type Database = {
           created_at?: string
           cuisine_type?: string | null
           description?: string | null
+          dietary_options?: string[] | null
+          dish_specialties?: string[] | null
           email?: string | null
           id?: string
           image_url?: string | null
@@ -322,6 +327,7 @@ export type Database = {
           phone?: string | null
           price_range?: string | null
           schedule_view_mode?: string
+          service_types?: string[] | null
           social_media?: Json | null
           special_offer?: string | null
           updated_at?: string
@@ -341,6 +347,8 @@ export type Database = {
           created_at?: string
           cuisine_type?: string | null
           description?: string | null
+          dietary_options?: string[] | null
+          dish_specialties?: string[] | null
           email?: string | null
           id?: string
           image_url?: string | null
@@ -351,6 +359,7 @@ export type Database = {
           phone?: string | null
           price_range?: string | null
           schedule_view_mode?: string
+          service_types?: string[] | null
           social_media?: Json | null
           special_offer?: string | null
           updated_at?: string

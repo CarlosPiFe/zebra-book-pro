@@ -33,7 +33,7 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Eres un parser que transforma texto libre en una búsqueda estructurada de restaurantes. Extrae la ubicación, tipo de cocina, rango de precio y palabras clave de la consulta del usuario. Si no se menciona algo, deja ese campo como null. Responde SOLO con JSON válido.',
+            content: 'Eres un parser que transforma texto libre en una búsqueda estructurada de restaurantes. Extrae la ubicación, tipo de cocina, rango de precio, palabras clave, opciones dietéticas (vegano, vegetariano, sin gluten, halal, kosher), tipos de servicio (menú del día, buffet, take away, etc.) y especialidades de platos (sushi, pizza, pasta, etc.) de la consulta del usuario. Si no se menciona algo, deja ese campo como null. Responde SOLO con JSON válido.',
           },
           {
             role: 'user',
@@ -52,8 +52,20 @@ serve(async (req) => {
                 cuisine: { type: ['string', 'null'] },
                 priceRange: { type: ['string', 'null'] },
                 keywords: { type: ['string', 'null'] },
+                dietaryOptions: { 
+                  type: ['array', 'null'],
+                  items: { type: 'string' }
+                },
+                serviceTypes: { 
+                  type: ['array', 'null'],
+                  items: { type: 'string' }
+                },
+                dishSpecialties: { 
+                  type: ['array', 'null'],
+                  items: { type: 'string' }
+                },
               },
-              required: ['location', 'cuisine', 'priceRange', 'keywords'],
+              required: ['location', 'cuisine', 'priceRange', 'keywords', 'dietaryOptions', 'serviceTypes', 'dishSpecialties'],
               additionalProperties: false,
             },
           },
