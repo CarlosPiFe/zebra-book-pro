@@ -22,39 +22,39 @@ serve(async (req) => {
 
     console.log('Interpretando consulta:', query);
 
-    const response = await fetch('https://api.openai.com/v1/responses', {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-nano',
-        input: [
+        model: 'gpt-5-nano-2025-08-07',
+        messages: [
           {
             role: 'system',
-            content: 'Eres un parser que transforma texto libre en una búsqueda estructurada de restaurantes. Extrae la ubicación, tipo de cocina, rango de precio y palabras clave de la consulta del usuario. Si no se menciona algo, deja ese campo como null.',
+            content: 'Eres un parser que transforma texto libre en una búsqueda estructurada de restaurantes. Extrae la ubicación, tipo de cocina, rango de precio y palabras clave de la consulta del usuario. Si no se menciona algo, deja ese campo como null. Responde SOLO con JSON válido.',
           },
           {
             role: 'user',
             content: query,
           },
         ],
-        text: {
-          format: {
-            type: 'json_schema',
-            json_schema: {
-              name: 'RestaurantSearchQuery',
-              schema: {
-                type: 'object',
-                properties: {
-                  location: { type: 'string', nullable: true },
-                  cuisine: { type: 'string', nullable: true },
-                  priceRange: { type: 'string', nullable: true },
-                  keywords: { type: 'string', nullable: true },
-                },
-                required: ['location', 'cuisine', 'priceRange', 'keywords'],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'RestaurantSearchQuery',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                location: { type: ['string', 'null'] },
+                cuisine: { type: ['string', 'null'] },
+                priceRange: { type: ['string', 'null'] },
+                keywords: { type: ['string', 'null'] },
               },
+              required: ['location', 'cuisine', 'priceRange', 'keywords'],
+              additionalProperties: false,
             },
           },
         },
@@ -69,8 +69,8 @@ serve(async (req) => {
 
     const data = await response.json();
     
-    // El resultado viene en data.output[0].content[0].text
-    const parsed = JSON.parse(data.output[0].content[0].text);
+    // Parsear el JSON del contenido del mensaje
+    const parsed = JSON.parse(data.choices[0].message.content);
 
     console.log('Consulta interpretada:', parsed);
 
