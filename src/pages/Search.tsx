@@ -141,10 +141,23 @@ export default function SearchPage() {
 
       if (error) throw error;
 
-      // Actualizar los filtros basados en la interpretación
+      // Actualizar los filtros basados en la interpretación - APLICAR TODOS
       if (data.name) setSearchType(data.name);
       if (data.location) setSearchLocation(data.location);
-      if (data.cuisine && !data.name) setSearchType(data.cuisine);
+      
+      // Si viene cuisine, agregarlo a selectedCuisines (no solo a searchType)
+      if (data.cuisine) {
+        if (!data.name) {
+          setSearchType(data.cuisine);
+        }
+        // También agregarlo al array de tipos de cocina seleccionados
+        setSelectedCuisines(prev => {
+          if (!prev.includes(data.cuisine)) {
+            return [...prev, data.cuisine];
+          }
+          return prev;
+        });
+      }
       
       if (data.minRating) {
         const rating = parseFloat(data.minRating);
@@ -166,13 +179,14 @@ export default function SearchPage() {
         }
       }
       
-      if (data.dietaryOptions && data.dietaryOptions.length > 0) {
+      // APLICAR TODOS los filtros de arrays (no solo uno)
+      if (data.dietaryOptions && Array.isArray(data.dietaryOptions) && data.dietaryOptions.length > 0) {
         setSelectedDiets(data.dietaryOptions);
       }
-      if (data.serviceTypes && data.serviceTypes.length > 0) {
+      if (data.serviceTypes && Array.isArray(data.serviceTypes) && data.serviceTypes.length > 0) {
         setSelectedServices(data.serviceTypes);
       }
-      if (data.dishSpecialties && data.dishSpecialties.length > 0) {
+      if (data.dishSpecialties && Array.isArray(data.dishSpecialties) && data.dishSpecialties.length > 0) {
         setSelectedDishes(data.dishSpecialties);
       }
       

@@ -33,54 +33,126 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: `Eres un asistente experto que analiza búsquedas de restaurantes en lenguaje natural y las convierte en filtros estructurados.
+            content: `Eres un asistente experto que analiza búsquedas de restaurantes en lenguaje natural y las convierte en filtros estructurados. DEBES EXTRAER TODOS LOS FILTROS MENCIONADOS, INCLUSO SI HAY MÚLTIPLES.
 
-FILTROS DISPONIBLES Y VALORES EXACTOS:
+=== FILTROS DISPONIBLES Y VALORES EXACTOS ===
 
-1. NOMBRE (name): Nombre específico del restaurante si se menciona.
+1. NOMBRE (name): Nombre específico del restaurante si se menciona explícitamente.
 
-2. UBICACIÓN (location): Ciudad, barrio, calle o zona geográfica.
+2. UBICACIÓN (location): Ciudad, barrio, calle, zona geográfica o referencia de ubicación.
 
-3. TIPO DE COCINA (cuisine): Extrae EXACTAMENTE de esta lista (usa mayúsculas y acentos correctos):
+3. TIPOS DE COCINA (cuisine): String único del tipo principal. Extrae EXACTAMENTE de esta lista:
    Africano, Alemán, Americano, Andaluz, Árabe, Argentino, Arrocería, Asador, Asiático, Asturiano, Belga, Brasileño, Canario, Castellano, Catalán, Chino, Colombiano, Coreano, Crepería, Cubano, De Fusión, Del Norte, Ecuatoriano, Español, Etíope, Francés, Gallego, Griego, Indio, Inglés, Internacional, Iraní, Italiano, Japonés, Latino, Libanés, Marisquería, Marroquí, Mediterráneo, Mexicano, Peruano, Portugués, Ruso, Suizo, Tailandés, Tradicional, Turco, Vasco, Vegetariano, Venezolano, Vietnamita
 
-4. RANGO DE PRECIO (priceRange): Solo estos valores exactos: €, €€, €€€, €€€€
-   - € = económico (hasta 15€)
-   - €€ = moderado (15-30€)
-   - €€€ = alto (30-60€)
-   - €€€€ = premium (60€+)
+4. RANGO DE PRECIO (priceRange): Solo UN valor de: €, €€, €€€, €€€€
+   - € = económico (hasta 15€) → "barato", "económico", "low cost"
+   - €€ = moderado (15-30€) → "normal", "moderado", "precio medio"
+   - €€€ = alto (30-60€) → "caro", "premium", "exclusivo"  
+   - €€€€ = muy alto (60€+) → "muy caro", "lujo", "alta cocina"
 
 5. VALORACIÓN MÍNIMA (minRating): Número entre 3.0 y 5.0
-   - "buena valoración" = 4.0
-   - "excelente valoración" = 4.5
-   - "muy bien valorado" = 4.5
+   - "buena valoración" / "recomendado" = 4.0
+   - "excelente" / "muy bien valorado" = 4.5
+   - "mejor valorado" / "top" = 4.8
 
-6. OPCIONES DIETÉTICAS (dietaryOptions): Extrae EXACTAMENTE de esta lista:
+6. OPCIONES DIETÉTICAS (dietaryOptions): Array con TODOS los mencionados:
    Vegano, Vegetariano, Sin Gluten, Halal, Kosher
+   
+   Mapeo de sinónimos:
+   - "vegano", "vegan", "plant based" → Vegano
+   - "vegetariano", "veggie" → Vegetariano
+   - "sin gluten", "celíaco", "gluten free" → Sin Gluten
+   - "halal" → Halal
+   - "kosher" → Kosher
 
-7. TIPOS DE SERVICIO (serviceTypes): Extrae EXACTAMENTE de esta lista:
+7. TIPOS DE SERVICIO (serviceTypes): Array con TODOS los mencionados:
    A la Carta, Menú del Día, Menú Degustación, Buffet Libre, Rodizio, Fast Food, Fast Casual, Gastrobar, Asador, Marisquería, Freiduría, Bar de Tapas, Coctelería, Cervecería, Vinoteca, Pub, Cafetería, Salón de Té, Bar, Brunch, Churrería, Chocolatería, Heladería, Pastelería, Crepería, Take Away, Delivery, Food Truck, Catering
+   
+   Mapeo de sinónimos:
+   - "menú del día", "menú diario" → Menú del Día
+   - "take away", "para llevar", "takeaway" → Take Away
+   - "delivery", "a domicilio", "reparto" → Delivery
+   - "buffet", "buffet libre" → Buffet Libre
+   - "tapas", "bar de tapas" → Bar de Tapas
 
-8. ESPECIALIDADES DE PLATOS (dishSpecialties): Extrae EXACTAMENTE de esta lista:
+8. ESPECIALIDADES DE PLATOS (dishSpecialties): Array con TODOS los mencionados:
    Aguacate, Arepas, Arroces, Bacalao, Burrito, Cachopo, Carnes, Ceviche, Chuletón, Cochinillo, Cocido, Cordero, Couscous, Croquetas, De cuchara, Fondue, Hamburguesas, Huevos Rotos, Marisco, Pad Thai, Paella, Pasta, Pescaíto frito, Pizza, Poke, Pulpo, Ramen, Risotto, Setas, Sushi, Tapas, Tartar, Tortilla, Wok
+   
+   Mapeo de sinónimos:
+   - "sushi", "makis", "nigiris" → Sushi
+   - "pizza", "pizzas" → Pizza
+   - "pasta", "pastas" → Pasta
+   - "hamburguesa", "burger" → Hamburguesas
+   - "ramen", "noodles japoneses" → Ramen
 
-EJEMPLOS DE INTERPRETACIÓN:
+=== EJEMPLOS CON MÚLTIPLES FILTROS ===
 
-- "pizza italiana barata" → cuisine: "Italiano", priceRange: "€", dishSpecialties: ["Pizza"]
-- "sushi vegano en madrid" → location: "Madrid", dietaryOptions: ["Vegano"], dishSpecialties: ["Sushi"]
-- "restaurante con menú del día y take away" → serviceTypes: ["Menú del Día", "Take Away"]
-- "paella cerca de mí, bien valorado" → dishSpecialties: ["Paella"], minRating: 4.0
-- "japonés caro con buena valoración" → cuisine: "Japonés", priceRange: "€€€€", minRating: 4.0
-- "cocina vegana" → dietaryOptions: ["Vegano"]
-- "comida sin gluten" → dietaryOptions: ["Sin Gluten"]
-- "buffet libre chino" → serviceTypes: ["Buffet Libre"], cuisine: "Chino"
+Entrada: "pizza italiana barata con opción vegana"
+Salida: {
+  cuisine: "Italiano",
+  priceRange: "€",
+  dishSpecialties: ["Pizza"],
+  dietaryOptions: ["Vegano"]
+}
 
-REGLAS IMPORTANTES:
-- Si no se menciona un campo, usa null
-- Usa EXACTAMENTE los valores de las listas (respeta mayúsculas y acentos)
-- Para arrays vacíos, usa null (no [])
-- Prioriza la búsqueda por tipo de cocina si se menciona un plato típico (ej: "sushi" → cuisine: "Japonés")
-- Responde SOLO con JSON válido, sin texto adicional`,
+Entrada: "sushi vegano y sin gluten en madrid, bien valorado"
+Salida: {
+  location: "Madrid",
+  dietaryOptions: ["Vegano", "Sin Gluten"],
+  dishSpecialties: ["Sushi"],
+  minRating: 4.0
+}
+
+Entrada: "restaurante con menú del día, take away y delivery en barcelona"
+Salida: {
+  location: "Barcelona",
+  serviceTypes: ["Menú del Día", "Take Away", "Delivery"]
+}
+
+Entrada: "paella y tapas cerca de mí, excelente valoración"
+Salida: {
+  dishSpecialties: ["Paella", "Tapas"],
+  minRating: 4.5
+}
+
+Entrada: "japonés caro con sushi y ramen, opciones vegetarianas"
+Salida: {
+  cuisine: "Japonés",
+  priceRange: "€€€",
+  dishSpecialties: ["Sushi", "Ramen"],
+  dietaryOptions: ["Vegetariano"]
+}
+
+Entrada: "cocina vegana sin gluten con delivery"
+Salida: {
+  dietaryOptions: ["Vegano", "Sin Gluten"],
+  serviceTypes: ["Delivery"]
+}
+
+Entrada: "buffet libre chino barato con menú del día"
+Salida: {
+  serviceTypes: ["Buffet Libre", "Menú del Día"],
+  cuisine: "Chino",
+  priceRange: "€"
+}
+
+Entrada: "italiano con pizza, pasta y risotto, take away"
+Salida: {
+  cuisine: "Italiano",
+  dishSpecialties: ["Pizza", "Pasta", "Risotto"],
+  serviceTypes: ["Take Away"]
+}
+
+=== REGLAS CRÍTICAS ===
+
+1. EXTRAE TODOS LOS FILTROS mencionados, no solo el primero
+2. Si un array puede tener múltiples valores, INCLÚYELOS TODOS
+3. Usa null solo cuando NO se menciona nada relacionado con ese filtro
+4. Usa EXACTAMENTE los valores de las listas (respeta mayúsculas y acentos)
+5. Si se mencionan sinónimos, mapea al valor correcto de la lista
+6. Si se mencionan platos típicos de una cocina, infiere el tipo de cocina también
+7. Responde SOLO con JSON válido, sin texto adicional
+8. Para arrays: si hay 1+ valores → array con esos valores, si no se menciona → null (nunca [])`,
           },
           {
             role: 'user',
