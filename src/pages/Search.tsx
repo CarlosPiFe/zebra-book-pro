@@ -97,6 +97,16 @@ export default function SearchPage() {
     // Usar name si existe, sino cuisine, sino type (legacy)
     setSearchType(name || cuisine || type);
     
+    // Si viene cuisine en la URL, agregarlo también a selectedCuisines
+    if (cuisine && cuisineTypes.includes(cuisine)) {
+      setSelectedCuisines(prev => {
+        if (!prev.includes(cuisine)) {
+          return [...prev, cuisine];
+        }
+        return prev;
+      });
+    }
+    
     // Aplicar filtros de la URL automáticamente
     if (dietsFromURL.length > 0) setSelectedDiets(dietsFromURL);
     if (servicesFromURL.length > 0) setSelectedServices(servicesFromURL);
@@ -250,9 +260,19 @@ export default function SearchPage() {
     const [minPrice = 0, maxPrice = 150] = priceRange || [0, 150];
     if (minPrice > 0 || maxPrice < 150) {
       filtered = filtered.filter((b) => {
-        if (!b.price_range) return false;
-        const priceMap: Record<string, number> = { '€': 10, '€€': 25, '€€€': 45, '€€€€': 100 };
-        const businessPrice = priceMap[b.price_range] || 0;
+        if (!b.price_range) return minPrice === 0; // Incluir sin precio solo si no hay mínimo
+        
+        // Mapear precios a sus valores medios reales
+        const priceMap: Record<string, number> = { 
+          '€': 7.5,     // 0-15€ → 7.5€ medio
+          '€€': 22.5,   // 15-30€ → 22.5€ medio
+          '€€€': 45,    // 30-60€ → 45€ medio
+          '€€€€': 105   // 60-150€ → 105€ medio
+        };
+        
+        const businessPrice = priceMap[b.price_range];
+        if (!businessPrice) return false;
+        
         return businessPrice >= minPrice && businessPrice <= maxPrice;
       });
     }
