@@ -25,6 +25,7 @@ interface Business {
   dietary_options?: string[] | null;
   service_types?: string[] | null;
   dish_specialties?: string[] | null;
+  seo_keywords?: string | null;
 }
 
 export default function SearchPage() {
@@ -239,14 +240,15 @@ export default function SearchPage() {
       );
     }
 
-    // Filtro de tipo de restaurante
+    // Filtro de tipo de restaurante - incluye seo_keywords
     if (searchType) {
       const type = searchType.toLowerCase();
       filtered = filtered.filter(
         (b) =>
           b.name.toLowerCase().includes(type) ||
           b.cuisine_type?.toLowerCase().includes(type) ||
-          b.description?.toLowerCase().includes(type)
+          b.description?.toLowerCase().includes(type) ||
+          b.seo_keywords?.toLowerCase().includes(type)
       );
     }
 

@@ -50,6 +50,7 @@ interface Business {
   dietary_options?: string[] | null;
   service_types?: string[] | null;
   dish_specialties?: string[] | null;
+  seo_keywords?: string | null;
 }
 
 interface SettingsContentProps {
@@ -136,6 +137,7 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
   const [selectedDietaryOptions, setSelectedDietaryOptions] = useState<string[]>(business.dietary_options || []);
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(business.service_types || []);
   const [selectedDishSpecialties, setSelectedDishSpecialties] = useState<string[]>(business.dish_specialties || []);
+  const [seoKeywords, setSeoKeywords] = useState<string>(business.seo_keywords || "");
 
   const handleCuisineTypeChange = (value: string) => {
     setSelectedCuisineType(value);
@@ -324,6 +326,7 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
           dietary_options: selectedDietaryOptions,
           service_types: selectedServiceTypes,
           dish_specialties: selectedDishSpecialties,
+          seo_keywords: seoKeywords || null,
         })
         .eq("id", business.id);
 
@@ -559,6 +562,24 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
                       </div>
                     ))}
                   </div>
+                </div>
+
+                {/* SEO Keywords - Campo oculto para managers */}
+                <div className="border-t pt-4 space-y-2">
+                  <Label htmlFor="seo-keywords">Palabras Clave SEO (Búsqueda Avanzada)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Añade palabras clave y descripciones que ayuden a los clientes a encontrar tu restaurante. 
+                    Ejemplos: "perfecto para citas románticas", "terraza con vistas", "música en vivo los fines de semana", "ideal para celebraciones".
+                    Este campo no se muestra públicamente, solo mejora los resultados de búsqueda.
+                  </p>
+                  <Textarea
+                    id="seo-keywords"
+                    value={seoKeywords}
+                    onChange={(e) => setSeoKeywords(e.target.value)}
+                    placeholder="Ej: ambiente romántico, perfecto para cenas de negocios, terraza climatizada, vista al mar, ideal para familias con niños..."
+                    rows={3}
+                    className="resize-none"
+                  />
                 </div>
 
                 <Button onClick={handleSubmitSearchFilters} disabled={loading}>

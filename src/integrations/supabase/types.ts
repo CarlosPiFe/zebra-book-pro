@@ -295,6 +295,7 @@ export type Database = {
           phone: string | null
           price_range: string | null
           schedule_view_mode: string
+          seo_keywords: string | null
           service_types: string[] | null
           social_media: Json | null
           special_offer: string | null
@@ -327,6 +328,7 @@ export type Database = {
           phone?: string | null
           price_range?: string | null
           schedule_view_mode?: string
+          seo_keywords?: string | null
           service_types?: string[] | null
           social_media?: Json | null
           special_offer?: string | null
@@ -359,6 +361,7 @@ export type Database = {
           phone?: string | null
           price_range?: string | null
           schedule_view_mode?: string
+          seo_keywords?: string | null
           service_types?: string[] | null
           social_media?: Json | null
           special_offer?: string | null

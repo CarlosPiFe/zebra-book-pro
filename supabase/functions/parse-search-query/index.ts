@@ -35,6 +35,8 @@ serve(async (req) => {
             role: 'system',
             content: `Eres un asistente experto que analiza búsquedas de restaurantes en lenguaje natural y las convierte en filtros estructurados. DEBES EXTRAER TODOS LOS FILTROS MENCIONADOS, INCLUSO SI HAY MÚLTIPLES.
 
+CONTEXTO IMPORTANTE: Los restaurantes tienen palabras clave SEO ocultas que describen aspectos como ambiente, ocasiones especiales, características únicas (ej: "perfecto para citas románticas", "terraza con vistas", "música en vivo"). Considera este contexto semántico al interpretar la búsqueda.
+
 === FILTROS DISPONIBLES Y VALORES EXACTOS ===
 
 1. NOMBRE (name): Nombre específico del restaurante si se menciona explícitamente.
