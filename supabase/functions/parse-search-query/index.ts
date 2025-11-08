@@ -35,7 +35,12 @@ serve(async (req) => {
             role: 'system',
             content: `Eres un asistente experto que analiza búsquedas de restaurantes en lenguaje natural y las convierte en filtros estructurados. DEBES EXTRAER TODOS LOS FILTROS MENCIONADOS, INCLUSO SI HAY MÚLTIPLES.
 
-CONTEXTO IMPORTANTE: Los restaurantes tienen palabras clave SEO ocultas que describen aspectos como ambiente, ocasiones especiales, características únicas (ej: "perfecto para citas románticas", "terraza con vistas", "música en vivo"). Considera este contexto semántico al interpretar la búsqueda.
+CONTEXTO IMPORTANTE: Los restaurantes tienen múltiples campos de texto que debes considerar:
+- Palabras clave SEO ocultas: describen ambiente, ocasiones especiales, características únicas (ej: "perfecto para citas románticas", "terraza con vistas", "música en vivo")
+- Descripción (Acerca de Nosotros): información detallada sobre el restaurante, su historia, especialidades y ambiente
+- Ubicación: dirección completa, barrio, ciudad, referencias geográficas
+
+Al interpretar búsquedas semánticas (ambiente, ocasión, estilo), extrae las palabras clave en el campo "keywords" para buscar en TODOS estos campos de texto.
 
 === FILTROS DISPONIBLES Y VALORES EXACTOS ===
 
@@ -145,6 +150,28 @@ Salida: {
   serviceTypes: ["Take Away"]
 }
 
+Entrada: "restaurante romántico con vistas para cena especial"
+Salida: {
+  keywords: "romántico vistas cena especial"
+}
+
+Entrada: "sitio tranquilo para celebración familiar"
+Salida: {
+  keywords: "tranquilo celebración familiar"
+}
+
+Entrada: "restaurante con terraza en el centro"
+Salida: {
+  location: "centro",
+  keywords: "terraza"
+}
+
+Entrada: "cocina casera tradicional ambiente familiar"
+Salida: {
+  cuisine: "Tradicional",
+  keywords: "cocina casera ambiente familiar"
+}
+
 === REGLAS CRÍTICAS ===
 
 1. EXTRAE TODOS LOS FILTROS mencionados, no solo el primero
@@ -153,8 +180,10 @@ Salida: {
 4. Usa EXACTAMENTE los valores de las listas (respeta mayúsculas y acentos)
 5. Si se mencionan sinónimos, mapea al valor correcto de la lista
 6. Si se mencionan platos típicos de una cocina, infiere el tipo de cocina también
-7. Responde SOLO con JSON válido, sin texto adicional
-8. Para arrays: si hay 1+ valores → array con esos valores, si no se menciona → null (nunca [])`,
+7. CRÍTICO - keywords: Extrae palabras sobre AMBIENTE, OCASIÓN, CARACTERÍSTICAS ESPECIALES (ej: "romántico", "vistas", "terraza", "música en vivo", "familiar", "elegante", "acogedor"). Estas se buscarán en descripción, ubicación y palabras clave SEO
+8. Si el usuario busca por ubicación específica, ponlo en "location" Y también en "keywords" si menciona características del lugar
+9. Responde SOLO con JSON válido, sin texto adicional
+10. Para arrays: si hay 1+ valores → array con esos valores, si no se menciona → null (nunca [])`,
           },
           {
             role: 'user',

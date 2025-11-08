@@ -141,9 +141,14 @@ export default function SearchPage() {
       if (data.name) setSearchType(data.name);
       if (data.location) setSearchLocation(data.location);
       
+      // Si vienen keywords semánticos, agregarlos al searchType para búsqueda amplia
+      if (data.keywords) {
+        setSearchType(prev => prev ? `${prev} ${data.keywords}` : data.keywords);
+      }
+      
       // Si viene cuisine, agregarlo a selectedCuisines (no solo a searchType)
       if (data.cuisine) {
-        if (!data.name) {
+        if (!data.name && !data.keywords) {
           setSearchType(data.cuisine);
         }
         // También agregarlo al array de tipos de cocina seleccionados
@@ -225,16 +230,24 @@ export default function SearchPage() {
       );
     }
 
-    // Filtro de tipo de restaurante - incluye seo_keywords
+    // Filtro de tipo de restaurante - búsqueda amplia en TODOS los campos de texto
     if (searchType) {
-      const type = searchType.toLowerCase();
-      filtered = filtered.filter(
-        (b) =>
-          b.name.toLowerCase().includes(type) ||
-          b.cuisine_type?.toLowerCase().includes(type) ||
-          b.description?.toLowerCase().includes(type) ||
-          b.seo_keywords?.toLowerCase().includes(type)
-      );
+      const terms = searchType.toLowerCase().split(' ').filter(t => t.length > 2);
+      filtered = filtered.filter((b) => {
+        const searchableText = [
+          b.name,
+          b.cuisine_type,
+          b.description,
+          b.address,
+          b.seo_keywords
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        
+        // Debe coincidir con al menos uno de los términos de búsqueda
+        return terms.some(term => searchableText.includes(term));
+      });
     }
 
     // Filtro de rating
