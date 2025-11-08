@@ -233,7 +233,7 @@ export default function SearchPage() {
 
     // Filtro de tipo de restaurante - búsqueda amplia en TODOS los campos de texto
     if (searchType) {
-      const terms = searchType.toLowerCase().split(' ').filter(t => t.length > 2);
+      const terms = searchType.toLowerCase().split(' ').filter(t => t.length > 3); // Solo términos de más de 3 letras
       filtered = filtered.filter((b) => {
         const searchableText = [
           b.name,
@@ -246,8 +246,12 @@ export default function SearchPage() {
           .join(' ')
           .toLowerCase();
         
-        // Debe coincidir con al menos uno de los términos de búsqueda
-        return terms.some(term => searchableText.includes(term));
+        // Debe coincidir con al menos uno de los términos de búsqueda (palabra completa o al inicio de palabra)
+        return terms.some(term => {
+          // Buscar el término como palabra completa o al inicio de una palabra
+          const regex = new RegExp(`\\b${term}`, 'i');
+          return regex.test(searchableText);
+        });
       });
     }
 
