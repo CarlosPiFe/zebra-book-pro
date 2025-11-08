@@ -70,6 +70,7 @@ export default function SearchPage() {
     const cuisine = searchParams.get('cuisine') || "";
     const type = searchParams.get('type') || ""; // legacy support
     const q = searchParams.get('q') || "";
+    const keywords = searchParams.get('keywords') || "";
     const minRatingFromURL = searchParams.get('minRating');
     const priceRangeFromURL = searchParams.get('priceRange');
     
@@ -80,8 +81,8 @@ export default function SearchPage() {
     const cuisinesFromURL = searchParams.getAll('cuisineType');
     
     setSearchLocation(location);
-    // Usar name si existe, sino cuisine, sino type (legacy)
-    setSearchType(name || cuisine || type);
+    // Usar name si existe, sino keywords, sino cuisine, sino type (legacy)
+    setSearchType(name || keywords || cuisine || type);
     
     // Si viene cuisine en la URL, agregarlo también a selectedCuisines
     if (cuisine && cuisineTypes.includes(cuisine)) {
@@ -121,7 +122,7 @@ export default function SearchPage() {
     }
     
     // Si hay un parámetro 'q', interpretarlo con IA
-    if (q && !name && !location && !cuisine && !type) {
+    if (q && !name && !location && !cuisine && !type && !keywords) {
       interpretNaturalQuery(q);
     } else {
       loadBusinesses();
