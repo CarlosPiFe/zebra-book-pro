@@ -233,7 +233,9 @@ export default function SearchPage() {
 
     // Filtro de tipo de restaurante - búsqueda amplia en TODOS los campos de texto
     if (searchType) {
-      const terms = searchType.toLowerCase().split(' ').filter(t => t.length > 3); // Solo términos de más de 3 letras
+      const phrase = searchType.toLowerCase().trim().replace(/\s+/g, ' ');
+      const terms = phrase.split(' ').filter(t => t.length > 3); // Ignorar conectores cortos
+
       filtered = filtered.filter((b) => {
         const searchableText = [
           b.name,
@@ -245,13 +247,17 @@ export default function SearchPage() {
           .filter(Boolean)
           .join(' ')
           .toLowerCase();
-        
-        // Debe coincidir con al menos uno de los términos de búsqueda (palabra completa o al inicio de palabra)
-        return terms.some(term => {
-          // Buscar el término como palabra completa o al inicio de una palabra
-          const regex = new RegExp(`\\b${term}`, 'i');
-          return regex.test(searchableText);
-        });
+
+        const phraseMatch = searchableText.includes(phrase);
+
+        const tokenMatches = terms.reduce((acc, term) => {
+          const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`\\b${escaped}\\b`, 'i');
+          return acc + (regex.test(searchableText) ? 1 : 0);
+        }, 0);
+
+        // Mantener si hay coincidencia por frase completa o al menos 2 tokens coinciden
+        return phraseMatch || tokenMatches >= 2;
       });
     }
 
