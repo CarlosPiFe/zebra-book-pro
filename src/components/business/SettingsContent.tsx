@@ -24,6 +24,13 @@ import { BusinessHours } from "./BusinessHours";
 import { PhotoGalleryManager } from "./PhotoGalleryManager";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
+import { 
+  CUISINE_TYPES_WITH_OTHER, 
+  SERVICE_TYPES, 
+  DISH_SPECIALTIES, 
+  DIETARY_OPTIONS, 
+  PRICE_RANGES 
+} from "@/lib/searchFilters";
 
 interface Business {
   id: string;
@@ -88,37 +95,12 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
     business.booking_mode || "automatic"
   );
 
-  const cuisineTypes = [
-    "Africano", "Alemán", "Americano", "Andaluz", "Árabe", "Argentino", "Arrocería", 
-    "Asador", "Asiático", "Asturiano", "Belga", "Brasileño", "Canario", "Castellano", 
-    "Catalán", "Chino", "Colombiano", "Coreano", "Crepería", "Cubano", "De Fusión", 
-    "Del Norte", "Ecuatoriano", "Español", "Etíope", "Francés", "Gallego", "Griego", 
-    "Indio", "Inglés", "Internacional", "Iraní", "Italiano", "Japonés", "Latino", 
-    "Libanés", "Marisquería", "Marroquí", "Mediterráneo", "Mexicano", "Peruano", 
-    "Portugués", "Ruso", "Suizo", "Tailandés", "Tradicional", "Turco", "Vasco", 
-    "Vegetariano", "Venezolano", "Vietnamita", "Otro"
-  ];
-
-  const serviceTypes = [
-    "A la Carta", "Menú del Día", "Menú Degustación", "Buffet Libre", "Rodizio", 
-    "Fast Food", "Fast Casual", "Gastrobar", "Asador", "Marisquería", "Freiduría", 
-    "Bar de Tapas", "Coctelería", "Cervecería", "Vinoteca", "Pub", 
-    "Cafetería", "Salón de Té", "Bar", "Brunch", "Churrería", "Chocolatería", 
-    "Heladería", "Pastelería", "Crepería", 
-    "Take Away", "Delivery", "Food Truck", "Catering"
-  ];
-
-  const dishTypes = [
-    "Aguacate", "Arepas", "Arroces", "Bacalao", "Burrito", "Cachopo", "Carnes", 
-    "Ceviche", "Chuletón", "Cochinillo", "Cocido", "Cordero", "Couscous", "Croquetas", 
-    "De cuchara", "Fondue", "Hamburguesas", "Huevos Rotos", "Marisco", "Pad Thai", 
-    "Paella", "Pasta", "Pescaíto frito", "Pizza", "Poke", "Pulpo", "Ramen", 
-    "Risotto", "Setas", "Sushi", "Tapas", "Tartar", "Tortilla", "Wok"
-  ];
-
-  const dietTypes = ["Vegano", "Vegetariano", "Sin Gluten", "Halal", "Kosher"];
-  
-  const priceRanges = ["€", "€€", "€€€", "€€€€"];
+  // Datos de filtros - importados de constantes compartidas
+  const cuisineTypes = CUISINE_TYPES_WITH_OTHER;
+  const serviceTypes = SERVICE_TYPES;
+  const dishTypes = DISH_SPECIALTIES;
+  const dietTypes = DIETARY_OPTIONS;
+  const priceRanges = PRICE_RANGES;
 
   // Determinar si el tipo de cocina actual es personalizado
   const isCustomType = Boolean(business.cuisine_type && !cuisineTypes.slice(0, -1).includes(business.cuisine_type));

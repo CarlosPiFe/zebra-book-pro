@@ -34,6 +34,7 @@ interface Business {
   dietary_options?: string[] | null;
   service_types?: string[] | null;
   dish_specialties?: string[] | null;
+  seo_keywords?: string | null;
 }
 
 const ManageBusiness = () => {

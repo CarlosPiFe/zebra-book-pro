@@ -11,6 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Star, Euro, ChefHat, ConciergeBell, UtensilsCrossed, Leaf, SlidersHorizontal } from "lucide-react";
+import { 
+  CUISINE_TYPES, 
+  SERVICE_TYPES, 
+  DISH_SPECIALTIES, 
+  DIETARY_OPTIONS,
+  PRICE_RANGE_VALUES 
+} from "@/lib/searchFilters";
 
 interface Business {
   id: string;
@@ -50,33 +57,11 @@ export default function SearchPage() {
   const [expandedServices, setExpandedServices] = useState(false);
   const [expandedDishes, setExpandedDishes] = useState(false);
 
-  // Datos de filtros
-  const cuisineTypes = [
-    "Africano", "Alemán", "Americano", "Andaluz", "Árabe", "Argentino", "Arrocería", 
-    "Asador", "Asiático", "Asturiano", "Belga", "Brasileño", "Canario", "Castellano", 
-    "Catalán", "Chino", "Colombiano", "Coreano", "Crepería", "Cubano", "De Fusión", 
-    "Del Norte", "Ecuatoriano", "Español", "Etíope", "Francés", "Gallego", "Griego", 
-    "Indio", "Inglés", "Internacional", "Iraní", "Italiano", "Japonés", "Latino", 
-    "Libanés", "Marisquería", "Marroquí", "Mediterráneo", "Mexicano", "Peruano", 
-    "Portugués", "Ruso", "Suizo", "Tailandés", "Tradicional", "Turco", "Vasco", 
-    "Vegetariano", "Venezolano", "Vietnamita"
-  ];
-  const serviceTypes = [
-    "A la Carta", "Menú del Día", "Menú Degustación", "Buffet Libre", "Rodizio", 
-    "Fast Food", "Fast Casual", "Gastrobar", "Asador", "Marisquería", "Freiduría", 
-    "Bar de Tapas", "Coctelería", "Cervecería", "Vinoteca", "Pub", 
-    "Cafetería", "Salón de Té", "Bar", "Brunch", "Churrería", "Chocolatería", 
-    "Heladería", "Pastelería", "Crepería", 
-    "Take Away", "Delivery", "Food Truck", "Catering"
-  ];
-  const dishTypes = [
-    "Aguacate", "Arepas", "Arroces", "Bacalao", "Burrito", "Cachopo", "Carnes", 
-    "Ceviche", "Chuletón", "Cochinillo", "Cocido", "Cordero", "Couscous", "Croquetas", 
-    "De cuchara", "Fondue", "Hamburguesas", "Huevos Rotos", "Marisco", "Pad Thai", 
-    "Paella", "Pasta", "Pescaíto frito", "Pizza", "Poke", "Pulpo", "Ramen", 
-    "Risotto", "Setas", "Sushi", "Tapas", "Tartar", "Tortilla", "Wok"
-  ];
-  const dietTypes = ["Vegano", "Vegetariano", "Sin Gluten", "Halal", "Kosher"];
+  // Datos de filtros - importados de constantes compartidas
+  const cuisineTypes = CUISINE_TYPES;
+  const serviceTypes = SERVICE_TYPES;
+  const dishTypes = DISH_SPECIALTIES;
+  const dietTypes = DIETARY_OPTIONS;
 
   useEffect(() => {
     // Leer parámetros de la URL al cargar
@@ -264,15 +249,7 @@ export default function SearchPage() {
       filtered = filtered.filter((b) => {
         if (!b.price_range) return minPrice === 0; // Incluir sin precio solo si no hay mínimo
         
-        // Mapear precios a sus valores medios reales
-        const priceMap: Record<string, number> = { 
-          '€': 7.5,     // 0-15€ → 7.5€ medio
-          '€€': 22.5,   // 15-30€ → 22.5€ medio
-          '€€€': 45,    // 30-60€ → 45€ medio
-          '€€€€': 105   // 60-150€ → 105€ medio
-        };
-        
-        const businessPrice = priceMap[b.price_range];
+        const businessPrice = PRICE_RANGE_VALUES[b.price_range];
         if (!businessPrice) return false;
         
         return businessPrice >= minPrice && businessPrice <= maxPrice;
