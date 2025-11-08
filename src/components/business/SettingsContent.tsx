@@ -47,9 +47,9 @@ interface Business {
   cuisine_type?: string | null;
   price_range?: string | null;
   special_offer?: string | null;
-  dietary_options?: string[];
-  service_types?: string[];
-  dish_specialties?: string[];
+  dietary_options?: string[] | null;
+  service_types?: string[] | null;
+  dish_specialties?: string[] | null;
 }
 
 interface SettingsContentProps {

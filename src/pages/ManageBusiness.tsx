@@ -28,6 +28,12 @@ interface Business {
   social_media: any;
   booking_additional_message?: string | null;
   schedule_view_mode?: string;
+  cuisine_type?: string | null;
+  price_range?: string | null;
+  special_offer?: string | null;
+  dietary_options?: string[] | null;
+  service_types?: string[] | null;
+  dish_specialties?: string[] | null;
 }
 
 const ManageBusiness = () => {

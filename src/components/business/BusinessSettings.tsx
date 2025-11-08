@@ -49,6 +49,11 @@ interface Business {
   booking_additional_message?: string | null;
   schedule_view_mode?: string;
   booking_mode?: string;
+  price_range?: string | null;
+  special_offer?: string | null;
+  dietary_options?: string[] | null;
+  service_types?: string[] | null;
+  dish_specialties?: string[] | null;
 }
 
 interface BusinessSettingsProps {

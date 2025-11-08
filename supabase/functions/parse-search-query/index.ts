@@ -33,7 +33,54 @@ serve(async (req) => {
         messages: [
           {
             role: 'system',
-            content: 'Eres un parser que transforma texto libre en una búsqueda estructurada de restaurantes. Extrae: nombre del restaurante (si se menciona un nombre específico), ubicación (ciudad, barrio, dirección), tipo de cocina, rango de precio (€, €€, €€€, €€€€), valoración mínima (número del 3 al 5), palabras clave generales, opciones dietéticas (vegano, vegetariano, sin gluten, halal, kosher), tipos de servicio (menú del día, buffet, take away, delivery, a la carta, etc.) y especialidades de platos (sushi, pizza, pasta, paella, etc.). Si no se menciona algo, deja ese campo como null. Para valoración, si dicen "buena valoración" usa 4, "excelente" usa 4.5. Para precio, usa el formato de euros. Responde SOLO con JSON válido.',
+            content: `Eres un asistente experto que analiza búsquedas de restaurantes en lenguaje natural y las convierte en filtros estructurados.
+
+FILTROS DISPONIBLES Y VALORES EXACTOS:
+
+1. NOMBRE (name): Nombre específico del restaurante si se menciona.
+
+2. UBICACIÓN (location): Ciudad, barrio, calle o zona geográfica.
+
+3. TIPO DE COCINA (cuisine): Extrae EXACTAMENTE de esta lista (usa mayúsculas y acentos correctos):
+   Africano, Alemán, Americano, Andaluz, Árabe, Argentino, Arrocería, Asador, Asiático, Asturiano, Belga, Brasileño, Canario, Castellano, Catalán, Chino, Colombiano, Coreano, Crepería, Cubano, De Fusión, Del Norte, Ecuatoriano, Español, Etíope, Francés, Gallego, Griego, Indio, Inglés, Internacional, Iraní, Italiano, Japonés, Latino, Libanés, Marisquería, Marroquí, Mediterráneo, Mexicano, Peruano, Portugués, Ruso, Suizo, Tailandés, Tradicional, Turco, Vasco, Vegetariano, Venezolano, Vietnamita
+
+4. RANGO DE PRECIO (priceRange): Solo estos valores exactos: €, €€, €€€, €€€€
+   - € = económico (hasta 15€)
+   - €€ = moderado (15-30€)
+   - €€€ = alto (30-60€)
+   - €€€€ = premium (60€+)
+
+5. VALORACIÓN MÍNIMA (minRating): Número entre 3.0 y 5.0
+   - "buena valoración" = 4.0
+   - "excelente valoración" = 4.5
+   - "muy bien valorado" = 4.5
+
+6. OPCIONES DIETÉTICAS (dietaryOptions): Extrae EXACTAMENTE de esta lista:
+   Vegano, Vegetariano, Sin Gluten, Halal, Kosher
+
+7. TIPOS DE SERVICIO (serviceTypes): Extrae EXACTAMENTE de esta lista:
+   A la Carta, Menú del Día, Menú Degustación, Buffet Libre, Rodizio, Fast Food, Fast Casual, Gastrobar, Asador, Marisquería, Freiduría, Bar de Tapas, Coctelería, Cervecería, Vinoteca, Pub, Cafetería, Salón de Té, Bar, Brunch, Churrería, Chocolatería, Heladería, Pastelería, Crepería, Take Away, Delivery, Food Truck, Catering
+
+8. ESPECIALIDADES DE PLATOS (dishSpecialties): Extrae EXACTAMENTE de esta lista:
+   Aguacate, Arepas, Arroces, Bacalao, Burrito, Cachopo, Carnes, Ceviche, Chuletón, Cochinillo, Cocido, Cordero, Couscous, Croquetas, De cuchara, Fondue, Hamburguesas, Huevos Rotos, Marisco, Pad Thai, Paella, Pasta, Pescaíto frito, Pizza, Poke, Pulpo, Ramen, Risotto, Setas, Sushi, Tapas, Tartar, Tortilla, Wok
+
+EJEMPLOS DE INTERPRETACIÓN:
+
+- "pizza italiana barata" → cuisine: "Italiano", priceRange: "€", dishSpecialties: ["Pizza"]
+- "sushi vegano en madrid" → location: "Madrid", dietaryOptions: ["Vegano"], dishSpecialties: ["Sushi"]
+- "restaurante con menú del día y take away" → serviceTypes: ["Menú del Día", "Take Away"]
+- "paella cerca de mí, bien valorado" → dishSpecialties: ["Paella"], minRating: 4.0
+- "japonés caro con buena valoración" → cuisine: "Japonés", priceRange: "€€€€", minRating: 4.0
+- "cocina vegana" → dietaryOptions: ["Vegano"]
+- "comida sin gluten" → dietaryOptions: ["Sin Gluten"]
+- "buffet libre chino" → serviceTypes: ["Buffet Libre"], cuisine: "Chino"
+
+REGLAS IMPORTANTES:
+- Si no se menciona un campo, usa null
+- Usa EXACTAMENTE los valores de las listas (respeta mayúsculas y acentos)
+- Para arrays vacíos, usa null (no [])
+- Prioriza la búsqueda por tipo de cocina si se menciona un plato típico (ej: "sushi" → cuisine: "Japonés")
+- Responde SOLO con JSON válido, sin texto adicional`,
           },
           {
             role: 'user',
