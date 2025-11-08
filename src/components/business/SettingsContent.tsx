@@ -471,12 +471,12 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
                 {/* Rango de Precio */}
                 <div className="space-y-2">
                   <Label>Rango de Precio</Label>
-                  <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
+                  <Select value={selectedPriceRange || "none"} onValueChange={(val) => setSelectedPriceRange(val === "none" ? "" : val)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona el rango de precio" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin especificar</SelectItem>
+                      <SelectItem value="none">Sin especificar</SelectItem>
                       {priceRanges.map((range) => (
                         <SelectItem key={range} value={range}>{range} - {range === "€" ? "Económico" : range === "€€" ? "Moderado" : range === "€€€" ? "Alto" : "Premium"}</SelectItem>
                       ))}
