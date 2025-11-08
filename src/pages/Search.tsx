@@ -22,6 +22,9 @@ interface Business {
   price_range?: string | null;
   average_rating?: number | null;
   special_offer?: string | null;
+  dietary_options?: string[] | null;
+  service_types?: string[] | null;
+  dish_specialties?: string[] | null;
 }
 
 export default function SearchPage() {
@@ -229,8 +232,16 @@ export default function SearchPage() {
       filtered = filtered.filter((b) => (b.average_rating || 0) >= minRatingValue);
     }
 
-    // Filtro de precio
-    // TODO: Implementar cuando tengamos precios en formato numérico
+    // Filtro de precio - Convertir rango de precio a valores numéricos para filtrar
+    const [minPrice = 0, maxPrice = 150] = priceRange || [0, 150];
+    if (minPrice > 0 || maxPrice < 150) {
+      filtered = filtered.filter((b) => {
+        if (!b.price_range) return false;
+        const priceMap: Record<string, number> = { '€': 10, '€€': 25, '€€€': 45, '€€€€': 100 };
+        const businessPrice = priceMap[b.price_range] || 0;
+        return businessPrice >= minPrice && businessPrice <= maxPrice;
+      });
+    }
 
     // Filtro de tipo de cocina
     if (selectedCuisines.length > 0) {

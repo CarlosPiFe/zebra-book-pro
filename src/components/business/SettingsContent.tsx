@@ -19,6 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { BusinessHours } from "./BusinessHours";
 import { PhotoGalleryManager } from "./PhotoGalleryManager";
 import { PhoneInput } from "react-international-phone";
@@ -44,6 +45,11 @@ interface Business {
   schedule_view_mode?: string;
   booking_mode?: string;
   cuisine_type?: string | null;
+  price_range?: string | null;
+  special_offer?: string | null;
+  dietary_options?: string[];
+  service_types?: string[];
+  dish_specialties?: string[];
 }
 
 interface SettingsContentProps {
@@ -82,15 +88,36 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
   );
 
   const cuisineTypes = [
-    "Chino",
-    "Japonés",
-    "Español",
-    "Italiano",
-    "Mexicano",
-    "Indio",
-    "Mediterráneo",
-    "Otro"
+    "Africano", "Alemán", "Americano", "Andaluz", "Árabe", "Argentino", "Arrocería", 
+    "Asador", "Asiático", "Asturiano", "Belga", "Brasileño", "Canario", "Castellano", 
+    "Catalán", "Chino", "Colombiano", "Coreano", "Crepería", "Cubano", "De Fusión", 
+    "Del Norte", "Ecuatoriano", "Español", "Etíope", "Francés", "Gallego", "Griego", 
+    "Indio", "Inglés", "Internacional", "Iraní", "Italiano", "Japonés", "Latino", 
+    "Libanés", "Marisquería", "Marroquí", "Mediterráneo", "Mexicano", "Peruano", 
+    "Portugués", "Ruso", "Suizo", "Tailandés", "Tradicional", "Turco", "Vasco", 
+    "Vegetariano", "Venezolano", "Vietnamita", "Otro"
   ];
+
+  const serviceTypes = [
+    "A la Carta", "Menú del Día", "Menú Degustación", "Buffet Libre", "Rodizio", 
+    "Fast Food", "Fast Casual", "Gastrobar", "Asador", "Marisquería", "Freiduría", 
+    "Bar de Tapas", "Coctelería", "Cervecería", "Vinoteca", "Pub", 
+    "Cafetería", "Salón de Té", "Bar", "Brunch", "Churrería", "Chocolatería", 
+    "Heladería", "Pastelería", "Crepería", 
+    "Take Away", "Delivery", "Food Truck", "Catering"
+  ];
+
+  const dishTypes = [
+    "Aguacate", "Arepas", "Arroces", "Bacalao", "Burrito", "Cachopo", "Carnes", 
+    "Ceviche", "Chuletón", "Cochinillo", "Cocido", "Cordero", "Couscous", "Croquetas", 
+    "De cuchara", "Fondue", "Hamburguesas", "Huevos Rotos", "Marisco", "Pad Thai", 
+    "Paella", "Pasta", "Pescaíto frito", "Pizza", "Poke", "Pulpo", "Ramen", 
+    "Risotto", "Setas", "Sushi", "Tapas", "Tartar", "Tortilla", "Wok"
+  ];
+
+  const dietTypes = ["Vegano", "Vegetariano", "Sin Gluten", "Halal", "Kosher"];
+  
+  const priceRanges = ["€", "€€", "€€€", "€€€€"];
 
   // Determinar si el tipo de cocina actual es personalizado
   const isCustomType = Boolean(business.cuisine_type && !cuisineTypes.slice(0, -1).includes(business.cuisine_type));
@@ -102,6 +129,13 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
     isCustomType ? business.cuisine_type || "" : ""
   );
   const [showCustomInput, setShowCustomInput] = useState<boolean>(isCustomType);
+  
+  // Estados para filtros de búsqueda
+  const [selectedPriceRange, setSelectedPriceRange] = useState<string>(business.price_range || "");
+  const [specialOffer, setSpecialOffer] = useState<string>(business.special_offer || "");
+  const [selectedDietaryOptions, setSelectedDietaryOptions] = useState<string[]>(business.dietary_options || []);
+  const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(business.service_types || []);
+  const [selectedDishSpecialties, setSelectedDishSpecialties] = useState<string[]>(business.dish_specialties || []);
 
   const handleCuisineTypeChange = (value: string) => {
     setSelectedCuisineType(value);
@@ -279,6 +313,39 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
     }
   };
 
+  const handleSubmitSearchFilters = async () => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("businesses")
+        .update({
+          price_range: selectedPriceRange || null,
+          special_offer: specialOffer || null,
+          dietary_options: selectedDietaryOptions,
+          service_types: selectedServiceTypes,
+          dish_specialties: selectedDishSpecialties,
+        })
+        .eq("id", business.id);
+
+      if (error) throw error;
+      toast.success("Información de búsqueda actualizada correctamente");
+      onUpdate();
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error al actualizar la información de búsqueda");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleArrayItem = (item: string, array: string[], setter: (val: string[]) => void) => {
+    if (array.includes(item)) {
+      setter(array.filter(i => i !== item));
+    } else {
+      setter([...array, item]);
+    }
+  };
+
   const renderContent = () => {
     switch (activeSubSection) {
       case "business-info":
@@ -359,53 +426,147 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
 
       case "restaurant-type":
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Utensils className="h-5 w-5" />
-                Tipo de Restaurante
-              </CardTitle>
-              <CardDescription>
-                Selecciona el tipo de cocina que ofrece tu restaurante
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="cuisine-type">Tipo de cocina</Label>
-                <Select
-                  value={selectedCuisineType}
-                  onValueChange={handleCuisineTypeChange}
-                >
-                  <SelectTrigger className="w-full bg-background">
-                    <SelectValue placeholder="Selecciona un tipo de cocina" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background z-50">
-                    {cuisineTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {showCustomInput && (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Utensils className="h-5 w-5" />
+                  Tipo de Restaurante
+                </CardTitle>
+                <CardDescription>
+                  Selecciona el tipo de cocina que ofrece tu restaurante
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="custom-cuisine">Especifica el tipo de cocina</Label>
+                  <Label htmlFor="cuisine-type">Tipo de cocina</Label>
+                  <Select
+                    value={selectedCuisineType}
+                    onValueChange={handleCuisineTypeChange}
+                  >
+                    <SelectTrigger className="w-full bg-background">
+                      <SelectValue placeholder="Selecciona un tipo de cocina" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background z-50 max-h-[300px]">
+                      {cuisineTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {showCustomInput && (
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-cuisine">Especifica el tipo de cocina</Label>
+                    <Input
+                      id="custom-cuisine"
+                      placeholder="Ej: Fusión asiática, Vegano, etc."
+                      value={customCuisineType}
+                      onChange={(e) => setCustomCuisineType(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <Button onClick={handleSubmitCuisineType} disabled={loading}>
+                  {loading ? "Guardando..." : "Guardar Tipo de Cocina"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Información de Búsqueda</CardTitle>
+                <CardDescription>
+                  Configura cómo aparecerá tu restaurante en los resultados de búsqueda
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Rango de Precio */}
+                <div className="space-y-2">
+                  <Label>Rango de Precio</Label>
+                  <Select value={selectedPriceRange} onValueChange={setSelectedPriceRange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el rango de precio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Sin especificar</SelectItem>
+                      {priceRanges.map((range) => (
+                        <SelectItem key={range} value={range}>{range} - {range === "€" ? "Económico" : range === "€€" ? "Moderado" : range === "€€€" ? "Alto" : "Premium"}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Oferta Especial */}
+                <div className="space-y-2">
+                  <Label htmlFor="special-offer">Oferta Especial</Label>
                   <Input
-                    id="custom-cuisine"
-                    placeholder="Ej: Fusión asiática, Vegano, etc."
-                    value={customCuisineType}
-                    onChange={(e) => setCustomCuisineType(e.target.value)}
+                    id="special-offer"
+                    placeholder="Ej: 20% descuento en menú del día"
+                    value={specialOffer}
+                    onChange={(e) => setSpecialOffer(e.target.value)}
                   />
                 </div>
-              )}
 
-              <Button onClick={handleSubmitCuisineType} disabled={loading}>
-                {loading ? "Guardando..." : "Guardar Tipo de Cocina"}
-              </Button>
-            </CardContent>
-          </Card>
+                {/* Opciones Dietéticas */}
+                <div className="space-y-2">
+                  <Label>Opciones Dietéticas</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {dietTypes.map((diet) => (
+                      <div key={diet} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`diet-${diet}`}
+                          checked={selectedDietaryOptions.includes(diet)}
+                          onCheckedChange={() => toggleArrayItem(diet, selectedDietaryOptions, setSelectedDietaryOptions)}
+                        />
+                        <Label htmlFor={`diet-${diet}`} className="cursor-pointer">{diet}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tipos de Servicio */}
+                <div className="space-y-2">
+                  <Label>Tipos de Servicio</Label>
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded">
+                    {serviceTypes.map((service) => (
+                      <div key={service} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`service-${service}`}
+                          checked={selectedServiceTypes.includes(service)}
+                          onCheckedChange={() => toggleArrayItem(service, selectedServiceTypes, setSelectedServiceTypes)}
+                        />
+                        <Label htmlFor={`service-${service}`} className="cursor-pointer text-sm">{service}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Especialidades de Platos */}
+                <div className="space-y-2">
+                  <Label>Especialidades de Platos</Label>
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 border rounded">
+                    {dishTypes.map((dish) => (
+                      <div key={dish} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`dish-${dish}`}
+                          checked={selectedDishSpecialties.includes(dish)}
+                          onCheckedChange={() => toggleArrayItem(dish, selectedDishSpecialties, setSelectedDishSpecialties)}
+                        />
+                        <Label htmlFor={`dish-${dish}`} className="cursor-pointer text-sm">{dish}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Button onClick={handleSubmitSearchFilters} disabled={loading}>
+                  {loading ? "Guardando..." : "Guardar Información de Búsqueda"}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         );
 
       case "business-hours":

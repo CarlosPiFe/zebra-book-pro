@@ -16,6 +16,9 @@ interface SearchRestaurantCardProps {
     price_range?: string | null;
     average_rating?: number | null;
     special_offer?: string | null;
+    dietary_options?: string[] | null;
+    service_types?: string[] | null;
+    dish_specialties?: string[] | null;
   };
   onClick: () => void;
 }
@@ -136,6 +139,16 @@ export const SearchRestaurantCard = ({ business, onClick }: SearchRestaurantCard
             <span>/</span>
             <User size={14} className="mt-0.5" />
           </div>
+          {business.special_offer && (
+            <p className="text-xs text-primary font-semibold mt-1">
+              🎉 {business.special_offer}
+            </p>
+          )}
+          {business.dietary_options && business.dietary_options.length > 0 && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {business.dietary_options.slice(0, 3).join(" · ")}
+            </p>
+          )}
         </div>
 
         {/* Contenido Inferior: Botones de Hora */}

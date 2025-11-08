@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { format, startOfDay, isBefore, addDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseDateTimeInMadrid, formatDateInMadrid } from "@/lib/timezone";
-import { ArrowLeft, Calendar, Clock, CheckCircle2, Download, Info, Phone, Mail, Heart, Star, MapPin, UtensilsCrossed, Users } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, CheckCircle2, Download, Info, Phone, Mail, Heart, Star, MapPin, UtensilsCrossed, Users, Leaf } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -49,6 +49,10 @@ interface Business {
   booking_additional_message?: string | null;
   price_range?: string | null;
   average_rating?: number | null;
+  special_offer?: string | null;
+  dietary_options?: string[] | null;
+  service_types?: string[] | null;
+  dish_specialties?: string[] | null;
 }
 
 interface Room {
@@ -827,6 +831,17 @@ export default function BusinessDetails() {
                 {business.cuisine_type || "Restaurante"}
                 {business.price_range && ` · ${business.price_range}`}
               </p>
+              {business.dietary_options && business.dietary_options.length > 0 && (
+                <p className="flex items-center gap-1">
+                  <Leaf className="h-3 w-3" />
+                  {business.dietary_options.join(", ")}
+                </p>
+              )}
+              {business.special_offer && (
+                <p className="text-primary font-semibold">
+                  🎉 {business.special_offer}
+                </p>
+              )}
               {business.average_rating && (
                 <p className="flex items-center gap-1 font-semibold text-foreground">
                   <Star className="h-4 w-4 fill-primary text-primary" />
