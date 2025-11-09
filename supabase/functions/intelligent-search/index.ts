@@ -88,8 +88,10 @@ serve(async (req) => {
 
 🔍 PROCESO DE BÚSQUEDA (MULTI-PASO):
 
-PASO 1: INTERPRETAR LA CONSULTA
+PASO 1: INTERPRETAR LA CONSULTA CON MÁXIMA PRECISIÓN
 - Extraer intención del usuario (ubicación, tipo de cocina, precio, ambiente, ocasión, platos específicos, etc.)
+- **CRÍTICO: Detectar restricciones temporales** (días específicos: "el viernes", "los martes", horarios: "por la noche", temporadas)
+- **CRÍTICO: Identificar palabras restrictivas** ("solo", "únicamente", "excepto", "no", "nunca")
 - Identificar filtros explícitos e implícitos
 - Detectar keywords semánticas (ej: "romántico", "familiar", "terraza", "vistas")
 
@@ -99,6 +101,7 @@ PASO 2: APLICAR FILTROS PROGRESIVOS
    - Tipo de cocina específica
    - Opciones dietéticas críticas (vegano, sin gluten, etc.)
    - Rango de precio
+   - **RESTRICCIONES TEMPORALES**: Si el usuario pide un día/horario específico, el restaurante DEBE ofrecerlo en ese momento
    
 2. Filtros suaves (NICE TO HAVE):
    - Rating mínimo sugerido (default: 3.5+)
@@ -111,11 +114,14 @@ PASO 2: APLICAR FILTROS PROGRESIVOS
    - Sinónimos y variaciones
    - Contexto de la consulta
 
-PASO 3: VALIDAR Y RANKEAR RESULTADOS
-- Verificar que cada resultado cumple los criterios
+PASO 3: VALIDAR Y RANKEAR RESULTADOS CON RAZONAMIENTO ESTRICTO
+- **VALIDACIÓN CRÍTICA**: Lee CUIDADOSAMENTE la description de cada restaurante candidato
+- **SI el usuario pidió algo en un día/horario específico Y la description dice "solo [otro día]" o "únicamente [otro horario]" → DESCARTA ese restaurante**
+- **SI la description contiene palabras negativas ("no", "excepto", "sin") relacionadas con la consulta → DESCARTA ese restaurante**
+- Verificar que cada resultado cumple TODOS los criterios
 - Calcular score de relevancia (0-100)
 - Ordenar por: score de relevancia > rating > nombre
-- Explicar POR QUÉ cada restaurante es relevante
+- Explicar POR QUÉ cada restaurante es relevante Y por qué otros fueron descartados
 
 PASO 4: GENERAR RESPUESTA ESTRUCTURADA
 {
@@ -137,18 +143,30 @@ PASO 4: GENERAR RESPUESTA ESTRUCTURADA
     "minRating": 4.0,
     "keywords": "terraza vistas"
   },
-  "searchStrategy": "Filtrado por ubicación + tipo de cocina + platos específicos + keywords de ambiente",
+  "searchStrategy": "Filtrado por ubicación + tipo de cocina + platos específicos + keywords de ambiente + validación temporal estricta",
   "totalMatches": 3
 }
 
-⚠️ REGLAS CRÍTICAS:
-1. Si NO hay resultados con filtros duros, relaja SOLO los filtros suaves
-2. SIEMPRE explica por qué cada restaurante es relevante
-3. MÁXIMO 10 resultados (los más relevantes)
-4. Si la consulta es ambigua, interpreta con contexto razonable
-5. Prioriza calidad sobre cantidad
+⚠️ REGLAS CRÍTICAS - VALIDACIÓN TEMPORAL Y NEGATIVA:
+1. **REGLA TEMPORAL ESTRICTA**: Si el usuario menciona un día específico (lunes, martes, miércoles, jueves, viernes, sábado, domingo) O un horario específico:
+   - Lee la description de cada candidato buscando palabras como "solo", "únicamente", "excepto", "días", horarios
+   - SI encuentras restricciones temporales que NO coinciden con lo que pidió el usuario → DESCARTA ese restaurante
+   - Ejemplo: Usuario pide "viernes" + Restaurante dice "mariachis solo los jueves" = NO INCLUIR
+   
+2. **REGLA DE NEGACIÓN ESTRICTA**: Si la description contiene "no", "sin", "excepto" relacionado con algo que el usuario pidió → DESCARTA
+   - Ejemplo: Usuario pide "mascotas" + Restaurante dice "no se permiten mascotas" = NO INCLUIR
+
+3. Si NO hay resultados con filtros duros + validación temporal, relaja SOLO los filtros suaves (NO las restricciones temporales)
+
+4. SIEMPRE explica por qué cada restaurante es relevante Y menciona si validaste restricciones temporales
+
+5. MÁXIMO 10 resultados (los más relevantes)
+
 6. Si hay keywords semánticas, búscalas en description, seo_keywords y address
+
 7. Considera sinónimos (ej: "barato" = "€", "caro" = "€€€", "veggie" = "Vegetariano")
+
+8. **PRIORIZA PRECISIÓN sobre cantidad**: Mejor devolver 0 resultados correctos que 5 resultados incorrectos
 
 📋 FILTROS DISPONIBLES:
 ${JSON.stringify(availableFilters, null, 2)}
@@ -165,13 +183,13 @@ ${JSON.stringify(restaurantContext, null, 2)}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-nano',
+        model: 'gpt-5',
         service_tier: "priority",
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Búsqueda del usuario: "${query}"` }
         ],
-        max_completion_tokens: 4000, // Mayor capacidad para análisis completo
+        max_completion_tokens: 6000, // Mayor capacidad para análisis completo y validación estricta
         response_format: {
           type: 'json_schema',
           json_schema: {
