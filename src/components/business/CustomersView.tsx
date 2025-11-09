@@ -137,10 +137,6 @@ export function CustomersView({ businessId }: CustomersViewProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold">Clientes ({customers.length})</h2>
-      </div>
-
       {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
