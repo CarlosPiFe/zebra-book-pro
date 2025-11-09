@@ -896,11 +896,11 @@ export function TablesView({ businessId }: TablesViewProps) {
 
         {/* Tabs de salas - Barra horizontal fija */}
         {rooms.length > 0 && (
-          <div className="flex w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 overflow-x-auto">
+          <div className="flex w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 overflow-x-auto gap-2">
             <button
               onClick={() => setSelectedRoomId(null)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 border-b-2 font-medium transition-all text-sm whitespace-nowrap",
+                "flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-all text-base whitespace-nowrap",
                 selectedRoomId === null
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
@@ -913,7 +913,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                 key={room.id}
                 onClick={() => setSelectedRoomId(room.id)}
                 className={cn(
-                  "flex items-center gap-2 px-4 py-2 border-b-2 font-medium transition-all text-sm whitespace-nowrap",
+                  "flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-all text-base whitespace-nowrap",
                   selectedRoomId === room.id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
