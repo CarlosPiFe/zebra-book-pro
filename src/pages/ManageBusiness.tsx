@@ -7,7 +7,7 @@ import { CalendarView } from "@/components/business/CalendarView";
 import { BookingsView } from "@/components/business/BookingsView";
 import { TablesView } from "@/components/business/TablesView";
 import { MenuView } from "@/components/business/MenuView";
-import { EmployeesView } from "@/components/business/EmployeesView";
+import { PeopleView } from "@/components/business/PeopleView";
 import { WeeklyScheduleView } from "@/components/business/WeeklyScheduleView";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { MainSidebar } from "@/components/business/MainSidebar";
@@ -117,7 +117,7 @@ const ManageBusiness = () => {
       case "menu":
         return <MenuView businessId={business.id} />;
       case "employees":
-        return <EmployeesView businessId={business.id} />;
+        return <PeopleView businessId={business.id} />;
       case "schedules":
         return <WeeklyScheduleView businessId={business.id} scheduleViewMode={business.schedule_view_mode || 'editable'} />;
       case "settings":

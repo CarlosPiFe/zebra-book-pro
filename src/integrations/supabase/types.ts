@@ -422,6 +422,50 @@ export type Database = {
           },
         ]
       }
+      customer_notes: {
+        Row: {
+          business_id: string
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          rating: number | null
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          client_email?: string | null
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          rating?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_notes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       employee_notifications: {
         Row: {
           business_id: string
