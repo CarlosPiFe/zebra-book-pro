@@ -44,9 +44,9 @@ export function BookingsView({ businessId }: BookingsViewProps) {
   const [searchParams] = useSearchParams();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState<Date>(() => {
+  const [selectedDate, setSelectedDate] = useState<Date | null>(() => {
     const dateParam = searchParams.get("date");
-    return dateParam ? new Date(dateParam) : new Date();
+    return dateParam ? new Date(dateParam) : null;
   });
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [searchName, setSearchName] = useState<string>("");
@@ -221,10 +221,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
 
   const loadBookings = async () => {
     try {
-      // Usar la fecha directamente sin conversión de zona horaria
-      const dateString = format(selectedDate, "yyyy-MM-dd");
-      
-      console.log("Loading bookings for:", { businessId, dateString, selectedTime });
+      console.log("Loading bookings for:", { businessId, selectedDate, selectedTime });
       
       let query = supabase
         .from("bookings")
@@ -235,9 +232,16 @@ export function BookingsView({ businessId }: BookingsViewProps) {
           )
         `)
         .eq("business_id", businessId)
-        .eq("booking_date", dateString)
+        .order("booking_date", { ascending: false })
         .order("start_time", { ascending: true });
 
+      // Solo aplicar filtro de fecha si hay una fecha seleccionada
+      if (selectedDate) {
+        const dateString = format(selectedDate, "yyyy-MM-dd");
+        query = query.eq("booking_date", dateString);
+      }
+
+      // Solo aplicar filtro de hora si hay una hora seleccionada
       if (selectedTime) {
         query = query
           .lte("start_time", selectedTime)
@@ -335,20 +339,28 @@ export function BookingsView({ businessId }: BookingsViewProps) {
                 <h3 className="text-sm font-medium">Filtros</h3>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Fecha</Label>
+                    <Label>Fecha (opcional)</Label>
                     <DatePicker
-                      date={selectedDate}
-                      onDateChange={(date) => date && setSelectedDate(date)}
-                      placeholder="Seleccionar fecha"
+                      date={selectedDate || undefined}
+                      onDateChange={(date) => setSelectedDate(date || null)}
+                      placeholder="Todas las fechas"
                       onPreviousDay={() => {
-                        const newDate = new Date(selectedDate);
-                        newDate.setDate(newDate.getDate() - 1);
-                        setSelectedDate(newDate);
+                        if (selectedDate) {
+                          const newDate = new Date(selectedDate);
+                          newDate.setDate(newDate.getDate() - 1);
+                          setSelectedDate(newDate);
+                        } else {
+                          setSelectedDate(new Date());
+                        }
                       }}
                       onNextDay={() => {
-                        const newDate = new Date(selectedDate);
-                        newDate.setDate(newDate.getDate() + 1);
-                        setSelectedDate(newDate);
+                        if (selectedDate) {
+                          const newDate = new Date(selectedDate);
+                          newDate.setDate(newDate.getDate() + 1);
+                          setSelectedDate(newDate);
+                        } else {
+                          setSelectedDate(new Date());
+                        }
                       }}
                     />
                   </div>
@@ -379,7 +391,7 @@ export function BookingsView({ businessId }: BookingsViewProps) {
       </div>
 
       {(() => {
-        // Filtrar reservas por nombre del comensal
+        // Filtrar reservas por nombre del comensal solo si hay texto de búsqueda
         const filteredBookings = bookings.filter((booking) => {
           if (!searchName) return true;
           return booking.client_name?.toLowerCase().includes(searchName.toLowerCase());
@@ -390,21 +402,26 @@ export function BookingsView({ businessId }: BookingsViewProps) {
         const currentTime = format(now, "HH:mm:ss");
         const currentDate = format(now, "yyyy-MM-dd");
 
-        // Separar reservas pasadas y futuras/actuales
+        // Separar reservas pasadas y futuras/actuales solo si NO hay filtro de fecha
         const pastBookings: Booking[] = [];
         const activeBookings: Booking[] = [];
 
         filteredBookings.forEach((booking) => {
-          // Una reserva es "pasada" si su fecha es anterior a hoy
-          // O si su fecha es hoy y su hora de finalización ya pasó
-          const isPast = 
-            booking.booking_date < currentDate || 
-            (booking.booking_date === currentDate && booking.end_time < currentTime);
-          
-          if (isPast) {
-            pastBookings.push(booking);
-          } else {
+          // Si hay filtro de fecha aplicado, todas las reservas van a activeBookings
+          if (selectedDate) {
             activeBookings.push(booking);
+          } else {
+            // Una reserva es "pasada" si su fecha es anterior a hoy
+            // O si su fecha es hoy y su hora de finalización ya pasó
+            const isPast = 
+              booking.booking_date < currentDate || 
+              (booking.booking_date === currentDate && booking.end_time < currentTime);
+            
+            if (isPast) {
+              pastBookings.push(booking);
+            } else {
+              activeBookings.push(booking);
+            }
           }
         });
 
