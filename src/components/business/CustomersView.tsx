@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, Phone, Calendar, Star } from "lucide-react";
+import { Search, Mail, Phone, Star, UserPlus } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
-import { CustomerDetailSheet } from "./CustomerDetailSheet";
+import { CustomersOverview } from "./CustomersOverview";
 import { format, parse } from "date-fns";
 import { es } from "date-fns/locale";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
 
 interface Customer {
   client_name: string;
@@ -28,7 +30,6 @@ export function CustomersView({ businessId }: CustomersViewProps) {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [detailSheetOpen, setDetailSheetOpen] = useState(false);
 
   useEffect(() => {
     loadCustomers();
@@ -128,7 +129,15 @@ export function CustomersView({ businessId }: CustomersViewProps) {
 
   const handleCustomerClick = (customer: Customer) => {
     setSelectedCustomer(customer);
-    setDetailSheetOpen(true);
+  };
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
   };
 
   if (loading) {
@@ -136,114 +145,142 @@ export function CustomersView({ businessId }: CustomersViewProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar por nombre o correo electrónico..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* Customer List */}
-      {filteredCustomers.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center text-muted-foreground py-8">
-              {customers.length === 0 ? (
-                <>
-                  <p className="text-lg font-medium mb-2">
-                    Aún no tienes clientes registrados
-                  </p>
-                  <p className="text-sm">
-                    Cuando recibas reservas, aparecerán aquí
-                  </p>
-                </>
-              ) : (
-                <p>No se encontraron clientes con ese criterio de búsqueda</p>
-              )}
-            </div>
-          </CardContent>
+    <div className="h-full flex flex-col overflow-hidden">
+      {customers.length === 0 ? (
+        <Card className="p-8 text-center">
+          <UserPlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <h3 className="text-lg font-semibold mb-2">No hay clientes</h3>
+          <p className="text-muted-foreground mb-4">
+            Cuando recibas reservas, los clientes aparecerán aquí
+          </p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredCustomers.map((customer) => (
-            <Card
-              key={customer.client_email}
-              className="cursor-pointer hover:shadow-md transition-all hover:border-primary/50"
-              onClick={() => handleCustomerClick(customer)}
-            >
-              <CardContent className="p-6 space-y-4">
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-lg truncate">
-                    {customer.client_name}
-                  </h3>
+        <div className="flex gap-6 h-full overflow-hidden min-h-0">
+          {/* Customer List - Left Column */}
+          <div className="w-80 flex-shrink-0 flex flex-col">
+            {/* Search Bar */}
+            <div className="relative mb-4 flex-shrink-0">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar cliente..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
 
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Mail className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{customer.client_email}</span>
-                  </div>
-
-                  {customer.client_phone && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="h-3 w-3 flex-shrink-0" />
-                      <span>{customer.client_phone}</span>
+            <div className="h-full overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+              {filteredCustomers.length === 0 ? (
+                <Card className="p-6">
+                  <p className="text-center text-muted-foreground text-sm">
+                    No se encontraron clientes
+                  </p>
+                </Card>
+              ) : (
+                filteredCustomers.map((customer) => (
+                  <Card
+                    key={customer.client_email}
+                    className={cn(
+                      "p-4 cursor-pointer transition-all hover:shadow-md flex-shrink-0",
+                      selectedCustomer?.client_email === customer.client_email
+                        ? "ring-2 ring-primary bg-accent/50"
+                        : "hover:bg-accent/50"
+                    )}
+                    onClick={() => handleCustomerClick(customer)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12 flex-shrink-0">
+                        <AvatarFallback>{getInitials(customer.client_name)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold truncate">{customer.client_name}</h3>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{customer.client_email}</span>
+                        </div>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs text-muted-foreground">
+                            {customer.total_bookings} reservas
+                          </span>
+                          {customer.rating && customer.rating > 0 && (
+                            <div className="flex items-center gap-0.5">
+                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                              <span className="text-xs">{customer.rating}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Customer Detail - Right Column */}
+          <div className="flex-1 min-w-0 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+            {selectedCustomer ? (
+              <div className="space-y-6 animate-fade-in">
+                <div>
+                  <h3 className="text-2xl font-bold mb-2">{selectedCustomer.client_name}</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="h-4 w-4" />
+                      <span>{selectedCustomer.client_email}</span>
+                    </div>
+                    {selectedCustomer.client_phone && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Phone className="h-4 w-4" />
+                        <span>{selectedCustomer.client_phone}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                <div className="pt-4 border-t space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Reservas:</span>
-                    <span className="font-medium">{customer.total_bookings}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      <Calendar className="inline h-3 w-3 mr-1" />
-                      Última visita:
-                    </span>
-                    <span className="font-medium text-xs">
-                      {format(
-                        parse(customer.last_booking_date, "yyyy-MM-dd", new Date()),
-                        "d MMM yyyy",
-                        { locale: es }
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <div className="p-4">
+                      <p className="text-sm text-muted-foreground mb-1">Total Reservas</p>
+                      <p className="text-2xl font-bold">{selectedCustomer.total_bookings}</p>
+                    </div>
+                  </Card>
+                  <Card>
+                    <div className="p-4">
+                      <p className="text-sm text-muted-foreground mb-1">Última Visita</p>
+                      <p className="text-lg font-semibold">
+                        {format(
+                          parse(selectedCustomer.last_booking_date, "yyyy-MM-dd", new Date()),
+                          "d MMM yyyy",
+                          { locale: es }
+                        )}
+                      </p>
+                    </div>
+                  </Card>
+                  <Card>
+                    <div className="p-4">
+                      <p className="text-sm text-muted-foreground mb-1">Valoración</p>
+                      {selectedCustomer.rating && selectedCustomer.rating > 0 ? (
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: selectedCustomer.rating }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className="h-5 w-5 fill-yellow-400 text-yellow-400"
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-muted-foreground">Sin valoración</p>
                       )}
-                    </span>
-                  </div>
-
-                  {customer.rating && customer.rating > 0 && (
-                    <div className="flex items-center gap-1 pt-2">
-                      {Array.from({ length: customer.rating }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className="h-4 w-4 fill-yellow-400 text-yellow-400"
-                        />
-                      ))}
                     </div>
-                  )}
+                  </Card>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
+              </div>
+            ) : (
+              <CustomersOverview customers={customers} />
+            )}
+          </div>
         </div>
       )}
-
-      <CustomerDetailSheet
-        customer={selectedCustomer}
-        businessId={businessId}
-        open={detailSheetOpen}
-        onOpenChange={(open) => {
-          setDetailSheetOpen(open);
-          if (!open) {
-            // Reload customers when closing to refresh ratings
-            loadCustomers();
-          }
-        }}
-      />
     </div>
   );
 }
