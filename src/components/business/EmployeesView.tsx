@@ -175,72 +175,74 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-end mb-2">
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Agregar Empleado
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nuevo Empleado</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="employeeName">Nombre del Empleado</Label>
-                <Input
-                  id="employeeName"
-                  value={newEmployeeName}
-                  onChange={(e) => setNewEmployeeName(e.target.value)}
-                  placeholder="Ej: Juan Pérez"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="employeePosition">Cargo (Opcional)</Label>
-                <Input
-                  id="employeePosition"
-                  value={newEmployeePosition}
-                  onChange={(e) => setNewEmployeePosition(e.target.value)}
-                  placeholder="Ej: Cocinero, Gerente, Cajero"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="employeeEmail">Correo para Portal de Empleado (Opcional)</Label>
-                <Input
-                  id="employeeEmail"
-                  type="email"
-                  value={newEmployeeEmail}
-                  onChange={(e) => setNewEmployeeEmail(e.target.value)}
-                  placeholder="ejemplo@correo.com"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Si se introduce un correo, el empleado podrá acceder al Portal de Empleado con su cuenta
-                </p>
-              </div>
-              <Button onClick={handleCreateEmployee} className="w-full">
-                <UserPlus className="w-4 h-4 mr-2" />
-                Crear Empleado
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
       {employees.length === 0 ? (
-        <Card className="p-8 text-center flex-shrink-0">
-          <UserPlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold mb-2">No hay empleados</h3>
-          <p className="text-muted-foreground mb-4">
-            Agrega tu primer empleado para comenzar
-          </p>
-        </Card>
+        <div className="space-y-4">
+          {/* Header con botón cuando no hay empleados */}
+          <div className="flex items-center justify-end">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Agregar Empleado
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nuevo Empleado</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="employeeName">Nombre del Empleado</Label>
+                    <Input
+                      id="employeeName"
+                      value={newEmployeeName}
+                      onChange={(e) => setNewEmployeeName(e.target.value)}
+                      placeholder="Ej: Juan Pérez"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="employeePosition">Cargo (Opcional)</Label>
+                    <Input
+                      id="employeePosition"
+                      value={newEmployeePosition}
+                      onChange={(e) => setNewEmployeePosition(e.target.value)}
+                      placeholder="Ej: Cocinero, Gerente, Cajero"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="employeeEmail">Correo para Portal de Empleado (Opcional)</Label>
+                    <Input
+                      id="employeeEmail"
+                      type="email"
+                      value={newEmployeeEmail}
+                      onChange={(e) => setNewEmployeeEmail(e.target.value)}
+                      placeholder="ejemplo@correo.com"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Si se introduce un correo, el empleado podrá acceder al Portal de Empleado con su cuenta
+                    </p>
+                  </div>
+                  <Button onClick={handleCreateEmployee} className="w-full">
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Crear Empleado
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card className="p-8 text-center">
+            <UserPlus className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No hay empleados</h3>
+            <p className="text-muted-foreground mb-4">
+              Agrega tu primer empleado para comenzar
+            </p>
+          </Card>
+        </div>
       ) : (
-        <div className="flex-1 flex gap-6 overflow-hidden min-h-0">
+        <div className="flex gap-6 h-full overflow-hidden min-h-0">
           {/* Employee List - Left Column */}
-          <div className="w-80 flex-shrink-0">
+          <div className="w-80 flex-shrink-0 flex flex-col">
             <div className="h-full overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               {employees.map((employee) => (
                 <Card 
@@ -289,8 +291,62 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
           </div>
 
           {/* Employee Detail - Right Column */}
-          <div className="flex-1 min-w-0">
-            <div className="h-full overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+          <div className="flex-1 min-w-0 flex flex-col">
+            {/* Botón Agregar Empleado */}
+            <div className="flex items-center justify-end mb-4">
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Agregar Empleado
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Nuevo Empleado</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="employeeName">Nombre del Empleado</Label>
+                      <Input
+                        id="employeeName"
+                        value={newEmployeeName}
+                        onChange={(e) => setNewEmployeeName(e.target.value)}
+                        placeholder="Ej: Juan Pérez"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="employeePosition">Cargo (Opcional)</Label>
+                      <Input
+                        id="employeePosition"
+                        value={newEmployeePosition}
+                        onChange={(e) => setNewEmployeePosition(e.target.value)}
+                        placeholder="Ej: Cocinero, Gerente, Cajero"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="employeeEmail">Correo para Portal de Empleado (Opcional)</Label>
+                      <Input
+                        id="employeeEmail"
+                        type="email"
+                        value={newEmployeeEmail}
+                        onChange={(e) => setNewEmployeeEmail(e.target.value)}
+                        placeholder="ejemplo@correo.com"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Si se introduce un correo, el empleado podrá acceder al Portal de Empleado con su cuenta
+                      </p>
+                    </div>
+                    <Button onClick={handleCreateEmployee} className="w-full">
+                      <UserPlus className="w-4 h-4 mr-2" />
+                      Crear Empleado
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
               {selectedEmployee ? (
               <EmployeeDetailView
                 employee={selectedEmployee}
