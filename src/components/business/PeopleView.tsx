@@ -14,9 +14,9 @@ export function PeopleView({ businessId }: PeopleViewProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("employees");
 
   return (
-    <div className="animate-fade-in -mx-4 md:-mx-6 lg:-mx-8 -my-6">
-      {/* Tabs Header - Fixed */}
-      <div className="bg-background border-b">
+    <div className="animate-fade-in">
+      {/* Tabs Header - Sticky below navbar */}
+      <div className="sticky top-0 z-10 bg-background border-b -mx-4 md:-mx-6 lg:-mx-8">
         <div className="flex px-4 md:px-6 lg:px-8">
           <button
             onClick={() => setActiveTab("employees")}
@@ -47,7 +47,7 @@ export function PeopleView({ businessId }: PeopleViewProps) {
       </div>
 
       {/* Content */}
-      <div className="px-4 md:px-6 lg:px-8 pt-4">
+      <div className="pt-4">
         {activeTab === "employees" ? (
           <EmployeesView businessId={businessId} />
         ) : (
