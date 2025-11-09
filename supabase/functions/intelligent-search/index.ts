@@ -165,9 +165,8 @@ ${JSON.stringify(restaurantContext, null, 2)}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-nano', 
-            service_tier="priority"
-
+        model: 'gpt-5-nano',
+        service_tier: "priority",
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Búsqueda del usuario: "${query}"` }
@@ -197,7 +196,7 @@ ${JSON.stringify(restaurantContext, null, 2)}`;
                       price: { type: ['string', 'null'] },
                       rating: { type: ['number', 'null'] }
                     },
-                    required: ['id', 'name', 'relevanceScore', 'matchReasons'],
+                    required: ['id', 'name', 'relevanceScore', 'matchReasons', 'cuisine', 'price', 'rating'],
                     additionalProperties: false
                   }
                 },
