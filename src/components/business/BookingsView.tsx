@@ -5,7 +5,9 @@ import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, User, ChevronDown } from "lucide-react";
+import { Calendar, Clock, User, ChevronDown, Filter } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
@@ -318,60 +320,63 @@ export function BookingsView({ businessId }: BookingsViewProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">Reservas</h1>
-          <p className="text-muted-foreground">
-            Gestiona y visualiza todas las reservas de tu negocio
-          </p>
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold">Reservas</h1>
+          
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[400px] p-4" align="start">
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Filtros</h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Fecha</Label>
+                    <DatePicker
+                      date={selectedDate}
+                      onDateChange={(date) => date && setSelectedDate(date)}
+                      placeholder="Seleccionar fecha"
+                      onPreviousDay={() => {
+                        const newDate = new Date(selectedDate);
+                        newDate.setDate(newDate.getDate() - 1);
+                        setSelectedDate(newDate);
+                      }}
+                      onNextDay={() => {
+                        const newDate = new Date(selectedDate);
+                        newDate.setDate(newDate.getDate() + 1);
+                        setSelectedDate(newDate);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Hora (opcional)</Label>
+                    <TimePicker
+                      time={selectedTime}
+                      onTimeChange={setSelectedTime}
+                      placeholder="Ver todas las horas"
+                      allowClear={true}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Nombre del comensal</Label>
+                    <Input
+                      type="text"
+                      placeholder="Buscar por nombre..."
+                      value={searchName}
+                      onChange={(e) => setSearchName(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
         <CreateBookingDialog businessId={businessId} onBookingCreated={loadBookings} />
       </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <h3 className="text-sm font-medium">Filtros</h3>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label>Fecha</Label>
-              <DatePicker
-                date={selectedDate}
-                onDateChange={(date) => date && setSelectedDate(date)}
-                placeholder="Seleccionar fecha"
-                onPreviousDay={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setDate(newDate.getDate() - 1);
-                  setSelectedDate(newDate);
-                }}
-                onNextDay={() => {
-                  const newDate = new Date(selectedDate);
-                  newDate.setDate(newDate.getDate() + 1);
-                  setSelectedDate(newDate);
-                }}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Hora (opcional)</Label>
-              <TimePicker
-                time={selectedTime}
-                onTimeChange={setSelectedTime}
-                placeholder="Ver todas las horas"
-                allowClear={true}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Nombre del comensal</Label>
-              <Input
-                type="text"
-                placeholder="Buscar por nombre..."
-                value={searchName}
-                onChange={(e) => setSearchName(e.target.value)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {(() => {
         // Filtrar reservas por nombre del comensal
