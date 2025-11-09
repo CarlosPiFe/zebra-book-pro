@@ -8,7 +8,6 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { CustomerDetailSheet } from "./CustomerDetailSheet";
 import { format, parse } from "date-fns";
 import { es } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 
 interface Customer {
   client_name: string;
@@ -88,7 +87,7 @@ export function CustomersView({ businessId }: CustomersViewProps) {
 
       // Merge ratings with customer data
       const notesMap = new Map(
-        (notesData || []).map((note) => [note.client_email, note.rating])
+        (notesData || []).map((note) => [note.client_email, note.rating || undefined])
       );
 
       uniqueCustomers.forEach((customer) => {

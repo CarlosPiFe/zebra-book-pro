@@ -176,11 +176,7 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-3xl font-bold">Empleados</h2>
-        </div>
-
+      <div className="flex-shrink-0 flex items-center justify-end mb-6">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
