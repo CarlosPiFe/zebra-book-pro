@@ -14,40 +14,40 @@ export function PeopleView({ businessId }: PeopleViewProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("employees");
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Tabs Header */}
-      <div className="border-b">
+    <div className="animate-fade-in">
+      {/* Tabs Header - Sticky */}
+      <div className="sticky top-0 z-10 bg-background border-b">
         <div className="flex">
           <button
             onClick={() => setActiveTab("employees")}
             className={cn(
-              "flex items-center gap-2 px-6 py-4 border-b-2 font-medium transition-all",
+              "flex items-center gap-2 px-4 py-2 border-b-2 font-medium transition-all text-sm",
               activeTab === "employees"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
             )}
           >
-            <Users className="h-5 w-5" />
+            <Users className="h-4 w-4" />
             Empleados
           </button>
 
           <button
             onClick={() => setActiveTab("customers")}
             className={cn(
-              "flex items-center gap-2 px-6 py-4 border-b-2 font-medium transition-all",
+              "flex items-center gap-2 px-4 py-2 border-b-2 font-medium transition-all text-sm",
               activeTab === "customers"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
             )}
           >
-            <UserCheck className="h-5 w-5" />
+            <UserCheck className="h-4 w-4" />
             Clientes
           </button>
         </div>
       </div>
 
       {/* Content */}
-      <div className="animate-fade-in">
+      <div className="pt-4">
         {activeTab === "employees" ? (
           <EmployeesView businessId={businessId} />
         ) : (
