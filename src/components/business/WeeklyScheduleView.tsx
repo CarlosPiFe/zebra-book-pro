@@ -6,36 +6,24 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { ChevronLeft, ChevronRight, Calendar, Trash2 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { format, startOfWeek, addDays, addWeeks, subWeeks } from "date-fns";
 import { es } from "date-fns/locale";
 import { ScheduleCell } from "./ScheduleCell";
 import { ExportSchedulesDialog } from "./ExportSchedulesDialog";
 import { AddFixedScheduleDialog } from "./AddFixedScheduleDialog";
 import { cn } from "@/lib/utils";
-
 interface Employee {
   id: string;
   name: string;
   position?: string;
 }
-
 interface Vacation {
   id: string;
   employee_id: string;
   start_date: string;
   end_date: string;
 }
-
 interface Schedule {
   id?: string;
   employee_id: string;
@@ -45,18 +33,21 @@ interface Schedule {
   end_time?: string;
   slot_order?: number;
 }
-
 interface WeeklyScheduleViewProps {
   businessId: string;
   scheduleViewMode?: string;
 }
-
 interface CopiedSchedule {
   schedules: Schedule[];
-  selectedCells: Array<{ employeeId: string; date: string }>; // Array of selected cells
+  selectedCells: Array<{
+    employeeId: string;
+    date: string;
+  }>; // Array of selected cells
 }
-
-export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }: WeeklyScheduleViewProps) => {
+export const WeeklyScheduleView = ({
+  businessId,
+  scheduleViewMode = 'editable'
+}: WeeklyScheduleViewProps) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [schedules, setSchedules] = useState<Schedule[]>([]);
@@ -68,18 +59,18 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
     if (weekStartParam) {
       return new Date(weekStartParam);
     }
-    return startOfWeek(new Date(), { weekStartsOn: 1 });
+    return startOfWeek(new Date(), {
+      weekStartsOn: 1
+    });
   });
   const [copiedSchedule, setCopiedSchedule] = useState<CopiedSchedule | null>(null);
   const [highlightedDate, setHighlightedDate] = useState<string | null>(() => {
     return searchParams.get("highlightDate");
   });
   const [deleteWeekDialogOpen, setDeleteWeekDialogOpen] = useState(false);
-
   useEffect(() => {
     loadData();
   }, [businessId, currentWeekStart]);
-
   useEffect(() => {
     if (highlightedDate) {
       const timer = setTimeout(() => {
@@ -87,13 +78,14 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
         // Limpiar los parámetros de la URL para que no persistan
         const newParams = new URLSearchParams(searchParams);
         newParams.delete("highlightDate");
-        setSearchParams(newParams, { replace: true });
+        setSearchParams(newParams, {
+          replace: true
+        });
       }, 2000);
       return () => clearTimeout(timer);
     }
     return undefined;
   }, [highlightedDate, searchParams, setSearchParams]);
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -102,16 +94,12 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
       setLoading(false);
     }
   };
-
   const loadEmployees = async () => {
     try {
-      const { data, error } = await supabase
-        .from("waiters")
-        .select("id, name, position")
-        .eq("business_id", businessId)
-        .eq("is_active", true)
-        .order("name");
-
+      const {
+        data,
+        error
+      } = await supabase.from("waiters").select("id, name, position").eq("business_id", businessId).eq("is_active", true).order("name");
       if (error) throw error;
       setEmployees((data || []) as any);
     } catch (error) {
@@ -119,17 +107,15 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
       toast.error("Error al cargar empleados");
     }
   };
-
   const loadSchedules = async () => {
     try {
       const weekEnd = addDays(currentWeekStart, 6);
-      const { data, error } = await supabase
-        .from("employee_weekly_schedules")
-        .select("*")
-        .gte("date", format(currentWeekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"))
-        .order("slot_order", { ascending: true });
-
+      const {
+        data,
+        error
+      } = await supabase.from("employee_weekly_schedules").select("*").gte("date", format(currentWeekStart, "yyyy-MM-dd")).lte("date", format(weekEnd, "yyyy-MM-dd")).order("slot_order", {
+        ascending: true
+      });
       if (error) throw error;
       setSchedules((data || []) as any);
     } catch (error) {
@@ -137,70 +123,56 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
       toast.error("Error al cargar horarios");
     }
   };
-
   const loadVacations = async () => {
     try {
-      const { data, error } = await supabase
-        .from("employee_vacations")
-        .select("id, employee_id, start_date, end_date");
-
+      const {
+        data,
+        error
+      } = await supabase.from("employee_vacations").select("id, employee_id, start_date, end_date");
       if (error) throw error;
       setVacations(data || []);
     } catch (error) {
       console.error("Error loading vacations:", error);
     }
   };
-
   const isOnVacation = (employeeId: string, date: Date): boolean => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return vacations.some((vacation) => {
+    return vacations.some(vacation => {
       if (vacation.employee_id !== employeeId) return false;
-      
+
       // Comparar strings directamente para evitar problemas de zona horaria
       // Las fechas en la base de datos ya están en formato YYYY-MM-DD sin hora
       return dateStr >= vacation.start_date && dateStr <= vacation.end_date;
     });
   };
-
   const getSchedulesForDay = (employeeId: string, date: Date): Schedule[] => {
     const dateStr = format(date, "yyyy-MM-dd");
-    return schedules.filter(
-      (schedule) =>
-        schedule.employee_id === employeeId && schedule.date === dateStr
-    );
+    return schedules.filter(schedule => schedule.employee_id === employeeId && schedule.date === dateStr);
   };
-
   const updateSchedule = async (schedule: Schedule) => {
     try {
       if (schedule.id) {
-        const { error } = await supabase
-          .from("employee_weekly_schedules")
-          .update(schedule)
-          .eq("id", schedule.id);
-        
+        const {
+          error
+        } = await supabase.from("employee_weekly_schedules").update(schedule).eq("id", schedule.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from("employee_weekly_schedules")
-          .insert(schedule);
-        
+        const {
+          error
+        } = await supabase.from("employee_weekly_schedules").insert(schedule);
         if (error) throw error;
       }
-      
       await loadSchedules(); // Always reload after update
     } catch (error) {
       console.error("Error updating schedule:", error);
       toast.error("Error al actualizar horario");
     }
   };
-
   const deleteSchedule = async (scheduleId: string) => {
     try {
-      const { error } = await supabase
-        .from("employee_weekly_schedules")
-        .delete()
-        .eq("id", scheduleId);
-
+      const {
+        error
+      } = await supabase.from("employee_weekly_schedules").delete().eq("id", scheduleId);
       if (error) throw error;
       toast.success("Tramo eliminado");
       await loadSchedules(); // Wait for reload to complete
@@ -209,19 +181,13 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
       toast.error("Error al eliminar tramo");
     }
   };
-
   const deleteWeekSchedules = async () => {
     try {
       const weekEnd = addDays(currentWeekStart, 6);
-      
-      const { error } = await supabase
-        .from("employee_weekly_schedules")
-        .delete()
-        .gte("date", format(currentWeekStart, "yyyy-MM-dd"))
-        .lte("date", format(weekEnd, "yyyy-MM-dd"));
-
+      const {
+        error
+      } = await supabase.from("employee_weekly_schedules").delete().gte("date", format(currentWeekStart, "yyyy-MM-dd")).lte("date", format(weekEnd, "yyyy-MM-dd"));
       if (error) throw error;
-      
       toast.success("Todos los horarios de la semana han sido eliminados");
       setDeleteWeekDialogOpen(false);
       await loadSchedules();
@@ -230,53 +196,39 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
       toast.error("Error al eliminar los horarios de la semana");
     }
   };
-
   const handleCopySchedule = (_scheduleEmployeeId: string, _scheduleDate: Date, schedulesToCopy: Schedule[]) => {
     setCopiedSchedule({
       schedules: schedulesToCopy,
-      selectedCells: [],
+      selectedCells: []
     });
     toast.success("Horario copiado. Haz clic en las celdas donde quieres pegarlo.");
   };
-
   const toggleCellSelection = (employeeId: string, date: Date) => {
     if (!copiedSchedule) return;
-    
     const dateStr = format(date, "yyyy-MM-dd");
-    const isSelected = copiedSchedule.selectedCells.some(
-      cell => cell.employeeId === employeeId && cell.date === dateStr
-    );
-    
+    const isSelected = copiedSchedule.selectedCells.some(cell => cell.employeeId === employeeId && cell.date === dateStr);
     setCopiedSchedule({
       ...copiedSchedule,
-      selectedCells: isSelected
-        ? copiedSchedule.selectedCells.filter(
-            cell => !(cell.employeeId === employeeId && cell.date === dateStr)
-          )
-        : [...copiedSchedule.selectedCells, { employeeId, date: dateStr }],
+      selectedCells: isSelected ? copiedSchedule.selectedCells.filter(cell => !(cell.employeeId === employeeId && cell.date === dateStr)) : [...copiedSchedule.selectedCells, {
+        employeeId,
+        date: dateStr
+      }]
     });
   };
-
   const handleApplySchedule = async () => {
     if (!copiedSchedule || copiedSchedule.selectedCells.length === 0) {
       toast.error("Selecciona al menos una celda");
       return;
     }
-
     try {
       // Apply schedule to all selected cells
       for (const cell of copiedSchedule.selectedCells) {
         // Delete existing schedules for this cell
-        const existingSchedules = schedules.filter(
-          s => s.employee_id === cell.employeeId && s.date === cell.date && s.id
-        );
-        
+        const existingSchedules = schedules.filter(s => s.employee_id === cell.employeeId && s.date === cell.date && s.id);
         if (existingSchedules.length > 0) {
-          const { error: deleteError } = await supabase
-            .from("employee_weekly_schedules")
-            .delete()
-            .in('id', existingSchedules.map(s => s.id!));
-          
+          const {
+            error: deleteError
+          } = await supabase.from("employee_weekly_schedules").delete().in('id', existingSchedules.map(s => s.id!));
           if (deleteError) throw deleteError;
         }
 
@@ -287,16 +239,13 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
           is_day_off: false,
           start_time: schedule.start_time,
           end_time: schedule.end_time,
-          slot_order: index + 1,
+          slot_order: index + 1
         }));
-
-        const { error: insertError } = await supabase
-          .from("employee_weekly_schedules")
-          .insert(newSchedules);
-        
+        const {
+          error: insertError
+        } = await supabase.from("employee_weekly_schedules").insert(newSchedules);
         if (insertError) throw insertError;
       }
-
       toast.success(`Horario aplicado a ${copiedSchedule.selectedCells.length} celda(s)`);
       setCopiedSchedule(null);
       await loadSchedules(); // Reload schedules after all operations
@@ -305,20 +254,18 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
       toast.error("Error al aplicar horario");
     }
   };
-
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i));
-
+  const weekDays = Array.from({
+    length: 7
+  }, (_, i) => addDays(currentWeekStart, i));
   if (loading) {
     return <LoadingSpinner fullScreen />;
   }
-
-  return (
-    <div className="space-y-6">
+  return <div className="space-y-6">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-3xl font-bold">Horarios Semanales</h2>
-            <p className="text-muted-foreground">Gestiona los horarios de tus empleados</p>
+            
           </div>
         </div>
 
@@ -326,59 +273,37 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
         <div className="flex items-center justify-between gap-4">
           {/* Pasador de semana */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}
-            >
+            <Button variant="outline" size="icon" onClick={() => setCurrentWeekStart(subWeeks(currentWeekStart, 1))}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <div className="text-center min-w-[200px]">
               <p className="font-semibold text-sm">
-                {format(currentWeekStart, "d 'de' MMMM", { locale: es })} -{" "}
-                {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}
+                {format(currentWeekStart, "d 'de' MMMM", {
+                locale: es
+              })} -{" "}
+                {format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", {
+                locale: es
+              })}
               </p>
             </div>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}
-            >
+            <Button variant="outline" size="icon" onClick={() => setCurrentWeekStart(addWeeks(currentWeekStart, 1))}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
 
           {/* Botones de acción */}
           <div className="flex gap-2">
-            {scheduleViewMode === 'visual' && (
-              <Button
-                variant={isEditMode ? "outline" : "default"}
-                onClick={() => setIsEditMode(!isEditMode)}
-                className="gap-2"
-                size="sm"
-              >
+            {scheduleViewMode === 'visual' && <Button variant={isEditMode ? "outline" : "default"} onClick={() => setIsEditMode(!isEditMode)} className="gap-2" size="sm">
                 <Calendar className="w-4 h-4" />
                 {isEditMode ? "Ver horario" : "Editar horario"}
-              </Button>
-            )}
-            {(scheduleViewMode === 'editable' || isEditMode) && (
-              <>
-                <AddFixedScheduleDialog
-                  businessId={businessId}
-                  currentWeekStart={currentWeekStart}
-                  onScheduleAdded={loadSchedules}
-                />
-                <Button
-                  variant="destructive"
-                  onClick={() => setDeleteWeekDialogOpen(true)}
-                  className="gap-2"
-                  size="sm"
-                >
+              </Button>}
+            {(scheduleViewMode === 'editable' || isEditMode) && <>
+                <AddFixedScheduleDialog businessId={businessId} currentWeekStart={currentWeekStart} onScheduleAdded={loadSchedules} />
+                <Button variant="destructive" onClick={() => setDeleteWeekDialogOpen(true)} className="gap-2" size="sm">
                   <Trash2 className="w-4 h-4" />
                   Vaciar Semana
                 </Button>
-              </>
-            )}
+              </>}
           </div>
         </div>
       </div>
@@ -390,17 +315,18 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
             <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción eliminará todos los horarios de la semana del{" "}
-              <strong>{format(currentWeekStart, "d 'de' MMMM", { locale: es })}</strong> al{" "}
-              <strong>{format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", { locale: es })}</strong>.
+              <strong>{format(currentWeekStart, "d 'de' MMMM", {
+                locale: es
+              })}</strong> al{" "}
+              <strong>{format(addDays(currentWeekStart, 6), "d 'de' MMMM yyyy", {
+                locale: es
+              })}</strong>.
               Esta acción no se puede deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={deleteWeekSchedules}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+            <AlertDialogAction onClick={deleteWeekSchedules} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Eliminar Todo
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -408,134 +334,83 @@ export const WeeklyScheduleView = ({ businessId, scheduleViewMode = 'editable' }
       </AlertDialog>
       
       {/* Barra de acción para pegar horario */}
-      {copiedSchedule && (
-        <Card className="p-4 border-2 border-primary bg-primary/5">
+      {copiedSchedule && <Card className="p-4 border-2 border-primary bg-primary/5">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-lg">Modo: Pegar Horario</h3>
               <p className="text-sm text-muted-foreground">
-                {copiedSchedule.selectedCells.length > 0 
-                  ? `${copiedSchedule.selectedCells.length} celda(s) seleccionada(s)`
-                  : "Haz clic en cualquier celda del calendario para pegar el horario"}
+                {copiedSchedule.selectedCells.length > 0 ? `${copiedSchedule.selectedCells.length} celda(s) seleccionada(s)` : "Haz clic en cualquier celda del calendario para pegar el horario"}
               </p>
             </div>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setCopiedSchedule(null)}
-              >
+              <Button variant="outline" onClick={() => setCopiedSchedule(null)}>
                 Cancelar
               </Button>
-              {copiedSchedule.selectedCells.length > 0 && (
-                <Button onClick={handleApplySchedule}>
+              {copiedSchedule.selectedCells.length > 0 && <Button onClick={handleApplySchedule}>
                   Aplicar a {copiedSchedule.selectedCells.length} celda(s)
-                </Button>
-              )}
+                </Button>}
             </div>
           </div>
-        </Card>
-      )}
+        </Card>}
 
-      {employees.length === 0 ? (
-        <Card className="p-8 text-center">
+      {employees.length === 0 ? <Card className="p-8 text-center">
           <p className="text-muted-foreground">
             No hay empleados activos. Añade empleados en la sección de Empleados.
           </p>
-        </Card>
-      ) : (
-        <Card className="overflow-x-auto">
+        </Card> : <Card className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="border-b">
                 <th className="py-4 px-3 text-left font-semibold w-32 sticky left-0 bg-card z-10">
                   Empleado
                 </th>
-                {weekDays.map((day) => {
-                  const dateStr = format(day, "yyyy-MM-dd");
-                  const isHighlighted = highlightedDate === dateStr;
-                  return (
-                    <th 
-                      key={day.toISOString()} 
-                      className={cn(
-                        "py-3 px-2 text-center font-semibold w-28 transition-all duration-300",
-                        isHighlighted && "bg-primary/15 shadow-[0_0_15px_rgba(var(--primary),0.3)]"
-                      )}
-                    >
-                      <div className="text-sm">{format(day, "EEE", { locale: es })}</div>
+                {weekDays.map(day => {
+              const dateStr = format(day, "yyyy-MM-dd");
+              const isHighlighted = highlightedDate === dateStr;
+              return <th key={day.toISOString()} className={cn("py-3 px-2 text-center font-semibold w-28 transition-all duration-300", isHighlighted && "bg-primary/15 shadow-[0_0_15px_rgba(var(--primary),0.3)]")}>
+                      <div className="text-sm">{format(day, "EEE", {
+                    locale: es
+                  })}</div>
                       <div className="text-xs font-normal text-muted-foreground">
-                        {format(day, "d MMM", { locale: es })}
+                        {format(day, "d MMM", {
+                    locale: es
+                  })}
                       </div>
-                    </th>
-                  );
-                })}
+                    </th>;
+            })}
               </tr>
             </thead>
             <tbody>
-              {employees.map((employee) => (
-                <tr key={employee.id} className="border-b hover:bg-muted/50">
+              {employees.map(employee => <tr key={employee.id} className="border-b hover:bg-muted/50">
                   <td className="py-4 px-3 sticky left-0 bg-card z-10">
                     <div>
                       <div className="font-medium text-sm">{employee.name}</div>
-                      {employee.position && (
-                        <div className="text-xs text-muted-foreground">{employee.position}</div>
-                      )}
+                      {employee.position && <div className="text-xs text-muted-foreground">{employee.position}</div>}
                     </div>
                   </td>
-                  {weekDays.map((day) => {
-                    const onVacation = isOnVacation(employee.id, day);
-                    const daySchedules = getSchedulesForDay(employee.id, day);
-                    const isInPasteMode = !!copiedSchedule;
-                    const dateStr = format(day, "yyyy-MM-dd");
-                    const isSelected = copiedSchedule?.selectedCells.some(
-                      cell => cell.employeeId === employee.id && cell.date === dateStr
-                    );
-
-                    const isHighlighted = highlightedDate === dateStr;
-
-                    return (
-                      <td 
-                        key={`${employee.id}-${day.toISOString()}`} 
-                        className={cn(
-                          "py-2 px-1 transition-all duration-300",
-                          isHighlighted && "bg-primary/15 shadow-[0_0_15px_rgba(var(--primary),0.3)]"
-                        )}
-                      >
-                        <ScheduleCell
-                          employeeId={employee.id}
-                          date={day}
-                          schedules={daySchedules}
-                          onVacation={onVacation}
-                          onUpdate={updateSchedule}
-                          onDelete={deleteSchedule}
-                          onCopy={handleCopySchedule}
-                          onSelect={() => {
-                            if (isInPasteMode && !onVacation) {
-                              toggleCellSelection(employee.id, day);
-                            }
-                          }}
-                          isInSelectionMode={isInPasteMode && !onVacation}
-                          isSelected={isSelected || false}
-                          disabled={scheduleViewMode === 'visual' && !isEditMode}
-                        />
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                  {weekDays.map(day => {
+              const onVacation = isOnVacation(employee.id, day);
+              const daySchedules = getSchedulesForDay(employee.id, day);
+              const isInPasteMode = !!copiedSchedule;
+              const dateStr = format(day, "yyyy-MM-dd");
+              const isSelected = copiedSchedule?.selectedCells.some(cell => cell.employeeId === employee.id && cell.date === dateStr);
+              const isHighlighted = highlightedDate === dateStr;
+              return <td key={`${employee.id}-${day.toISOString()}`} className={cn("py-2 px-1 transition-all duration-300", isHighlighted && "bg-primary/15 shadow-[0_0_15px_rgba(var(--primary),0.3)]")}>
+                        <ScheduleCell employeeId={employee.id} date={day} schedules={daySchedules} onVacation={onVacation} onUpdate={updateSchedule} onDelete={deleteSchedule} onCopy={handleCopySchedule} onSelect={() => {
+                  if (isInPasteMode && !onVacation) {
+                    toggleCellSelection(employee.id, day);
+                  }
+                }} isInSelectionMode={isInPasteMode && !onVacation} isSelected={isSelected || false} disabled={scheduleViewMode === 'visual' && !isEditMode} />
+                      </td>;
+            })}
+                </tr>)}
             </tbody>
           </table>
-        </Card>
-      )}
+        </Card>}
 
       {/* Botón de exportar debajo del cuadrante */}
-      {employees.length > 0 && (
-        <div className="flex justify-end mt-4">
-          <ExportSchedulesDialog 
-            businessId={businessId} 
-            disabled={scheduleViewMode === 'visual' && !isEditMode}
-          />
-        </div>
-      )}
-    </div>
-  );
+      {employees.length > 0 && <div className="flex justify-end mt-4">
+          <ExportSchedulesDialog businessId={businessId} disabled={scheduleViewMode === 'visual' && !isEditMode} />
+        </div>}
+    </div>;
 };
