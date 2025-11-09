@@ -165,7 +165,9 @@ ${JSON.stringify(restaurantContext, null, 2)}`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07', // GPT-5 completo (no nano)
+        model: 'gpt-5-nano', 
+            service_tier="priority"
+
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Búsqueda del usuario: "${query}"` }
