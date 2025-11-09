@@ -179,7 +179,6 @@ export const EmployeesView = ({ businessId }: EmployeesViewProps) => {
       <div className="flex-shrink-0 flex items-center justify-between mb-6">
         <div>
           <h2 className="text-3xl font-bold">Empleados</h2>
-          <p className="text-muted-foreground">Gestiona los empleados de tu negocio</p>
         </div>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
