@@ -796,8 +796,8 @@ export function TablesView({ businessId }: TablesViewProps) {
       </div>
 
       {/* Botones de filtros y añadir mesa */}
-      <div className="flex-shrink-0 bg-background border-b">
-        <div className="flex items-center gap-3 w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-3">
+      <div className="flex-shrink-0 bg-background">
+        <div className="flex items-center justify-end gap-3 w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
