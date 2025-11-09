@@ -43,9 +43,6 @@ export const EmployeesOverview = ({ employees }: EmployeesOverviewProps) => {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold">Resumen General</h2>
-        <p className="text-muted-foreground">
-          Vista general de todos los empleados de tu negocio
-        </p>
       </div>
 
       {/* Stats Cards */}
