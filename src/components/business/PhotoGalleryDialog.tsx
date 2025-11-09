@@ -1,13 +1,7 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import { useState } from "react";
 
 interface Photo {
   id: string;
@@ -24,54 +18,77 @@ interface PhotoGalleryDialogProps {
 export function PhotoGalleryDialog({
   photos,
   open,
-  onOpenChange,
-  initialIndex = 0
+  onOpenChange
 }: PhotoGalleryDialogProps) {
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-0">
-        <div className="relative w-full h-full">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onOpenChange(false)}
-            className="absolute top-4 right-4 z-50 bg-background/80 backdrop-blur-sm hover:bg-background"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
 
-          <Carousel
-            opts={{
-              align: "center",
-              loop: true,
-              startIndex: initialIndex
-            }}
-            className="w-full h-full"
-          >
-            <CarouselContent className="h-full">
-              {photos.map((photo, index) => (
-                <CarouselItem key={photo.id} className="h-full">
-                  <div className="flex items-center justify-center h-full p-8">
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-6xl w-[95vw] h-[90vh] p-6">
+          <div className="relative w-full h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-semibold">Galería de fotos</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenChange(false)}
+                className="bg-background/80 backdrop-blur-sm hover:bg-background"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              <div className="grid grid-cols-3 gap-4 pb-4">
+                {photos.map((photo, index) => (
+                  <div
+                    key={photo.id}
+                    className="relative aspect-square cursor-pointer group overflow-hidden rounded-lg"
+                    onClick={() => setSelectedPhoto(photo)}
+                  >
                     <img
                       src={photo.photo_url}
                       alt={`Foto ${index + 1}`}
-                      loading={index < 2 ? "eager" : "lazy"}
+                      loading={index < 6 ? "eager" : "lazy"}
                       decoding="async"
-                      className="max-w-full max-h-full object-contain rounded-lg"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                     />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300" />
                   </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-4" />
-            <CarouselNext className="right-4" />
-          </Carousel>
+                ))}
+              </div>
+            </div>
 
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-background/80 backdrop-blur-sm px-4 py-2 rounded-full text-sm">
-            {photos.length} fotos
+            <div className="text-center text-sm text-muted-foreground mt-2">
+              {photos.length} fotos
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog para foto ampliada */}
+      <Dialog open={!!selectedPhoto} onOpenChange={(open) => !open && setSelectedPhoto(null)}>
+        <DialogContent className="max-w-[95vw] max-h-[95vh] w-fit h-fit p-0 bg-black/95">
+          <div className="relative">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute top-2 right-2 z-50 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            {selectedPhoto && (
+              <img
+                src={selectedPhoto.photo_url}
+                alt="Foto ampliada"
+                className="max-w-[90vw] max-h-[90vh] object-contain"
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
