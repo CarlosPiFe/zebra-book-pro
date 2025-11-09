@@ -57,7 +57,7 @@ export function DatePicker({ date, onDateChange, placeholder = "Seleccionar fech
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
+      <PopoverContent className="w-auto p-0 bg-background z-[9999]" align="start">
         <Calendar
           mode="single"
           selected={date}

@@ -108,7 +108,7 @@ export function TimePicker({ time, onTimeChange, allowClear = false }: TimePicke
           </PopoverTrigger>
         </div>
       </div>
-      <PopoverContent className="w-auto p-0 bg-background z-50" align="start">
+      <PopoverContent className="w-auto p-0 bg-background z-[9999]" align="start">
         <div className="flex">
           <ScrollArea className="h-[200px] w-[70px] border-r">
             <div className="p-2 space-y-1">
