@@ -762,53 +762,84 @@ export function TablesView({ businessId }: TablesViewProps) {
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
-      {/* Header con título y botones */}
+      {/* Tabs de salas - Barra horizontal fija arriba de todo */}
       <div className="flex-shrink-0 bg-background border-b">
-        <div className="flex items-center justify-between gap-4 w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-3">
-          <div className="flex items-center gap-3">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[400px] p-4" align="start">
+        {rooms.length > 0 && (
+          <div className="flex w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 overflow-x-auto gap-2">
+            <button
+              onClick={() => setSelectedRoomId(null)}
+              className={cn(
+                "flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-all text-base whitespace-nowrap",
+                selectedRoomId === null
+                  ? "border-primary text-primary"
+                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
+              )}
+            >
+              Todas las salas
+            </button>
+            {rooms.map((room) => (
+              <button
+                key={room.id}
+                onClick={() => setSelectedRoomId(room.id)}
+                className={cn(
+                  "flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-all text-base whitespace-nowrap",
+                  selectedRoomId === room.id
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
+                )}
+              >
+                {room.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Botones de filtros y añadir mesa */}
+      <div className="flex-shrink-0 bg-background border-b">
+        <div className="flex items-center gap-3 w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-3">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[400px] p-4" align="start">
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium">Filtros</h3>
                 <div className="space-y-4">
-                  <h3 className="text-sm font-medium">Filtros</h3>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Fecha</Label>
-                      <DatePicker
-                        date={filterDate}
-                        onDateChange={(date) => date && setFilterDate(date)}
-                        placeholder="Seleccionar fecha"
-                        onPreviousDay={() => {
-                          const newDate = new Date(filterDate);
-                          newDate.setDate(newDate.getDate() - 1);
-                          setFilterDate(newDate);
-                        }}
-                        onNextDay={() => {
-                          const newDate = new Date(filterDate);
-                          newDate.setDate(newDate.getDate() + 1);
-                          setFilterDate(newDate);
-                        }}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Hora (opcional)</Label>
-                      <TimePicker
-                        time={filterTime}
-                        onTimeChange={setFilterTime}
-                        placeholder="Ver todas las horas"
-                        allowClear={true}
-                      />
-                    </div>
+                  <div className="space-y-2">
+                    <Label>Fecha</Label>
+                    <DatePicker
+                      date={filterDate}
+                      onDateChange={(date) => date && setFilterDate(date)}
+                      placeholder="Seleccionar fecha"
+                      onPreviousDay={() => {
+                        const newDate = new Date(filterDate);
+                        newDate.setDate(newDate.getDate() - 1);
+                        setFilterDate(newDate);
+                      }}
+                      onNextDay={() => {
+                        const newDate = new Date(filterDate);
+                        newDate.setDate(newDate.getDate() + 1);
+                        setFilterDate(newDate);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Hora (opcional)</Label>
+                    <TimePicker
+                      time={filterTime}
+                      onTimeChange={setFilterTime}
+                      placeholder="Ver todas las horas"
+                      allowClear={true}
+                    />
                   </div>
                 </div>
-              </PopoverContent>
-            </Popover>
-          </div>
+              </div>
+            </PopoverContent>
+          </Popover>
 
           <Dialog open={isAddTableDialogOpen} onOpenChange={setIsAddTableDialogOpen}>
             <DialogTrigger asChild>
@@ -891,37 +922,6 @@ export function TablesView({ businessId }: TablesViewProps) {
             </DialogContent>
           </Dialog>
         </div>
-
-        {/* Tabs de salas - Barra horizontal fija */}
-        {rooms.length > 0 && (
-          <div className="flex w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 overflow-x-auto gap-2">
-            <button
-              onClick={() => setSelectedRoomId(null)}
-              className={cn(
-                "flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-all text-base whitespace-nowrap",
-                selectedRoomId === null
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
-              )}
-            >
-              Todas las salas
-            </button>
-            {rooms.map((room) => (
-              <button
-                key={room.id}
-                onClick={() => setSelectedRoomId(room.id)}
-                className={cn(
-                  "flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-all text-base whitespace-nowrap",
-                  selectedRoomId === room.id
-                    ? "border-primary text-primary"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
-                )}
-              >
-                {room.name}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Content - Scrollable */}
