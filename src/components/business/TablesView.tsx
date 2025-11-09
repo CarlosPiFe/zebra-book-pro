@@ -762,43 +762,45 @@ export function TablesView({ businessId }: TablesViewProps) {
 
   return (
     <div className="flex flex-col h-full animate-fade-in">
-      {/* Tabs de salas - Barra horizontal fija arriba de todo */}
+      {/* Tabs de salas y botones en la misma línea */}
       <div className="flex-shrink-0 bg-background border-b">
-        {rooms.length > 0 && (
-          <div className="flex w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 overflow-x-auto gap-2">
-            <button
-              onClick={() => setSelectedRoomId(null)}
-              className={cn(
-                "flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-all text-base whitespace-nowrap",
-                selectedRoomId === null
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
-              )}
-            >
-              Todas las salas
-            </button>
-            {rooms.map((room) => (
+        <div className="flex items-center justify-between gap-4 w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
+          {/* Tabs de salas a la izquierda */}
+          {rooms.length > 0 ? (
+            <div className="flex overflow-x-auto gap-2">
               <button
-                key={room.id}
-                onClick={() => setSelectedRoomId(room.id)}
+                onClick={() => setSelectedRoomId(null)}
                 className={cn(
                   "flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-all text-base whitespace-nowrap",
-                  selectedRoomId === room.id
+                  selectedRoomId === null
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
                 )}
               >
-                {room.name}
+                Todas las salas
               </button>
-            ))}
-          </div>
-        )}
-      </div>
+              {rooms.map((room) => (
+                <button
+                  key={room.id}
+                  onClick={() => setSelectedRoomId(room.id)}
+                  className={cn(
+                    "flex items-center gap-2 px-6 py-3 border-b-2 font-medium transition-all text-base whitespace-nowrap",
+                    selectedRoomId === room.id
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted"
+                  )}
+                >
+                  {room.name}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div></div>
+          )}
 
-      {/* Botones de filtros y añadir mesa */}
-      <div className="flex-shrink-0 bg-background">
-        <div className="flex items-center justify-end gap-3 w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8 py-2">
-          <Popover>
+          {/* Botones a la derecha */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm">
                 <Filter className="h-4 w-4 mr-2" />
@@ -921,6 +923,7 @@ export function TablesView({ businessId }: TablesViewProps) {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         </div>
       </div>
 
