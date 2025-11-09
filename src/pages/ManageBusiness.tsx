@@ -160,7 +160,7 @@ const ManageBusiness = () => {
           />
         )}
         
-        <main className="flex-1 overflow-hidden flex flex-col p-6">
+        <main className="flex-1 overflow-y-auto flex flex-col p-6">
           {renderView()}
         </main>
       </div>
