@@ -21,42 +21,48 @@ export const HeroSearch = () => {
     setIsSearching(true);
     
     try {
-      const { data, error } = await supabase.functions.invoke('parse-search-query', {
+      const { data, error } = await supabase.functions.invoke('intelligent-search', {
         body: { query: searchQuery }
       });
 
       if (error) throw error;
 
+      // La IA ya devuelve los resultados filtrados y validados
       const params = new URLSearchParams();
-      if (data.name) params.append('name', data.name);
-      if (data.location) params.append('location', data.location);
-      if (data.cuisine) params.append('cuisine', data.cuisine);
-      if (data.keywords) params.append('keywords', data.keywords);
-      if (data.priceRange) params.append('priceRange', data.priceRange);
-      if (data.minRating) params.append('minRating', data.minRating.toString());
       
-      // Añadir filtros de dietas
-      if (data.dietaryOptions && data.dietaryOptions.length > 0) {
-        data.dietaryOptions.forEach((diet: string) => params.append('diet', diet));
+      // Añadir filtros aplicados por la IA
+      const filters = data.appliedFilters;
+      if (filters.location) params.append('location', filters.location);
+      if (filters.cuisine) params.append('cuisine', filters.cuisine);
+      if (filters.keywords) params.append('keywords', filters.keywords);
+      if (filters.priceRange) params.append('priceRange', filters.priceRange);
+      if (filters.minRating) params.append('minRating', filters.minRating.toString());
+      
+      if (filters.dietaryOptions && filters.dietaryOptions.length > 0) {
+        filters.dietaryOptions.forEach((diet: string) => params.append('diet', diet));
       }
       
-      // Añadir filtros de servicios
-      if (data.serviceTypes && data.serviceTypes.length > 0) {
-        data.serviceTypes.forEach((service: string) => params.append('service', service));
+      if (filters.serviceTypes && filters.serviceTypes.length > 0) {
+        filters.serviceTypes.forEach((service: string) => params.append('service', service));
       }
       
-      // Añadir filtros de platos
-      if (data.dishSpecialties && data.dishSpecialties.length > 0) {
-        data.dishSpecialties.forEach((dish: string) => params.append('dish', dish));
+      if (filters.dishSpecialties && filters.dishSpecialties.length > 0) {
+        filters.dishSpecialties.forEach((dish: string) => params.append('dish', dish));
+      }
+
+      // Añadir los IDs de restaurantes encontrados por la IA
+      if (data.matches && data.matches.length > 0) {
+        const matchIds = data.matches.map((m: any) => m.id).join(',');
+        params.append('aiMatches', matchIds);
       }
       
       navigate(`/search?${params.toString()}`);
     } catch (error) {
-      console.error('Error al interpretar búsqueda:', error);
+      console.error('Error en búsqueda inteligente:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo interpretar tu búsqueda. Intenta de nuevo.",
+        description: "No se pudo procesar tu búsqueda. Intenta de nuevo.",
       });
     } finally {
       setIsSearching(false);

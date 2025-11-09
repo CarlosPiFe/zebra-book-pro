@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.parse-search-query]
 verify_jwt = false
+
+[functions.intelligent-search]
+verify_jwt = false

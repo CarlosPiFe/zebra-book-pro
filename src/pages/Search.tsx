@@ -41,6 +41,7 @@ export default function SearchPage() {
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
+  const [aiMatchIds, setAiMatchIds] = useState<string[]>([]); // IDs pre-seleccionados por IA
 
   // Parámetros de búsqueda
   const [searchLocation, setSearchLocation] = useState<string>("");
@@ -73,12 +74,20 @@ export default function SearchPage() {
     const keywords = searchParams.get('keywords') || "";
     const minRatingFromURL = searchParams.get('minRating');
     const priceRangeFromURL = searchParams.get('priceRange');
+    const aiMatches = searchParams.get('aiMatches') || "";
     
     // Leer filtros de URL
     const dietsFromURL = searchParams.getAll('diet');
     const servicesFromURL = searchParams.getAll('service');
     const dishesFromURL = searchParams.getAll('dish');
     const cuisinesFromURL = searchParams.getAll('cuisineType');
+    
+    // Configurar IDs pre-seleccionados por IA
+    if (aiMatches) {
+      setAiMatchIds(aiMatches.split(','));
+    } else {
+      setAiMatchIds([]);
+    }
     
     setSearchLocation(location);
     // Usar name si existe, sino keywords, sino cuisine, sino type (legacy)
@@ -201,7 +210,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [businesses, searchLocation, searchType, minRating, priceRange, selectedCuisines, selectedServices, selectedDishes, selectedDiets]);
+  }, [businesses, searchLocation, searchType, minRating, priceRange, selectedCuisines, selectedServices, selectedDishes, selectedDiets, aiMatchIds]);
 
   const loadBusinesses = async () => {
     setLoading(true);
@@ -222,6 +231,16 @@ export default function SearchPage() {
 
   const applyFilters = () => {
     let filtered = [...businesses];
+
+    // PRIORIDAD 1: Si la IA ya pre-seleccionó restaurantes, usar esos
+    if (aiMatchIds.length > 0) {
+      filtered = aiMatchIds
+        .map(id => businesses.find(b => b.id === id))
+        .filter((b): b is Business => b !== undefined);
+      
+      setFilteredBusinesses(filtered);
+      return;
+    }
 
     // Filtro de ubicación
     if (searchLocation) {
