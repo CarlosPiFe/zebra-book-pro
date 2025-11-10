@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,11 @@ import {
   CalendarCheck,
   Info,
   Globe,
-  Utensils
+  Utensils,
+  Plus,
+  Trash2,
+  Edit,
+  Calendar
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -31,6 +35,21 @@ import {
   DIETARY_OPTIONS, 
   PRICE_RANGES 
 } from "@/lib/searchFilters";
+import { cn } from "@/lib/utils";
+
+interface TimeSlot {
+  id: string;
+  days: number[];
+  openTime: string;
+  closeTime: string;
+}
+
+interface Room {
+  id: string;
+  name: string;
+  timeSlots: TimeSlot[];
+  isActive: boolean;
+}
 
 interface Business {
   id: string;
@@ -95,6 +114,21 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
     business.booking_mode || "automatic"
   );
 
+  // Room management states
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null);
+
+  const daysOfWeek = [
+    { value: 1, label: "L" },
+    { value: 2, label: "M" },
+    { value: 3, label: "X" },
+    { value: 4, label: "J" },
+    { value: 5, label: "V" },
+    { value: 6, label: "S" },
+    { value: 0, label: "D" },
+  ];
+
   // Datos de filtros - importados de constantes compartidas
   const cuisineTypes = CUISINE_TYPES_WITH_OTHER;
   const serviceTypes = SERVICE_TYPES;
@@ -120,6 +154,227 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
   const [selectedServiceTypes, setSelectedServiceTypes] = useState<string[]>(business.service_types || []);
   const [selectedDishSpecialties, setSelectedDishSpecialties] = useState<string[]>(business.dish_specialties || []);
   const [seoKeywords, setSeoKeywords] = useState<string>(business.seo_keywords || "");
+
+  // Load rooms when subsection changes
+  useEffect(() => {
+    if (activeSubSection === "rooms") {
+      loadRooms();
+    }
+  }, [activeSubSection]);
+
+  const loadRooms = async () => {
+    setLoadingRooms(true);
+    try {
+      const { data, error } = await supabase
+        .from('business_rooms')
+        .select('*')
+        .eq('business_id', business.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (data) {
+        setRooms(data.map(room => ({
+          id: room.id,
+          name: room.name,
+          timeSlots: (room.time_slots as unknown as TimeSlot[]) || [],
+          isActive: room.is_active,
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading rooms:', error);
+      toast.error("Error al cargar las salas");
+    } finally {
+      setLoadingRooms(false);
+    }
+  };
+
+  const handleAddRoom = () => {
+    const newRoom: Room = {
+      id: `temp-${Date.now()}`,
+      name: "",
+      timeSlots: [],
+      isActive: true,
+    };
+    setRooms([...rooms, newRoom]);
+    setEditingRoomId(newRoom.id);
+  };
+
+  const handleRemoveRoom = async (id: string) => {
+    if (id.startsWith('temp-')) {
+      setRooms(rooms.filter(room => room.id !== id));
+    } else {
+      try {
+        const { error } = await supabase
+          .from('business_rooms')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+        
+        setRooms(rooms.filter(room => room.id !== id));
+        toast.success("Sala eliminada");
+      } catch (error) {
+        console.error('Error deleting room:', error);
+        toast.error("Error al eliminar la sala");
+      }
+    }
+  };
+
+  const handleRoomChange = (id: string, field: keyof Room, value: any) => {
+    setRooms(rooms.map(room => 
+      room.id === id ? { ...room, [field]: value } : room
+    ));
+  };
+
+  const handleAddTimeSlot = (roomId: string) => {
+    const newTimeSlot: TimeSlot = {
+      id: `slot-${Date.now()}`,
+      days: [],
+      openTime: "",
+      closeTime: "",
+    };
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? { ...room, timeSlots: [...room.timeSlots, newTimeSlot] }
+        : room
+    ));
+  };
+
+  const handleRemoveTimeSlot = (roomId: string, slotId: string) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? { ...room, timeSlots: room.timeSlots.filter(slot => slot.id !== slotId) }
+        : room
+    ));
+  };
+
+  const handleTimeSlotChange = (roomId: string, slotId: string, field: keyof TimeSlot, value: any) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? {
+            ...room,
+            timeSlots: room.timeSlots.map(slot =>
+              slot.id === slotId ? { ...slot, [field]: value } : slot
+            )
+          }
+        : room
+    ));
+  };
+
+  const handleToggleDay = (roomId: string, slotId: string, day: number) => {
+    setRooms(rooms.map(room => 
+      room.id === roomId 
+        ? {
+            ...room,
+            timeSlots: room.timeSlots.map(slot =>
+              slot.id === slotId 
+                ? {
+                    ...slot,
+                    days: slot.days.includes(day)
+                      ? slot.days.filter(d => d !== day)
+                      : [...slot.days, day]
+                  }
+                : slot
+            )
+          }
+        : room
+    ));
+  };
+
+  const handleSaveRoom = async (roomId: string) => {
+    const room = rooms.find(r => r.id === roomId);
+    if (!room) return;
+
+    if (!room.name.trim()) {
+      toast.error("La sala debe tener un nombre");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const roomData = {
+        business_id: business.id,
+        name: room.name,
+        time_slots: room.timeSlots as any,
+        is_active: room.isActive,
+      };
+
+      if (roomId.startsWith('temp-')) {
+        const { data, error } = await supabase
+          .from('business_rooms')
+          .insert([roomData])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        setRooms(rooms.map(r => 
+          r.id === roomId ? { ...room, id: data.id } : r
+        ));
+      } else {
+        const { error } = await supabase
+          .from('business_rooms')
+          .update(roomData)
+          .eq('id', roomId);
+
+        if (error) throw error;
+      }
+
+      toast.success("Sala guardada correctamente");
+      setEditingRoomId(null);
+    } catch (error) {
+      console.error('Error saving room:', error);
+      toast.error("Error al guardar la sala");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleRoomActive = async (roomId: string, isActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('business_rooms')
+        .update({ is_active: isActive })
+        .eq('id', roomId);
+
+      if (error) throw error;
+
+      setRooms(rooms.map(room => 
+        room.id === roomId ? { ...room, isActive } : room
+      ));
+
+      toast.success(isActive ? "Sala activada" : "Sala desactivada");
+    } catch (error) {
+      console.error('Error updating room status:', error);
+      toast.error("Error al actualizar el estado de la sala");
+    }
+  };
+
+  const formatRoomSchedule = (room: Room) => {
+    if (room.timeSlots.length === 0) {
+      return "Horario heredado del local";
+    }
+
+    const dayNames = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
+    const scheduleGroups: { [key: string]: number[] } = {};
+
+    room.timeSlots.forEach(slot => {
+      const timeKey = `${slot.openTime}-${slot.closeTime}`;
+      if (!scheduleGroups[timeKey]) {
+        scheduleGroups[timeKey] = [];
+      }
+      scheduleGroups[timeKey].push(...slot.days);
+    });
+
+    const formattedGroups = Object.entries(scheduleGroups).map(([timeKey, days]) => {
+      const uniqueDays = Array.from(new Set(days)).sort((a, b) => a - b);
+      const dayLabels = uniqueDays.map(d => dayNames[d]).join(', ');
+      return `${dayLabels}: ${timeKey}`;
+    });
+
+    return formattedGroups.join(' | ');
+  };
 
   const handleCuisineTypeChange = (value: string) => {
     setSelectedCuisineType(value);
@@ -674,13 +929,189 @@ export function SettingsContent({ business, activeSubSection, onUpdate }: Settin
                 Configuración de Salas
               </CardTitle>
               <CardDescription>
-                Esta funcionalidad está en desarrollo
+                Gestiona las diferentes salas de tu negocio y sus horarios
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Próximamente podrás gestionar diferentes salas para tu negocio.
-              </p>
+            <CardContent className="space-y-6">
+              {loadingRooms ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Cargando salas...</p>
+                </div>
+              ) : (
+                <>
+                  {rooms.length === 0 ? (
+                    <div className="text-center py-8 space-y-4">
+                      <p className="text-muted-foreground">No hay salas configuradas</p>
+                      <Button onClick={handleAddRoom}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Añadir Primera Sala
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {rooms.map((room) => (
+                        <Card key={room.id} className={cn(
+                          "border-2",
+                          !room.isActive && "opacity-60"
+                        )}>
+                          <CardContent className="p-4 space-y-4">
+                            {editingRoomId === room.id ? (
+                              <>
+                                {/* Editing mode */}
+                                <div className="space-y-4">
+                                  <div className="flex items-center justify-between">
+                                    <Label>Nombre de la Sala</Label>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleSaveRoom(room.id)}
+                                        disabled={loading}
+                                      >
+                                        {loading ? "Guardando..." : "Guardar"}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setEditingRoomId(null)}
+                                      >
+                                        Cancelar
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <Input
+                                    value={room.name}
+                                    onChange={(e) => handleRoomChange(room.id, 'name', e.target.value)}
+                                    placeholder="Ej: Sala Principal, Terraza, etc."
+                                  />
+
+                                  <div className="space-y-3">
+                                    <div className="flex items-center justify-between">
+                                      <Label>Horarios Personalizados</Label>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleAddTimeSlot(room.id)}
+                                      >
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Añadir Horario
+                                      </Button>
+                                    </div>
+
+                                    {room.timeSlots.length === 0 ? (
+                                      <p className="text-sm text-muted-foreground">
+                                        Sin horarios personalizados. La sala usará el horario general del negocio.
+                                      </p>
+                                    ) : (
+                                      <div className="space-y-3">
+                                        {room.timeSlots.map((slot) => (
+                                          <Card key={slot.id} className="p-3">
+                                            <div className="space-y-3">
+                                              <div className="flex items-center justify-between">
+                                                <Label className="text-sm">Días de la semana</Label>
+                                                <Button
+                                                  size="sm"
+                                                  variant="ghost"
+                                                  onClick={() => handleRemoveTimeSlot(room.id, slot.id)}
+                                                >
+                                                  <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                              </div>
+                                              <div className="flex gap-1">
+                                                {daysOfWeek.map((day) => (
+                                                  <Button
+                                                    key={day.value}
+                                                    size="sm"
+                                                    variant={slot.days.includes(day.value) ? "default" : "outline"}
+                                                    onClick={() => handleToggleDay(room.id, slot.id, day.value)}
+                                                    className="flex-1"
+                                                  >
+                                                    {day.label}
+                                                  </Button>
+                                                ))}
+                                              </div>
+                                              <div className="grid grid-cols-2 gap-2">
+                                                <div>
+                                                  <Label className="text-sm">Apertura</Label>
+                                                  <Input
+                                                    type="time"
+                                                    value={slot.openTime}
+                                                    onChange={(e) => handleTimeSlotChange(room.id, slot.id, 'openTime', e.target.value)}
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label className="text-sm">Cierre</Label>
+                                                  <Input
+                                                    type="time"
+                                                    value={slot.closeTime}
+                                                    onChange={(e) => handleTimeSlotChange(room.id, slot.id, 'closeTime', e.target.value)}
+                                                  />
+                                                </div>
+                                              </div>
+                                            </div>
+                                          </Card>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                {/* View mode */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                      <h3 className="font-semibold text-lg">{room.name}</h3>
+                                      <Switch
+                                        checked={room.isActive}
+                                        onCheckedChange={(checked) => handleToggleRoomActive(room.id, checked)}
+                                        disabled={room.id.startsWith('temp-')}
+                                      />
+                                      <span className="text-sm text-muted-foreground">
+                                        {room.isActive ? "Activa" : "Inactiva"}
+                                      </span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setEditingRoomId(room.id)}
+                                      >
+                                        <Edit className="h-4 w-4 mr-2" />
+                                        Editar
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => handleRemoveRoom(room.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                                    <Calendar className="h-4 w-4 mt-0.5" />
+                                    <span>{formatRoomSchedule(room)}</span>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                      
+                      <Button
+                        variant="outline"
+                        onClick={handleAddRoom}
+                        className="w-full"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Añadir Nueva Sala
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
         );
