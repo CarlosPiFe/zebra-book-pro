@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Mail, Phone, Star, UserPlus } from "lucide-react";
+import { Search, Star, UserPlus } from "lucide-react";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { CustomersOverview } from "./CustomersOverview";
 import { format, parse } from "date-fns";
@@ -194,10 +194,6 @@ export function CustomersView({ businessId }: CustomersViewProps) {
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold truncate">{customer.client_name}</h3>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Mail className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">{customer.client_email}</span>
-                        </div>
                         <div className="flex items-center justify-between mt-1">
                           <span className="text-xs text-muted-foreground">
                             {customer.total_bookings} reservas
@@ -223,18 +219,9 @@ export function CustomersView({ businessId }: CustomersViewProps) {
               <div className="space-y-6 animate-fade-in">
                 <div>
                   <h3 className="text-2xl font-bold mb-2">{selectedCustomer.client_name}</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Mail className="h-4 w-4" />
-                      <span>{selectedCustomer.client_email}</span>
-                    </div>
-                    {selectedCustomer.client_phone && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="h-4 w-4" />
-                        <span>{selectedCustomer.client_phone}</span>
-                      </div>
-                    )}
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Información de contacto protegida por privacidad
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

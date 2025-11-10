@@ -200,18 +200,8 @@ export function CustomerDetailSheet({
         <div className="space-y-6 mt-6">
           {/* Customer Info */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-lg">Información de Contacto</h3>
+            <h3 className="font-semibold text-lg">Información del Cliente</h3>
             <div className="space-y-2 text-sm">
-              <p>
-                <span className="text-muted-foreground">Email:</span>{" "}
-                <span className="font-medium">{customer.client_email}</span>
-              </p>
-              {customer.client_phone && (
-                <p>
-                  <span className="text-muted-foreground">Teléfono:</span>{" "}
-                  <span className="font-medium">{customer.client_phone}</span>
-                </p>
-              )}
               <p>
                 <span className="text-muted-foreground">Total de reservas:</span>{" "}
                 <span className="font-medium">{customer.total_bookings}</span>
@@ -225,6 +215,9 @@ export function CustomerDetailSheet({
                     { locale: es }
                   )}
                 </span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-2 pt-2 border-t">
+                Los datos de contacto están protegidos por privacidad
               </p>
             </div>
           </div>
