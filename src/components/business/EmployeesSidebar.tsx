@@ -67,20 +67,36 @@ export function EmployeesSidebar({
               <Popover>
                 <PopoverTrigger asChild>
                   <button
-                    className="w-4 h-4 rounded-full flex-shrink-0 border-2 border-sidebar-border hover:scale-110 transition-transform"
+                    className="w-4 h-4 rounded-full flex-shrink-0 border-2 border-sidebar-border hover:scale-110 transition-transform cursor-pointer"
                     style={{ backgroundColor: waiterColor }}
+                    title="Cambiar color"
                   />
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-3" side="right">
-                  <div className="grid grid-cols-6 gap-2">
-                    {PRESET_COLORS.map((color) => (
-                      <button
-                        key={color}
-                        className="w-6 h-6 rounded-full border-2 border-border hover:scale-110 transition-transform"
-                        style={{ backgroundColor: color }}
-                        onClick={() => onWaiterColorChange(waiter.id, color)}
-                      />
-                    ))}
+                <PopoverContent className="w-auto p-3" side="right" align="start">
+                  <div className="space-y-3">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      Seleccionar color para {waiter.name}
+                    </div>
+                    <div className="grid grid-cols-6 gap-2">
+                      {PRESET_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          className={cn(
+                            "w-7 h-7 rounded-full border-2 hover:scale-110 transition-transform relative",
+                            color === waiterColor ? "border-primary ring-2 ring-primary ring-offset-2" : "border-border"
+                          )}
+                          style={{ backgroundColor: color }}
+                          onClick={() => onWaiterColorChange(waiter.id, color)}
+                          title={color}
+                        >
+                          {color === waiterColor && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-2 h-2 rounded-full bg-white shadow-sm" />
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </PopoverContent>
               </Popover>
