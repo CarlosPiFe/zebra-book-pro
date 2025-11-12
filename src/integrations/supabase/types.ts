@@ -289,6 +289,8 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          latitude: number | null
+          longitude: number | null
           mark_delayed_as_no_show: boolean | null
           name: string
           owner_id: string
@@ -322,6 +324,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           mark_delayed_as_no_show?: boolean | null
           name: string
           owner_id: string
@@ -355,6 +359,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           mark_delayed_as_no_show?: boolean | null
           name?: string
           owner_id?: string

@@ -33,6 +33,8 @@ interface Business {
   service_types?: string[] | null;
   dish_specialties?: string[] | null;
   seo_keywords?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export default function SearchPage() {
@@ -655,8 +657,11 @@ export default function SearchPage() {
             {/* Columna 2: Tarjetas de Restaurantes */}
             <main className="lg:col-span-4">
               {loading ? (
-                <div className="flex items-center justify-center h-64">
-                  <LoadingSpinner />
+                <div className="flex flex-col items-center justify-center h-64 space-y-4">
+                  <LoadingSpinner size="lg" text="Buscando restaurantes..." />
+                  <p className="text-sm text-muted-foreground animate-pulse">
+                    Analizando opciones disponibles
+                  </p>
                 </div>
               ) : filteredBusinesses.length === 0 ? (
                 <div className="flex items-center justify-center h-64">
@@ -665,7 +670,7 @@ export default function SearchPage() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-fade-in">
                   {filteredBusinesses.map((business) => (
                     <SearchRestaurantCard
                       key={business.id}
@@ -680,10 +685,16 @@ export default function SearchPage() {
             {/* Columna 3: Mapa */}
             <aside className="hidden lg:block lg:col-span-4 lg:sticky top-20 h-fit">
               <div className="h-[calc(100vh-7rem)] rounded-lg overflow-hidden border">
-                <RestaurantMap 
-                  businesses={filteredBusinesses}
-                  onBusinessClick={handleBusinessClick}
-                />
+                {loading ? (
+                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                    <LoadingSpinner size="lg" text="Cargando mapa..." />
+                  </div>
+                ) : (
+                  <RestaurantMap 
+                    businesses={filteredBusinesses}
+                    onBusinessClick={handleBusinessClick}
+                  />
+                )}
               </div>
             </aside>
           </div>
