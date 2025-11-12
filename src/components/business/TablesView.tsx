@@ -922,7 +922,7 @@ export function TablesView({ businessId }: TablesViewProps) {
                 <Button onClick={handleAddTable}>Añadir Mesa</Button>
               </DialogFooter>
             </DialogContent>
-          </Dialog>
+            </Dialog>
           </div>
         </div>
       </div>
@@ -1467,8 +1467,6 @@ export function TablesView({ businessId }: TablesViewProps) {
           </Dialog>
         </>
       )}
-        </div>
-      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Navbar } from "@/components/Navbar";
 import { CalendarView } from "@/components/business/CalendarView";
 import { BookingsView } from "@/components/business/BookingsView";
-import { TablesView } from "@/components/business/TablesView";
+import { TablesViewWrapper } from "@/components/business/TablesViewWrapper";
 import { MenuView } from "@/components/business/MenuView";
 import { PeopleView } from "@/components/business/PeopleView";
 import { WeeklyScheduleView } from "@/components/business/WeeklyScheduleView";
@@ -129,7 +129,7 @@ const ManageBusiness = () => {
       case "bookings":
         return <BookingsView businessId={business.id} businessName={business.name} />;
       case "tables":
-        return <TablesView businessId={business.id} />;
+        return <TablesViewWrapper businessId={business.id} />;
       case "menu":
         return <MenuView businessId={business.id} />;
       case "employees":

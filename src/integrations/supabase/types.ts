@@ -1020,36 +1020,64 @@ export type Database = {
       }
       tables: {
         Row: {
+          assigned_waiter_id: string | null
           business_id: string
           created_at: string
+          element_type: string | null
+          height: number | null
           id: string
           max_capacity: number
           min_capacity: number
+          position_x: number | null
+          position_y: number | null
           room_id: string | null
+          rotation: number | null
           table_number: number
           updated_at: string
+          width: number | null
         }
         Insert: {
+          assigned_waiter_id?: string | null
           business_id: string
           created_at?: string
+          element_type?: string | null
+          height?: number | null
           id?: string
           max_capacity: number
           min_capacity?: number
+          position_x?: number | null
+          position_y?: number | null
           room_id?: string | null
+          rotation?: number | null
           table_number: number
           updated_at?: string
+          width?: number | null
         }
         Update: {
+          assigned_waiter_id?: string | null
           business_id?: string
           created_at?: string
+          element_type?: string | null
+          height?: number | null
           id?: string
           max_capacity?: number
           min_capacity?: number
+          position_x?: number | null
+          position_y?: number | null
           room_id?: string | null
+          rotation?: number | null
           table_number?: number
           updated_at?: string
+          width?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tables_assigned_waiter_id_fkey"
+            columns: ["assigned_waiter_id"]
+            isOneToOne: false
+            referencedRelation: "waiters"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tables_business_id_fkey"
             columns: ["business_id"]
