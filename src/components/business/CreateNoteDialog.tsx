@@ -62,7 +62,7 @@ export function CreateNoteDialog({
       business_id: businessId,
       title: title.trim(),
       content: content.trim() || null,
-      category: category || null,
+      category: category && category !== "none" ? category : null,
     });
 
     if (error) {
@@ -107,7 +107,7 @@ export function CreateNoteDialog({
                 <SelectValue placeholder="Seleccionar categoría (opcional)" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin categoría</SelectItem>
+                <SelectItem value="none">Sin categoría</SelectItem>
                 {categories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}

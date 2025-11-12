@@ -83,7 +83,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
       setNote(data);
       setEditedTitle(data.title);
       setEditedContent(data.content || "");
-      setEditedCategory(data.category || "");
+      setEditedCategory(data.category || "none");
     }
     setLoading(false);
   };
@@ -97,7 +97,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
     if (note) {
       setEditedTitle(note.title);
       setEditedContent(note.content || "");
-      setEditedCategory(note.category || "");
+      setEditedCategory(note.category || "none");
     }
   };
 
@@ -112,7 +112,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
       .update({
         title: editedTitle,
         content: editedContent,
-        category: editedCategory || null,
+        category: editedCategory && editedCategory !== "none" ? editedCategory : null,
       })
       .eq("id", note.id);
 
@@ -154,7 +154,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
         business_id: businessId,
         title: `${note.title} (copia)`,
         content: note.content,
-        category: note.category,
+        category: note.category || null,
       });
 
     if (error) {
@@ -206,12 +206,12 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
                   </div>
                   <div>
                     <Label htmlFor="category">Categoría</Label>
-                    <Select value={editedCategory} onValueChange={setEditedCategory}>
+                    <Select value={editedCategory || "none"} onValueChange={setEditedCategory}>
                       <SelectTrigger>
                         <SelectValue placeholder="Seleccionar categoría" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sin categoría</SelectItem>
+                        <SelectItem value="none">Sin categoría</SelectItem>
                         {categories.map((cat) => (
                           <SelectItem key={cat} value={cat}>
                             {cat}
