@@ -1467,6 +1467,8 @@ export function TablesView({ businessId }: TablesViewProps) {
           </Dialog>
         </>
       )}
+        </div>
+      </div>
     </div>
   );
 }
