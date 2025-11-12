@@ -20,6 +20,17 @@ interface CreateNoteDialogProps {
   onNoteCreated: (noteId: string) => void;
 }
 
+const noteColors = [
+  { value: "#3b82f6", label: "Azul" },
+  { value: "#10b981", label: "Verde" },
+  { value: "#f59e0b", label: "Naranja" },
+  { value: "#ef4444", label: "Rojo" },
+  { value: "#8b5cf6", label: "Morado" },
+  { value: "#ec4899", label: "Rosa" },
+  { value: "#06b6d4", label: "Cian" },
+  { value: "#6b7280", label: "Gris" },
+];
+
 export function CreateNoteDialog({
   businessId,
   open,
@@ -27,6 +38,7 @@ export function CreateNoteDialog({
   onNoteCreated,
 }: CreateNoteDialogProps) {
   const [title, setTitle] = useState("");
+  const [selectedColor, setSelectedColor] = useState("#3b82f6");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +58,7 @@ export function CreateNoteDialog({
         title: title.trim(),
         content: "",
         category: null,
+        color: selectedColor,
       })
       .select()
       .single();
@@ -56,6 +69,7 @@ export function CreateNoteDialog({
     } else if (data) {
       toast.success("Nota creada correctamente");
       setTitle("");
+      setSelectedColor("#3b82f6");
       onOpenChange(false);
       onNoteCreated(data.id);
     }
@@ -83,6 +97,31 @@ export function CreateNoteDialog({
               required
               autoFocus
             />
+          </div>
+          <div>
+            <Label>Color de la nota</Label>
+            <div className="grid grid-cols-4 gap-2 mt-2">
+              {noteColors.map((color) => (
+                <button
+                  key={color.value}
+                  type="button"
+                  onClick={() => setSelectedColor(color.value)}
+                  className="group relative"
+                >
+                  <div
+                    className={`w-full h-10 rounded-lg transition-all ${
+                      selectedColor === color.value
+                        ? "ring-2 ring-offset-2 ring-primary scale-110"
+                        : "hover:scale-105"
+                    }`}
+                    style={{ backgroundColor: color.value }}
+                  />
+                  <span className="text-xs mt-1 block text-center text-muted-foreground">
+                    {color.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
           <DialogFooter>
             <Button

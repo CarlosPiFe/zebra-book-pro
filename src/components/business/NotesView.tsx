@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Trash2, Copy, Check, X } from "lucide-react";
+import { Pencil, Trash2, Copy, Check, X, Palette } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +14,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -28,9 +33,21 @@ interface Note {
   title: string;
   content: string | null;
   category: string | null;
+  color: string;
   created_at: string;
   updated_at: string;
 }
+
+const noteColors = [
+  { value: "#3b82f6", label: "Azul" },
+  { value: "#10b981", label: "Verde" },
+  { value: "#f59e0b", label: "Naranja" },
+  { value: "#ef4444", label: "Rojo" },
+  { value: "#8b5cf6", label: "Morado" },
+  { value: "#ec4899", label: "Rosa" },
+  { value: "#06b6d4", label: "Cian" },
+  { value: "#6b7280", label: "Gris" },
+];
 
 export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewProps) {
   const [note, setNote] = useState<Note | null>(null);
@@ -71,7 +88,10 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
       console.error("Error loading note:", error);
       toast.error("Error al cargar la nota");
     } else if (data) {
-      setNote(data);
+      setNote({
+        ...data,
+        color: data.color || "#3b82f6"
+      });
       setEditedContent(data.content || "");
       setEditedTitle(data.title);
     }
@@ -148,6 +168,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
         title: `${note.title} (copia)`,
         content: note.content,
         category: note.category || null,
+        color: note.color,
       });
 
     if (error) {
@@ -155,6 +176,23 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
       toast.error("Error al duplicar la nota");
     } else {
       toast.success("Nota duplicada correctamente");
+      onNoteChange();
+    }
+  };
+
+  const handleColorChange = async (color: string) => {
+    if (!note) return;
+
+    const { error } = await supabase
+      .from("business_notes")
+      .update({ color })
+      .eq("id", note.id);
+
+    if (error) {
+      console.error("Error updating color:", error);
+      toast.error("Error al cambiar el color");
+    } else {
+      setNote({ ...note, color });
       onNoteChange();
     }
   };
@@ -193,6 +231,10 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
     <div className="space-y-4">
       <div className="flex items-center justify-between pb-4 border-b">
         <div className="flex items-center gap-3 flex-1">
+          <div
+            className="w-4 h-4 rounded-full flex-shrink-0"
+            style={{ backgroundColor: note.color }}
+          />
           {isRenamingTitle ? (
             <div className="flex items-center gap-2 flex-1">
               <Input
@@ -232,6 +274,40 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
           {isSaving && (
             <span className="text-xs text-muted-foreground">Guardando...</span>
           )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button size="sm" variant="outline">
+                <Palette className="w-4 h-4 mr-2" />
+                Color
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Color de la nota</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {noteColors.map((color) => (
+                    <button
+                      key={color.value}
+                      onClick={() => handleColorChange(color.value)}
+                      className="group relative"
+                    >
+                      <div
+                        className={`w-full h-10 rounded-lg transition-all ${
+                          note.color === color.value
+                            ? "ring-2 ring-offset-2 ring-primary scale-110"
+                            : "hover:scale-105"
+                        }`}
+                        style={{ backgroundColor: color.value }}
+                      />
+                      <span className="text-xs mt-1 block text-center text-muted-foreground">
+                        {color.label}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button size="sm" variant="outline" onClick={handleDuplicate}>
             <Copy className="w-4 h-4 mr-2" />
             Duplicar
@@ -263,6 +339,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
         content={editedContent}
         onUpdate={setEditedContent}
         placeholder="Empieza a escribir tu nota aquí..."
+        noteId={note.id}
       />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

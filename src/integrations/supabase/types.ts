@@ -199,6 +199,7 @@ export type Database = {
         Row: {
           business_id: string
           category: string | null
+          color: string | null
           content: string | null
           created_at: string
           id: string
@@ -208,6 +209,7 @@ export type Database = {
         Insert: {
           business_id: string
           category?: string | null
+          color?: string | null
           content?: string | null
           created_at?: string
           id?: string
@@ -217,6 +219,7 @@ export type Database = {
         Update: {
           business_id?: string
           category?: string | null
+          color?: string | null
           content?: string | null
           created_at?: string
           id?: string

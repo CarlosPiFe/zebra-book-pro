@@ -2,6 +2,7 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Placeholder from "@tiptap/extension-placeholder";
+import Image from "@tiptap/extension-image";
 import { 
   Bold, 
   Italic, 
@@ -10,19 +11,25 @@ import {
   ListOrdered,
   Heading2,
   Undo,
-  Redo
+  Redo,
+  ImagePlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface RichTextEditorProps {
   content: string;
   onUpdate: (content: string) => void;
   placeholder?: string;
+  noteId?: string;
 }
 
-export function RichTextEditor({ content, onUpdate, placeholder = "Empieza a escribir..." }: RichTextEditorProps) {
+export function RichTextEditor({ content, onUpdate, placeholder = "Empieza a escribir...", noteId }: RichTextEditorProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -31,6 +38,13 @@ export function RichTextEditor({ content, onUpdate, placeholder = "Empieza a esc
         },
       }),
       Underline,
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: 'max-w-full h-auto rounded-lg',
+        },
+      }),
       Placeholder.configure({
         placeholder,
       }),
@@ -51,6 +65,50 @@ export function RichTextEditor({ content, onUpdate, placeholder = "Empieza a esc
       editor.commands.setContent(content);
     }
   }, [content, editor]);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !editor || !noteId) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("Por favor selecciona una imagen válida");
+      return;
+    }
+
+    // Max 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("La imagen debe ser menor a 5MB");
+      return;
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${noteId}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('note-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('note-images')
+        .getPublicUrl(fileName);
+
+      if (data?.publicUrl) {
+        editor.chain().focus().setImage({ src: data.publicUrl }).run();
+        toast.success("Imagen añadida");
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Error al subir la imagen");
+    }
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   if (!editor) {
     return null;
@@ -137,6 +195,25 @@ export function RichTextEditor({ content, onUpdate, placeholder = "Empieza a esc
         >
           <ListOrdered className="h-4 w-4" />
         </Button>
+        
+        <div className="w-px h-6 bg-border mx-1" />
+        
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          className="h-8 w-8 p-0"
+        >
+          <ImagePlus className="h-4 w-4" />
+        </Button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
         
         <div className="w-px h-6 bg-border mx-1" />
         

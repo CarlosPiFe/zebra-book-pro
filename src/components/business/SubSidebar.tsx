@@ -17,6 +17,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
+interface Note {
+  id: string;
+  title: string;
+  color: string;
+}
+
 interface SubSidebarProps {
   activeSection: string;
   activeSubSection: string;
@@ -33,7 +39,7 @@ interface SubMenuItem {
 }
 
 export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange, businessId, onCreateNote }: SubSidebarProps) {
-  const [notes, setNotes] = useState<any[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const subMenuItems: SubMenuItem[] = [
     // Configuración submenu
     {
@@ -109,7 +115,7 @@ export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange
     
     const { data, error } = await supabase
       .from("business_notes")
-      .select("*")
+      .select("id, title, color")
       .eq("business_id", businessId)
       .order("created_at", { ascending: false });
 
@@ -118,7 +124,10 @@ export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange
       return;
     }
 
-    setNotes(data || []);
+    setNotes((data || []).map(note => ({
+      ...note,
+      color: note.color || "#3b82f6"
+    })));
   };
 
   const visibleItems = subMenuItems.filter((item) => item.section === activeSection);
@@ -156,11 +165,14 @@ export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange
                   onClick={() => onSubSectionChange(note.id)}
                   className={cn(
                     "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
-                    "hover:bg-accent",
+                    "hover:bg-accent relative",
                     isActive && "bg-primary/10 text-primary font-medium"
                   )}
                 >
-                  <StickyNote className="w-4 h-4 flex-shrink-0" />
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: note.color }}
+                  />
                   <span className="truncate">{note.title}</span>
                 </button>
               );
