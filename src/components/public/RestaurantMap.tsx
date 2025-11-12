@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -111,55 +111,59 @@ export const RestaurantMap = ({
           className="w-full h-full"
           scrollWheelZoom={true}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {validBusinesses.map((business) => (
-            <Marker
-              key={business.id}
-              position={[business.latitude!, business.longitude!]}
-              eventHandlers={{
-                click: () => handleMarkerClick(business.id),
-              }}
-            >
-              <Popup>
-                <div className="min-w-[200px] p-2">
-                  {business.image_url && (
-                    <img
-                      src={business.image_url}
-                      alt={business.name}
-                      className="w-full h-32 object-cover rounded-lg mb-2"
-                    />
-                  )}
-                  <h3 className="font-semibold text-base mb-1">
-                    {business.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {business.cuisine_type || "Restaurante"}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <span className="text-yellow-500">⭐</span>
-                      <span className="font-semibold">
-                        {business.average_rating?.toFixed(1) || "N/A"}
-                      </span>
+          {(/*ctx*/) => (
+            <>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {validBusinesses.map((business) => (
+                <Marker
+                  key={business.id}
+                  position={[business.latitude!, business.longitude!]}
+                  eventHandlers={{
+                    click: () => handleMarkerClick(business.id),
+                  }}
+                >
+                  <Popup>
+                    <div className="min-w-[200px] p-2">
+                      {business.image_url && (
+                        <img
+                          src={business.image_url}
+                          alt={business.name}
+                          className="w-full h-32 object-cover rounded-lg mb-2"
+                        />
+                      )}
+                      <h3 className="font-semibold text-base mb-1">
+                        {business.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {business.cuisine_type || "Restaurante"}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-1">
+                          <span className="text-yellow-500">⭐</span>
+                          <span className="font-semibold">
+                            {business.average_rating?.toFixed(1) || "N/A"}
+                          </span>
+                        </div>
+                        <span className="text-gray-400">·</span>
+                        <span className="font-semibold text-green-600">
+                          {business.price_range || "€€"}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleMarkerClick(business.id)}
+                        className="mt-2 w-full bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90"
+                      >
+                        Ver detalles
+                      </button>
                     </div>
-                    <span className="text-gray-400">·</span>
-                    <span className="font-semibold text-green-600">
-                      {business.price_range || "€€"}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleMarkerClick(business.id)}
-                    className="mt-2 w-full bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90"
-                  >
-                    Ver detalles
-                  </button>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+                  </Popup>
+                </Marker>
+              ))}
+            </>
+          )}
         </MapContainer>
       ) : (
         <MapContainer
@@ -168,55 +172,59 @@ export const RestaurantMap = ({
           className="w-full h-full"
           scrollWheelZoom={true}
         >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-          {validBusinesses.map((business) => (
-            <Marker
-              key={business.id}
-              position={[business.latitude!, business.longitude!]}
-              eventHandlers={{
-                click: () => handleMarkerClick(business.id),
-              }}
-            >
-              <Popup>
-                <div className="min-w-[200px] p-2">
-                  {business.image_url && (
-                    <img
-                      src={business.image_url}
-                      alt={business.name}
-                      className="w-full h-32 object-cover rounded-lg mb-2"
-                    />
-                  )}
-                  <h3 className="font-semibold text-base mb-1">
-                    {business.name}
-                  </h3>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    {business.cuisine_type || "Restaurante"}
-                  </p>
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <span className="text-yellow-500">⭐</span>
-                      <span className="font-semibold">
-                        {business.average_rating?.toFixed(1) || "N/A"}
-                      </span>
+          {(/*ctx*/) => (
+            <>
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              {validBusinesses.map((business) => (
+                <Marker
+                  key={business.id}
+                  position={[business.latitude!, business.longitude!]}
+                  eventHandlers={{
+                    click: () => handleMarkerClick(business.id),
+                  }}
+                >
+                  <Popup>
+                    <div className="min-w-[200px] p-2">
+                      {business.image_url && (
+                        <img
+                          src={business.image_url}
+                          alt={business.name}
+                          className="w-full h-32 object-cover rounded-lg mb-2"
+                        />
+                      )}
+                      <h3 className="font-semibold text-base mb-1">
+                        {business.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {business.cuisine_type || "Restaurante"}
+                      </p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="flex items-center gap-1">
+                          <span className="text-yellow-500">⭐</span>
+                          <span className="font-semibold">
+                            {business.average_rating?.toFixed(1) || "N/A"}
+                          </span>
+                        </div>
+                        <span className="text-gray-400">·</span>
+                        <span className="font-semibold text-green-600">
+                          {business.price_range || "€€"}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleMarkerClick(business.id)}
+                        className="mt-2 w-full bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90"
+                      >
+                        Ver detalles
+                      </button>
                     </div>
-                    <span className="text-gray-400">·</span>
-                    <span className="font-semibold text-green-600">
-                      {business.price_range || "€€"}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => handleMarkerClick(business.id)}
-                    className="mt-2 w-full bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90"
-                  >
-                    Ver detalles
-                  </button>
-                </div>
-              </Popup>
-            </Marker>
-          ))}
+                  </Popup>
+                </Marker>
+              ))}
+            </>
+          )}
         </MapContainer>
       )}
     </div>
