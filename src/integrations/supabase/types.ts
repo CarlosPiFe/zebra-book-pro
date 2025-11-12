@@ -195,6 +195,44 @@ export type Database = {
           },
         ]
       }
+      business_notes: {
+        Row: {
+          business_id: string
+          category: string | null
+          content: string | null
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_notes_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_photos: {
         Row: {
           business_id: string
@@ -289,6 +327,8 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          latitude: number | null
+          longitude: number | null
           mark_delayed_as_no_show: boolean | null
           name: string
           owner_id: string
@@ -322,6 +362,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           mark_delayed_as_no_show?: boolean | null
           name: string
           owner_id: string
@@ -355,6 +397,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          latitude?: number | null
+          longitude?: number | null
           mark_delayed_as_no_show?: boolean | null
           name?: string
           owner_id?: string

@@ -13,6 +13,8 @@ import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { MainSidebar } from "@/components/business/MainSidebar";
 import { SubSidebar } from "@/components/business/SubSidebar";
 import { SettingsContent } from "@/components/business/SettingsContent";
+import { NotesView } from "@/components/business/NotesView";
+import { CreateNoteDialog } from "@/components/business/CreateNoteDialog";
 
 interface Business {
   id: string;
@@ -47,6 +49,8 @@ const ManageBusiness = () => {
   });
   const [activeSubSection, setActiveSubSection] = useState<string>("business-info");
   const [loading, setLoading] = useState(true);
+  const [createNoteDialogOpen, setCreateNoteDialogOpen] = useState(false);
+  const [notesRefreshKey, setNotesRefreshKey] = useState(0);
 
   useEffect(() => {
     loadBusiness();
@@ -101,7 +105,14 @@ const ManageBusiness = () => {
     setActiveView(section);
     if (section === "settings") {
       setActiveSubSection("business-info");
+    } else if (section === "notes") {
+      setActiveSubSection("");
     }
+  };
+
+  const handleNotesRefresh = () => {
+    setNotesRefreshKey(prev => prev + 1);
+    setActiveSubSection("");
   };
 
   const renderView = () => {
@@ -120,6 +131,8 @@ const ManageBusiness = () => {
         return <PeopleView businessId={business.id} />;
       case "schedules":
         return <WeeklyScheduleView businessId={business.id} scheduleViewMode={business.schedule_view_mode || 'editable'} />;
+      case "notes":
+        return <NotesView businessId={business.id} activeNoteId={activeSubSection} onNoteChange={handleNotesRefresh} />;
       case "settings":
         return <SettingsContent business={business} activeSubSection={activeSubSection} onUpdate={loadBusiness} />;
       case "statistics":
@@ -152,11 +165,14 @@ const ManageBusiness = () => {
           onSectionChange={handleSectionChange}
         />
         
-        {activeView === "settings" && (
+        {(activeView === "settings" || activeView === "notes") && (
           <SubSidebar
+            key={notesRefreshKey}
             activeSection={activeView}
             activeSubSection={activeSubSection}
             onSubSectionChange={setActiveSubSection}
+            businessId={business?.id}
+            onCreateNote={() => setCreateNoteDialogOpen(true)}
           />
         )}
         
@@ -164,6 +180,15 @@ const ManageBusiness = () => {
           {renderView()}
         </main>
       </div>
+
+      {business && (
+        <CreateNoteDialog
+          businessId={business.id}
+          open={createNoteDialogOpen}
+          onOpenChange={setCreateNoteDialogOpen}
+          onNoteCreated={handleNotesRefresh}
+        />
+      )}
     </div>
   );
 };

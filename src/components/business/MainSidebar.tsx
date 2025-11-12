@@ -1,4 +1,4 @@
-import { Calendar, ClipboardList, Users, Clock, Settings, BarChart3, UtensilsCrossed, TableProperties } from "lucide-react";
+import { Calendar, ClipboardList, Users, Clock, Settings, BarChart3, UtensilsCrossed, TableProperties, StickyNote } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Tooltip,
@@ -57,6 +57,12 @@ export function MainSidebar({ activeSection, onSectionChange }: MainSidebarProps
       label: "Menú",
       icon: UtensilsCrossed,
       hasSubmenu: false,
+    },
+    {
+      id: "notes",
+      label: "Notas",
+      icon: StickyNote,
+      hasSubmenu: true,
     },
     {
       id: "settings",

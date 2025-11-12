@@ -9,13 +9,20 @@ import {
   Info,
   Image,
   Globe,
-  Utensils
+  Utensils,
+  StickyNote,
+  Plus
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 
 interface SubSidebarProps {
   activeSection: string;
   activeSubSection: string;
   onSubSectionChange: (subSection: string) => void;
+  businessId?: string;
+  onCreateNote?: () => void;
 }
 
 interface SubMenuItem {
@@ -25,7 +32,8 @@ interface SubMenuItem {
   section: string;
 }
 
-export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange }: SubSidebarProps) {
+export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange, businessId, onCreateNote }: SubSidebarProps) {
+  const [notes, setNotes] = useState<any[]>([]);
   const subMenuItems: SubMenuItem[] = [
     // Configuración submenu
     {
@@ -90,7 +98,78 @@ export function SubSidebar({ activeSection, activeSubSection, onSubSectionChange
     },
   ];
 
+  useEffect(() => {
+    if (activeSection === "notes" && businessId) {
+      loadNotes();
+    }
+  }, [activeSection, businessId]);
+
+  const loadNotes = async () => {
+    if (!businessId) return;
+    
+    const { data, error } = await supabase
+      .from("business_notes")
+      .select("*")
+      .eq("business_id", businessId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error loading notes:", error);
+      return;
+    }
+
+    setNotes(data || []);
+  };
+
   const visibleItems = subMenuItems.filter((item) => item.section === activeSection);
+
+  if (activeSection === "notes") {
+    return (
+      <div className="w-[280px] h-full bg-card border-r border-border flex flex-col py-6 animate-slide-in-right">
+        <div className="px-4 mb-4 flex items-center justify-between">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Notas
+          </h3>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={onCreateNote}
+            className="h-7 w-7 p-0"
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+        <nav className="flex-1 px-2 space-y-1 overflow-y-auto">
+          {notes.length === 0 ? (
+            <div className="px-3 py-8 text-center">
+              <StickyNote className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+              <p className="text-xs text-muted-foreground">
+                No hay notas aún
+              </p>
+            </div>
+          ) : (
+            notes.map((note) => {
+              const isActive = activeSubSection === note.id;
+              return (
+                <button
+                  key={note.id}
+                  onClick={() => onSubSectionChange(note.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+                    "hover:bg-accent",
+                    isActive && "bg-primary/10 text-primary font-medium"
+                  )}
+                >
+                  <StickyNote className="w-4 h-4 flex-shrink-0" />
+                  <span className="truncate">{note.title}</span>
+                </button>
+              );
+            })
+          )}
+        </nav>
+      </div>
+    );
+  }
 
   if (visibleItems.length === 0) return null;
 
