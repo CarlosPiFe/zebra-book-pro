@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Pencil, Trash2, Copy, Check, X, Palette } from "lucide-react";
+import { Pencil, Trash2, Copy, Check, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,10 +15,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { RichTextEditor } from "./RichTextEditor";
 import { useDebounce } from "@/hooks/useDebounce";
 
@@ -55,6 +56,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
   const [isRenamingTitle, setIsRenamingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -263,7 +265,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => setIsRenamingTitle(true)}
+                onClick={() => setEditDialogOpen(true)}
               >
                 <Pencil className="w-4 h-4" />
               </Button>
@@ -274,52 +276,6 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
           {isSaving && (
             <span className="text-xs text-muted-foreground">Guardando...</span>
           )}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Palette className="w-4 h-4 mr-2" />
-                Color
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-64">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Color de la nota</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {noteColors.map((color) => (
-                    <button
-                      key={color.value}
-                      onClick={() => handleColorChange(color.value)}
-                      className="group relative"
-                    >
-                      <div
-                        className={`w-full h-10 rounded-lg transition-all ${
-                          note.color === color.value
-                            ? "ring-2 ring-offset-2 ring-primary scale-110"
-                            : "hover:scale-105"
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                      />
-                      <span className="text-xs mt-1 block text-center text-muted-foreground">
-                        {color.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-          <Button size="sm" variant="outline" onClick={handleDuplicate}>
-            <Copy className="w-4 h-4 mr-2" />
-            Duplicar
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setDeleteDialogOpen(true)}
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            Eliminar
-          </Button>
         </div>
       </div>
 
@@ -341,6 +297,67 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
         placeholder="Empieza a escribir tu nota aquí..."
         noteId={note.id}
       />
+
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar nota</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Color de la nota</label>
+              <div className="grid grid-cols-4 gap-2">
+                {noteColors.map((color) => (
+                  <button
+                    key={color.value}
+                    onClick={() => {
+                      handleColorChange(color.value);
+                    }}
+                    className="group relative"
+                  >
+                    <div
+                      className={`w-full h-10 rounded-lg transition-all ${
+                        note.color === color.value
+                          ? "ring-2 ring-offset-2 ring-primary scale-110"
+                          : "hover:scale-105"
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                    />
+                    <span className="text-xs mt-1 block text-center text-muted-foreground">
+                      {color.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={() => {
+                  handleDuplicate();
+                  setEditDialogOpen(false);
+                }}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Duplicar nota
+              </Button>
+              <Button
+                className="flex-1"
+                variant="destructive"
+                onClick={() => {
+                  setEditDialogOpen(false);
+                  setDeleteDialogOpen(true);
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Eliminar nota
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
