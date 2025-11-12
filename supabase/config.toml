@@ -23,3 +23,9 @@ verify_jwt = false
 
 [functions.intelligent-search]
 verify_jwt = false
+
+[functions.add-demo-locations]
+verify_jwt = false
+
+[functions.create-demo-businesses]
+verify_jwt = false

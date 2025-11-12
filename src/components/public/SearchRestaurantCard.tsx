@@ -20,6 +20,8 @@ interface SearchRestaurantCardProps {
     service_types?: string[] | null;
     dish_specialties?: string[] | null;
     seo_keywords?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
   };
   onClick: () => void;
 }

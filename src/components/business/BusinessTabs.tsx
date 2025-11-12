@@ -19,6 +19,8 @@ interface Business {
   phone: string | null;
   image_url: string | null;
   website: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface MenuItem {

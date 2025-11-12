@@ -54,6 +54,8 @@ interface Business {
   dietary_options?: string[] | null;
   service_types?: string[] | null;
   dish_specialties?: string[] | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 interface BusinessSettingsProps {

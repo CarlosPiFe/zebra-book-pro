@@ -19,6 +19,8 @@ interface Business {
   price_range?: string | null;
   average_rating?: number | null;
   special_offer?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export const MyFavorites = ({ userId }: MyFavoritesProps) => {
