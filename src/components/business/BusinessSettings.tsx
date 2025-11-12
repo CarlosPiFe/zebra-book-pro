@@ -54,8 +54,6 @@ interface Business {
   dietary_options?: string[] | null;
   service_types?: string[] | null;
   dish_specialties?: string[] | null;
-  latitude?: number | null;
-  longitude?: number | null;
 }
 
 interface BusinessSettingsProps {
@@ -91,8 +89,6 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
     mark_delayed_as_no_show: business.mark_delayed_as_no_show ?? false,
     booking_additional_message: business.booking_additional_message || "",
     schedule_view_mode: business.schedule_view_mode || "editable",
-    latitude: (business as any).latitude || "",
-    longitude: (business as any).longitude || "",
   });
   
   const [bookingConfirmationType, setBookingConfirmationType] = useState<string>(
@@ -449,8 +445,6 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
           booking_slot_duration_minutes: formData.booking_slot_duration_minutes,
           website: formData.website,
           social_media: formData.social_media,
-          latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-          longitude: formData.longitude ? parseFloat(formData.longitude) : null,
         })
         .eq("id", business.id);
 
@@ -1163,38 +1157,6 @@ export function BusinessSettings({ business, onUpdate }: BusinessSettingsProps) 
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="Calle, número, ciudad"
               />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="latitude">Latitud</Label>
-                <Input
-                  id="latitude"
-                  type="number"
-                  step="any"
-                  value={formData.latitude}
-                  onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
-                  placeholder="Ej: 40.4168"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Coordenada de latitud para mostrar tu ubicación en el mapa
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="longitude">Longitud</Label>
-                <Input
-                  id="longitude"
-                  type="number"
-                  step="any"
-                  value={formData.longitude}
-                  onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
-                  placeholder="Ej: -3.7038"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Coordenada de longitud para mostrar tu ubicación en el mapa
-                </p>
-              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

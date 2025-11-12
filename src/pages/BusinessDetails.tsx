@@ -28,7 +28,6 @@ import { PhotoGalleryDialog } from "@/components/business/PhotoGalleryDialog";
 import { useFavorites } from "@/hooks/useFavorites";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { RestaurantMap } from "@/components/public/RestaurantMap";
 import {
   Carousel,
   CarouselContent,
@@ -55,8 +54,6 @@ interface Business {
   service_types?: string[] | null;
   dish_specialties?: string[] | null;
   seo_keywords?: string | null;
-  latitude?: number | null;
-  longitude?: number | null;
 }
 
 interface Room {
@@ -918,34 +915,6 @@ export default function BusinessDetails() {
           </div>
         )}
       </div>
-
-      {/* Mapa de ubicación */}
-      {business && business.latitude && business.longitude && (
-        <div className="container mx-auto px-4 mb-4 max-w-7xl">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MapPin className="h-5 w-5" />
-                Ubicación
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] rounded-lg overflow-hidden">
-                <RestaurantMap 
-                  businesses={[business]}
-                  center={[business.latitude, business.longitude]}
-                  zoom={15}
-                />
-              </div>
-              {business.address && (
-                <p className="text-sm text-muted-foreground mt-3">
-                  {business.address}
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Contenido principal - 2 columnas */}
       <div className="container mx-auto px-4 pb-8 max-w-7xl">

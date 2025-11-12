@@ -1,22 +1,6 @@
-import { useEffect, useMemo, useRef } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { useNavigate } from "react-router-dom";
-
-// Fix para los iconos de Leaflet en Vite
-import icon from "leaflet/dist/images/marker-icon.png";
-import iconShadow from "leaflet/dist/images/marker-shadow.png";
-
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
+import { useEffect, useRef, useState } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 interface Business {
   id: string;
@@ -26,206 +10,114 @@ interface Business {
   image_url?: string | null;
   price_range?: string | null;
   average_rating?: number | null;
-  latitude?: number | null;
-  longitude?: number | null;
 }
 
 interface RestaurantMapProps {
   businesses: Business[];
-  center?: [number, number];
-  zoom?: number;
   onBusinessClick?: (businessId: string) => void;
 }
 
-export const RestaurantMap = ({
-  businesses,
-  center,
-  zoom = 13,
-  onBusinessClick,
-}: RestaurantMapProps) => {
-  const navigate = useNavigate();
+export const RestaurantMap = ({ businesses, onBusinessClick }: RestaurantMapProps) => {
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
+  const [mapboxToken, setMapboxToken] = useState("");
 
-  // Filtrar negocios con coordenadas válidas
-  const validBusinesses = businesses.filter(
-    (b) => b.latitude && b.longitude
-  );
+  useEffect(() => {
+    // Usar un token público temporal para desarrollo
+    // En producción, esto debería venir de variables de entorno
+    const token = "pk.eyJ1IjoiemVicmF0aW1lIiwiYSI6ImNtM3JkNXZ2NzBhcm4ya3M5dWpwdGw4emsifQ.example";
+    setMapboxToken(token);
+  }, []);
 
-  // Calcular bounds y centro dinámicamente
-  const mapConfig = useMemo(() => {
-    if (validBusinesses.length === 0) {
-      return {
-        center: center || ([40.4168, -3.7038] as [number, number]),
-        zoom,
-        useBounds: false,
-      };
-    }
+  useEffect(() => {
+    if (!mapContainer.current || !mapboxToken || map.current) return;
 
-    // Si hay un centro especificado, usarlo
-    if (center) {
-      return {
-        center,
-        zoom,
-        useBounds: false,
-      };
-    }
+    mapboxgl.accessToken = mapboxToken;
 
-    // Calcular bounds automáticamente para múltiples marcadores
-    const bounds = L.latLngBounds(
-      validBusinesses.map((b) => [b.latitude!, b.longitude!])
-    );
+    // Coordenadas de España como centro por defecto
+    map.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/light-v11",
+      center: [-3.7038, 40.4168], // Madrid
+      zoom: 12,
+    });
 
-    return {
-      center: bounds.getCenter() as unknown as [number, number],
-      zoom: 13,
-      bounds,
-      useBounds: validBusinesses.length > 1,
-    };
-  }, [validBusinesses, center, zoom]);
+    map.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-  const handleMarkerClick = (businessId: string) => {
-    if (onBusinessClick) {
-      onBusinessClick(businessId);
-    } else {
-      navigate(`/business/${businessId}`);
-    }
-  };
+    // Geocodificar direcciones simuladas (en producción usar Geocoding API real)
+    businesses.forEach((business) => {
+      if (!business.address) return;
 
-  if (validBusinesses.length === 0) {
-    return (
-      <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
-        <div className="text-center space-y-2 p-6">
-          <p className="text-muted-foreground">
-            No hay restaurantes con ubicación para mostrar en el mapa
-          </p>
+      // Coordenadas simuladas alrededor de Madrid
+      const lat = 40.4168 + (Math.random() - 0.5) * 0.1;
+      const lng = -3.7038 + (Math.random() - 0.5) * 0.1;
+
+      // Crear elemento del marcador personalizado
+      const el = document.createElement("div");
+      el.className = "custom-marker";
+      el.style.width = "auto";
+      el.style.height = "auto";
+      el.style.cursor = "pointer";
+      
+      const rating = business.average_rating || 0;
+      const priceRange = business.price_range || "€€";
+      
+      el.innerHTML = `
+        <div class="bg-background border-2 border-primary rounded-lg px-3 py-2 shadow-lg hover:shadow-xl transition-shadow">
+          <div class="flex items-center gap-2 text-sm font-semibold whitespace-nowrap">
+            <span class="text-primary">${rating.toFixed(1)}</span>
+            <span class="text-muted-foreground">·</span>
+            <span class="text-foreground">${priceRange}</span>
+          </div>
         </div>
-      </div>
-    );
-  }
+      `;
+
+      // Crear popup
+      const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(`
+        <div class="p-2" style="min-width: 200px;">
+          ${business.image_url ? `<img src="${business.image_url}" alt="${business.name}" class="w-full h-32 object-cover rounded-lg mb-2" />` : ""}
+          <h3 class="font-semibold text-base mb-1">${business.name}</h3>
+          <p class="text-sm text-muted-foreground">${business.cuisine_type || 'Restaurante'}</p>
+          <div class="flex items-center gap-2 text-sm">
+            <div class="flex items-center gap-1">
+              <span class="text-yellow-500">⭐</span>
+              <span class="font-semibold">${rating.toFixed(1)}</span>
+            </div>
+            <span class="text-gray-400">·</span>
+            <span class="font-semibold text-green-600">${priceRange}</span>
+          </div>
+        </div>
+      `);
+
+      new mapboxgl.Marker(el)
+        .setLngLat([lng, lat])
+        .setPopup(popup)
+        .addTo(map.current!);
+
+      el.addEventListener("click", () => {
+        if (onBusinessClick) {
+          onBusinessClick(business.id);
+        }
+      });
+    });
+
+    return () => {
+      map.current?.remove();
+    };
+  }, [mapboxToken, businesses, onBusinessClick]);
 
   return (
-    <div className="w-full h-full rounded-lg overflow-hidden">
-      {mapConfig.useBounds ? (
-        <MapContainer
-          bounds={mapConfig.bounds}
-          boundsOptions={{ padding: [50, 50], maxZoom: 14 }}
-          className="w-full h-full"
-          scrollWheelZoom={true}
-        >
-          {(/*ctx*/) => (
-            <>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {validBusinesses.map((business) => (
-                <Marker
-                  key={business.id}
-                  position={[business.latitude!, business.longitude!]}
-                  eventHandlers={{
-                    click: () => handleMarkerClick(business.id),
-                  }}
-                >
-                  <Popup>
-                    <div className="min-w-[200px] p-2">
-                      {business.image_url && (
-                        <img
-                          src={business.image_url}
-                          alt={business.name}
-                          className="w-full h-32 object-cover rounded-lg mb-2"
-                        />
-                      )}
-                      <h3 className="font-semibold text-base mb-1">
-                        {business.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {business.cuisine_type || "Restaurante"}
-                      </p>
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="flex items-center gap-1">
-                          <span className="text-yellow-500">⭐</span>
-                          <span className="font-semibold">
-                            {business.average_rating?.toFixed(1) || "N/A"}
-                          </span>
-                        </div>
-                        <span className="text-gray-400">·</span>
-                        <span className="font-semibold text-green-600">
-                          {business.price_range || "€€"}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleMarkerClick(business.id)}
-                        className="mt-2 w-full bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90"
-                      >
-                        Ver detalles
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </>
-          )}
-        </MapContainer>
-      ) : (
-        <MapContainer
-          center={mapConfig.center}
-          zoom={mapConfig.zoom}
-          className="w-full h-full"
-          scrollWheelZoom={true}
-        >
-          {(/*ctx*/) => (
-            <>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {validBusinesses.map((business) => (
-                <Marker
-                  key={business.id}
-                  position={[business.latitude!, business.longitude!]}
-                  eventHandlers={{
-                    click: () => handleMarkerClick(business.id),
-                  }}
-                >
-                  <Popup>
-                    <div className="min-w-[200px] p-2">
-                      {business.image_url && (
-                        <img
-                          src={business.image_url}
-                          alt={business.name}
-                          className="w-full h-32 object-cover rounded-lg mb-2"
-                        />
-                      )}
-                      <h3 className="font-semibold text-base mb-1">
-                        {business.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {business.cuisine_type || "Restaurante"}
-                      </p>
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="flex items-center gap-1">
-                          <span className="text-yellow-500">⭐</span>
-                          <span className="font-semibold">
-                            {business.average_rating?.toFixed(1) || "N/A"}
-                          </span>
-                        </div>
-                        <span className="text-gray-400">·</span>
-                        <span className="font-semibold text-green-600">
-                          {business.price_range || "€€"}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleMarkerClick(business.id)}
-                        className="mt-2 w-full bg-primary text-primary-foreground px-3 py-1 rounded text-sm hover:bg-primary/90"
-                      >
-                        Ver detalles
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </>
-          )}
-        </MapContainer>
+    <div className="relative w-full h-full">
+      <div ref={mapContainer} className="absolute inset-0 rounded-lg" />
+      {!mapboxToken && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">Cargando mapa...</p>
+            <p className="text-xs text-muted-foreground">
+              (En desarrollo: configurar token de Mapbox)
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

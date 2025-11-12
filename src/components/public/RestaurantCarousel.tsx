@@ -15,8 +15,6 @@ interface Business {
   average_rating?: number | null;
   special_offer?: string | null;
   created_at: string;
-  latitude?: number | null;
-  longitude?: number | null;
 }
 interface RestaurantCarouselProps {
   title: string;
