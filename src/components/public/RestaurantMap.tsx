@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { useMemo } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useNavigate } from "react-router-dom";
@@ -37,34 +37,9 @@ interface RestaurantMapProps {
   onBusinessClick?: (businessId: string) => void;
 }
 
-// Componente para ajustar el centro del mapa cuando cambian los negocios
-function MapUpdater({ businesses }: { businesses: Business[] }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (businesses.length === 0) return;
-
-    // Filtrar negocios con coordenadas válidas
-    const validBusinesses = businesses.filter(
-      (b) => b.latitude && b.longitude
-    );
-
-    if (validBusinesses.length === 0) return;
-
-    // Calcular bounds para centrar el mapa
-    const bounds = L.latLngBounds(
-      validBusinesses.map((b) => [b.latitude!, b.longitude!])
-    );
-
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
-  }, [businesses, map]);
-
-  return null;
-}
-
 export const RestaurantMap = ({
   businesses,
-  center = [40.4168, -3.7038], // Madrid por defecto
+  center,
   zoom = 13,
   onBusinessClick,
 }: RestaurantMapProps) => {
@@ -74,6 +49,37 @@ export const RestaurantMap = ({
   const validBusinesses = businesses.filter(
     (b) => b.latitude && b.longitude
   );
+
+  // Calcular bounds y centro dinámicamente
+  const mapConfig = useMemo(() => {
+    if (validBusinesses.length === 0) {
+      return {
+        center: center || [40.4168, -3.7038] as [number, number],
+        zoom,
+        bounds: undefined,
+      };
+    }
+
+    // Si hay un centro especificado, usarlo
+    if (center) {
+      return {
+        center,
+        zoom,
+        bounds: undefined,
+      };
+    }
+
+    // Calcular bounds automáticamente
+    const bounds = L.latLngBounds(
+      validBusinesses.map((b) => [b.latitude!, b.longitude!])
+    );
+
+    return {
+      center: bounds.getCenter() as unknown as [number, number],
+      zoom: undefined,
+      bounds,
+    };
+  }, [validBusinesses, center, zoom]);
 
   const handleMarkerClick = (businessId: string) => {
     if (onBusinessClick) {
@@ -98,8 +104,10 @@ export const RestaurantMap = ({
   return (
     <div className="w-full h-full rounded-lg overflow-hidden">
       <MapContainer
-        center={center}
-        zoom={zoom}
+        center={mapConfig.center}
+        zoom={mapConfig.zoom || 13}
+        bounds={mapConfig.bounds}
+        boundsOptions={{ padding: [50, 50], maxZoom: 14 }}
         className="w-full h-full"
         scrollWheelZoom={true}
       >
@@ -107,7 +115,6 @@ export const RestaurantMap = ({
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <MapUpdater businesses={validBusinesses} />
         {validBusinesses.map((business) => (
           <Marker
             key={business.id}
