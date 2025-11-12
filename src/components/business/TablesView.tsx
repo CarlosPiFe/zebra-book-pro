@@ -26,7 +26,6 @@ import { addMinutes } from "date-fns";
 import { getTimeSlotId } from "@/lib/timeSlots";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { EmployeesSidebar } from "./EmployeesSidebar";
 
 interface Room {
   id: string;
@@ -679,22 +678,6 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
-  const handleWaiterColorChange = async (waiterId: string, color: string) => {
-    try {
-      await supabase
-        .from("waiters")
-        .update({ color })
-        .eq("id", waiterId);
-
-      toast.success("Color actualizado");
-      loadWaiters();
-      loadTables(); // Refresh to show updated colors
-    } catch (error) {
-      console.error("Error updating waiter color:", error);
-      toast.error("Error al actualizar el color");
-    }
-  };
-
   const getTableColor = (table: Table) => {
     // Rojo - fuera de servicio (prioridad máxima)
     if (table.is_out_of_service) {
@@ -803,16 +786,7 @@ export function TablesView({ businessId }: TablesViewProps) {
   }, {} as Record<string, Table[]>);
 
   return (
-    <div className="flex h-full">
-      {/* Left sidebar - Employees */}
-      <EmployeesSidebar
-        waiters={waiters}
-        tables={tables}
-        onWaiterColorChange={handleWaiterColorChange}
-      />
-
-      {/* Main content */}
-      <div className="flex flex-col flex-1 h-full animate-fade-in overflow-hidden">{/* Tabs de salas y botones en la misma línea */}
+    <div className="flex flex-col flex-1 h-full animate-fade-in overflow-hidden">{/* Tabs de salas y botones en la misma línea */}
       <div className="flex-shrink-0 bg-background border-b">
         <div className="flex items-center justify-between gap-4 w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
           {/* Tabs de salas a la izquierda */}
@@ -1547,7 +1521,6 @@ export function TablesView({ businessId }: TablesViewProps) {
         </>
       )}
         </div>
-      </div>
       </div>
     </div>
   );

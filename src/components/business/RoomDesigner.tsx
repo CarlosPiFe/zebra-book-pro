@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Trash2, Save } from "lucide-react";
 import { DesignerSidebar } from "./DesignerSidebar";
-import { EmployeesSidebar } from "./EmployeesSidebar";
 
 interface Table {
   id: string;
@@ -335,32 +334,8 @@ export function RoomDesigner({
     }
   };
 
-  const handleWaiterColorChange = async (waiterId: string, color: string) => {
-    try {
-      await supabase
-        .from("waiters")
-        .update({ color })
-        .eq("id", waiterId);
-
-      toast.success("Color actualizado");
-      loadWaiters();
-      // Refresh canvas to show new colors
-      setTimeout(() => loadTables(), 100);
-    } catch (error) {
-      console.error("Error updating waiter color:", error);
-      toast.error("Error al actualizar el color");
-    }
-  };
-
   return (
     <div className="flex h-full">
-      {/* Left sidebar - Employees */}
-      <EmployeesSidebar
-        waiters={waiters}
-        tables={tables}
-        onWaiterColorChange={handleWaiterColorChange}
-      />
-
       {/* Main canvas area */}
       <div className="flex-1 flex flex-col p-4">
         <div className="flex items-center justify-between mb-4">
