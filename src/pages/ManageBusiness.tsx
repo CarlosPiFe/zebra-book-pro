@@ -115,6 +115,11 @@ const ManageBusiness = () => {
     setActiveSubSection("");
   };
 
+  const handleNoteCreated = (noteId: string) => {
+    setNotesRefreshKey(prev => prev + 1);
+    setActiveSubSection(noteId);
+  };
+
   const renderView = () => {
     if (!business) return null;
 
@@ -186,7 +191,7 @@ const ManageBusiness = () => {
           businessId={business.id}
           open={createNoteDialogOpen}
           onOpenChange={setCreateNoteDialogOpen}
-          onNoteCreated={handleNotesRefresh}
+          onNoteCreated={handleNoteCreated}
         />
       )}
     </div>

@@ -3,10 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, Edit2, Copy, Save, X } from "lucide-react";
+import { Pencil, Trash2, Copy, Check, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,13 +14,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RichTextEditor } from "./RichTextEditor";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface NotesViewProps {
   businessId: string;
@@ -40,23 +32,16 @@ interface Note {
   updated_at: string;
 }
 
-const categories = [
-  "Mantenimiento",
-  "Stock",
-  "Tareas pendientes",
-  "Proveedores",
-  "Personal",
-  "Otro"
-];
-
 export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewProps) {
   const [note, setNote] = useState<Note | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState("");
   const [editedContent, setEditedContent] = useState("");
-  const [editedCategory, setEditedCategory] = useState("");
+  const [isRenamingTitle, setIsRenamingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const debouncedContent = useDebounce(editedContent, 1000);
 
   useEffect(() => {
     if (activeNoteId) {
@@ -65,6 +50,12 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
       setNote(null);
     }
   }, [activeNoteId]);
+
+  useEffect(() => {
+    if (note && debouncedContent !== note.content && debouncedContent !== "") {
+      saveContent();
+    }
+  }, [debouncedContent]);
 
   const loadNote = async () => {
     if (!activeNoteId) return;
@@ -81,47 +72,49 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
       toast.error("Error al cargar la nota");
     } else if (data) {
       setNote(data);
-      setEditedTitle(data.title);
       setEditedContent(data.content || "");
-      setEditedCategory(data.category || "none");
+      setEditedTitle(data.title);
     }
     setLoading(false);
   };
 
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
+  const saveContent = async () => {
+    if (!note) return;
 
-  const handleCancelEdit = () => {
-    setIsEditing(false);
-    if (note) {
-      setEditedTitle(note.title);
-      setEditedContent(note.content || "");
-      setEditedCategory(note.category || "none");
+    setIsSaving(true);
+    const { error } = await supabase
+      .from("business_notes")
+      .update({
+        content: editedContent,
+      })
+      .eq("id", note.id);
+
+    if (error) {
+      console.error("Error saving note:", error);
+      toast.error("Error al guardar");
     }
+    setIsSaving(false);
   };
 
-  const handleSave = async () => {
+  const handleRenameTitle = async () => {
     if (!note || !editedTitle.trim()) {
-      toast.error("El título es obligatorio");
+      toast.error("El título no puede estar vacío");
       return;
     }
 
     const { error } = await supabase
       .from("business_notes")
       .update({
-        title: editedTitle,
-        content: editedContent,
-        category: editedCategory && editedCategory !== "none" ? editedCategory : null,
+        title: editedTitle.trim(),
       })
       .eq("id", note.id);
 
     if (error) {
-      console.error("Error updating note:", error);
-      toast.error("Error al actualizar la nota");
+      console.error("Error renaming note:", error);
+      toast.error("Error al renombrar la nota");
     } else {
-      toast.success("Nota actualizada correctamente");
-      setIsEditing(false);
+      toast.success("Nota renombrada");
+      setIsRenamingTitle(false);
       loadNote();
       onNoteChange();
     }
@@ -166,6 +159,13 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
     }
   };
 
+  const handleCancelRename = () => {
+    setIsRenamingTitle(false);
+    if (note) {
+      setEditedTitle(note.title);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -178,9 +178,11 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <p className="text-muted-foreground mb-2">Selecciona una nota para ver su contenido</p>
+          <p className="text-muted-foreground mb-2">
+            Aún no tienes notas. Crea una nueva para empezar.
+          </p>
           <p className="text-sm text-muted-foreground">
-            o haz clic en el botón + para crear una nueva
+            Haz clic en el botón + para crear tu primera nota
           </p>
         </div>
       </div>
@@ -188,110 +190,80 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="title">Título</Label>
-                    <Input
-                      id="title"
-                      value={editedTitle}
-                      onChange={(e) => setEditedTitle(e.target.value)}
-                      placeholder="Título de la nota"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="category">Categoría</Label>
-                    <Select value={editedCategory || "none"} onValueChange={setEditedCategory}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar categoría" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">Sin categoría</SelectItem>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat} value={cat}>
-                            {cat}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <CardTitle>{note.title}</CardTitle>
-                  <CardDescription>
-                    {note.category && (
-                      <span className="inline-block px-2 py-1 text-xs rounded-md bg-primary/10 text-primary mr-2">
-                        {note.category}
-                      </span>
-                    )}
-                    Creada el {new Date(note.created_at).toLocaleDateString()}
-                    {note.updated_at !== note.created_at && (
-                      <> · Actualizada el {new Date(note.updated_at).toLocaleDateString()}</>
-                    )}
-                  </CardDescription>
-                </>
-              )}
-            </div>
-            <div className="flex gap-2">
-              {isEditing ? (
-                <>
-                  <Button size="sm" onClick={handleSave}>
-                    <Save className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                    <X className="w-4 h-4" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button size="sm" variant="outline" onClick={handleEdit}>
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={handleDuplicate}>
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isEditing ? (
-            <div>
-              <Label htmlFor="content">Contenido</Label>
-              <Textarea
-                id="content"
-                value={editedContent}
-                onChange={(e) => setEditedContent(e.target.value)}
-                placeholder="Escribe el contenido de la nota..."
-                rows={15}
-                className="resize-none"
+    <div className="space-y-4">
+      <div className="flex items-center justify-between pb-4 border-b">
+        <div className="flex items-center gap-3 flex-1">
+          {isRenamingTitle ? (
+            <div className="flex items-center gap-2 flex-1">
+              <Input
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="max-w-md"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleRenameTitle();
+                  } else if (e.key === "Escape") {
+                    handleCancelRename();
+                  }
+                }}
               />
+              <Button size="sm" onClick={handleRenameTitle}>
+                <Check className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleCancelRename}>
+                <X className="w-4 h-4" />
+              </Button>
             </div>
           ) : (
-            <div className="prose prose-sm max-w-none">
-              {note.content ? (
-                <p className="whitespace-pre-wrap">{note.content}</p>
-              ) : (
-                <p className="text-muted-foreground italic">Sin contenido</p>
-              )}
-            </div>
+            <>
+              <h2 className="text-2xl font-semibold">{note.title}</h2>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setIsRenamingTitle(true)}
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+            </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+        <div className="flex items-center gap-2">
+          {isSaving && (
+            <span className="text-xs text-muted-foreground">Guardando...</span>
+          )}
+          <Button size="sm" variant="outline" onClick={handleDuplicate}>
+            <Copy className="w-4 h-4 mr-2" />
+            Duplicar
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Eliminar
+          </Button>
+        </div>
+      </div>
+
+      <div className="text-xs text-muted-foreground mb-4">
+        Creada el {new Date(note.created_at).toLocaleDateString()} a las{" "}
+        {new Date(note.created_at).toLocaleTimeString()}
+        {note.updated_at !== note.created_at && (
+          <>
+            {" · "}
+            Actualizada el {new Date(note.updated_at).toLocaleDateString()} a las{" "}
+            {new Date(note.updated_at).toLocaleTimeString()}
+          </>
+        )}
+      </div>
+
+      <RichTextEditor
+        content={editedContent}
+        onUpdate={setEditedContent}
+        placeholder="Empieza a escribir tu nota aquí..."
+      />
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -303,7 +275,10 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

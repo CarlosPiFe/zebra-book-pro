@@ -11,31 +11,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface CreateNoteDialogProps {
   businessId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onNoteCreated: () => void;
+  onNoteCreated: (noteId: string) => void;
 }
-
-const categories = [
-  "Mantenimiento",
-  "Stock",
-  "Tareas pendientes",
-  "Proveedores",
-  "Personal",
-  "Otro"
-];
 
 export function CreateNoteDialog({
   businessId,
@@ -44,37 +27,37 @@ export function CreateNoteDialog({
   onNoteCreated,
 }: CreateNoteDialogProps) {
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [category, setCategory] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!title.trim()) {
-      toast.error("El título es obligatorio");
+      toast.error("El nombre es obligatorio");
       return;
     }
 
     setLoading(true);
 
-    const { error } = await supabase.from("business_notes").insert({
-      business_id: businessId,
-      title: title.trim(),
-      content: content.trim() || null,
-      category: category && category !== "none" ? category : null,
-    });
+    const { data, error } = await supabase
+      .from("business_notes")
+      .insert({
+        business_id: businessId,
+        title: title.trim(),
+        content: "",
+        category: null,
+      })
+      .select()
+      .single();
 
     if (error) {
       console.error("Error creating note:", error);
       toast.error("Error al crear la nota");
-    } else {
+    } else if (data) {
       toast.success("Nota creada correctamente");
       setTitle("");
-      setContent("");
-      setCategory("");
       onOpenChange(false);
-      onNoteCreated();
+      onNoteCreated(data.id);
     }
 
     setLoading(false);
@@ -82,49 +65,23 @@ export function CreateNoteDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[400px]">
         <DialogHeader>
           <DialogTitle>Nueva nota</DialogTitle>
           <DialogDescription>
-            Crea una nota para organizar la información de tu negocio
+            Escribe un nombre para tu nueva nota
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="title">Título *</Label>
+            <Label htmlFor="title">Nombre de la nota *</Label>
             <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Título de la nota"
+              placeholder="Ej: Tareas pendientes, Proveedores..."
               required
-            />
-          </div>
-          <div>
-            <Label htmlFor="category">Categoría</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar categoría (opcional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Sin categoría</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="content">Contenido</Label>
-            <Textarea
-              id="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Escribe el contenido de la nota..."
-              rows={8}
-              className="resize-none"
+              autoFocus
             />
           </div>
           <DialogFooter>
