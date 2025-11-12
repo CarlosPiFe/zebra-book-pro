@@ -135,8 +135,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
       console.error("Error renaming note:", error);
       toast.error("Error al renombrar la nota");
     } else {
-      toast.success("Nota renombrada");
-      setIsRenamingTitle(false);
+      toast.success("Nota actualizada");
       loadNote();
       onNoteChange();
     }
@@ -305,6 +304,15 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
           </DialogHeader>
           <div className="space-y-4">
             <div>
+              <label className="text-sm font-medium mb-2 block">Nombre de la nota</label>
+              <Input
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                placeholder="Escribe el nombre de la nota"
+              />
+            </div>
+
+            <div>
               <label className="text-sm font-medium mb-2 block">Color de la nota</label>
               <div className="grid grid-cols-4 gap-2">
                 {noteColors.map((color) => (
@@ -336,12 +344,27 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
                 className="flex-1"
                 variant="outline"
                 onClick={() => {
+                  if (editedTitle.trim() && editedTitle !== note.title) {
+                    handleRenameTitle();
+                  }
+                  setEditDialogOpen(false);
+                }}
+              >
+                Guardar cambios
+              </Button>
+            </div>
+
+            <div className="flex gap-2 pt-2 border-t">
+              <Button
+                className="flex-1"
+                variant="outline"
+                onClick={() => {
                   handleDuplicate();
                   setEditDialogOpen(false);
                 }}
               >
                 <Copy className="w-4 h-4 mr-2" />
-                Duplicar nota
+                Duplicar
               </Button>
               <Button
                 className="flex-1"
@@ -352,7 +375,7 @@ export function NotesView({ businessId, activeNoteId, onNoteChange }: NotesViewP
                 }}
               >
                 <Trash2 className="w-4 h-4 mr-2" />
-                Eliminar nota
+                Eliminar
               </Button>
             </div>
           </div>
