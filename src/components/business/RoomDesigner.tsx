@@ -32,6 +32,7 @@ interface Waiter {
   id: string;
   name: string;
   position: string | null;
+  color: string | null;
 }
 
 interface RoomDesignerProps {
@@ -118,7 +119,7 @@ export function RoomDesigner({
     try {
       const { data, error } = await supabase
         .from("waiters")
-        .select("id, name, position")
+        .select("id, name, position, color")
         .eq("business_id", businessId)
         .eq("is_active", true);
 
@@ -138,15 +139,36 @@ export function RoomDesigner({
     tables.forEach((table) => {
       if (table.position_x !== null && table.position_y !== null) {
         const elementType = table.element_type || "table-square";
+        
+        // Get waiter color if table is assigned
+        const assignedWaiter = waiters.find(w => w.id === table.assigned_waiter_id);
+        const waiterColor = assignedWaiter?.color || null;
+        
         let element: FabricObject;
+        let fillColor: string;
+        let strokeColor: string;
+
+        // Use waiter color if assigned, otherwise use default colors
+        if (waiterColor && (elementType === "table-round" || elementType === "table-square")) {
+          fillColor = waiterColor;
+          strokeColor = waiterColor;
+        } else {
+          // Default colors for unassigned tables and other elements
+          fillColor = elementType === "chair" ? "#10b981" : 
+                     elementType === "sofa" ? "#8b5cf6" : 
+                     elementType === "wall" ? "#6b7280" : "#3b82f6";
+          strokeColor = elementType === "chair" ? "#059669" : 
+                       elementType === "sofa" ? "#7c3aed" : 
+                       elementType === "wall" ? "#374151" : "#1e40af";
+        }
 
         if (elementType === "table-round") {
           element = new Circle({
             left: table.position_x,
             top: table.position_y,
             radius: (table.width || 100) / 2,
-            fill: "#3b82f6",
-            stroke: "#1e40af",
+            fill: fillColor,
+            stroke: strokeColor,
             strokeWidth: 2,
           });
         } else {
@@ -155,12 +177,8 @@ export function RoomDesigner({
             top: table.position_y,
             width: table.width || 100,
             height: table.height || 100,
-            fill: elementType === "chair" ? "#10b981" : 
-                  elementType === "sofa" ? "#8b5cf6" : 
-                  elementType === "wall" ? "#6b7280" : "#3b82f6",
-            stroke: elementType === "chair" ? "#059669" : 
-                    elementType === "sofa" ? "#7c3aed" : 
-                    elementType === "wall" ? "#374151" : "#1e40af",
+            fill: fillColor,
+            stroke: strokeColor,
             strokeWidth: 2,
             angle: table.rotation || 0,
           });
@@ -334,6 +352,23 @@ export function RoomDesigner({
     }
   };
 
+  const handleWaiterColorChange = async (waiterId: string, color: string) => {
+    try {
+      await supabase
+        .from("waiters")
+        .update({ color })
+        .eq("id", waiterId);
+
+      toast.success("Color actualizado");
+      loadWaiters();
+      // Refresh canvas to show new colors
+      setTimeout(() => loadTables(), 100);
+    } catch (error) {
+      console.error("Error updating waiter color:", error);
+      toast.error("Error al actualizar el color");
+    }
+  };
+
   return (
     <div className="flex h-full">
       {/* Left sidebar - Employees */}
@@ -344,6 +379,7 @@ export function RoomDesigner({
         selectedRoomId={selectedRoomId}
         onRoomChange={onRoomChange}
         onAssignWaiter={handleAssignWaiter}
+        onWaiterColorChange={handleWaiterColorChange}
       />
 
       {/* Main canvas area */}

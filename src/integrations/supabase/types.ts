@@ -1193,6 +1193,7 @@ export type Database = {
       waiters: {
         Row: {
           business_id: string
+          color: string | null
           created_at: string
           email: string | null
           id: string
@@ -1204,6 +1205,7 @@ export type Database = {
         }
         Insert: {
           business_id: string
+          color?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1215,6 +1217,7 @@ export type Database = {
         }
         Update: {
           business_id?: string
+          color?: string | null
           created_at?: string
           email?: string | null
           id?: string

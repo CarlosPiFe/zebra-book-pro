@@ -26,11 +26,19 @@ import { addMinutes } from "date-fns";
 import { getTimeSlotId } from "@/lib/timeSlots";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { EmployeesSidebar } from "./EmployeesSidebar";
 
 interface Room {
   id: string;
   name: string;
   is_active: boolean;
+}
+
+interface Waiter {
+  id: string;
+  name: string;
+  position: string | null;
+  color: string | null;
 }
 
 interface Table {
@@ -39,6 +47,7 @@ interface Table {
   max_capacity: number;
   min_capacity: number;
   room_id?: string | null;
+  assigned_waiter_id?: string | null;
   current_booking?: Booking | null;
   total_spent?: number;
   is_out_of_service?: boolean;
@@ -65,6 +74,7 @@ interface TablesViewProps {
 export function TablesView({ businessId }: TablesViewProps) {
   const [tables, setTables] = useState<Table[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [waiters, setWaiters] = useState<Waiter[]>([]);
   const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAddTableDialogOpen, setIsAddTableDialogOpen] = useState(false);
@@ -103,6 +113,7 @@ export function TablesView({ businessId }: TablesViewProps) {
 
   useEffect(() => {
     loadRooms();
+    loadWaiters();
     loadTables();
 
     // Subscribe to realtime changes in bookings table
@@ -141,6 +152,21 @@ export function TablesView({ businessId }: TablesViewProps) {
       setRooms(data || []);
     } catch (error) {
       console.error("Error loading rooms:", error);
+    }
+  };
+
+  const loadWaiters = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("waiters")
+        .select("id, name, position, color")
+        .eq("business_id", businessId)
+        .eq("is_active", true);
+
+      if (error) throw error;
+      setWaiters(data || []);
+    } catch (error) {
+      console.error("Error loading waiters:", error);
     }
   };
 
@@ -653,6 +679,37 @@ export function TablesView({ businessId }: TablesViewProps) {
     }
   };
 
+  const handleWaiterColorChange = async (waiterId: string, color: string) => {
+    try {
+      await supabase
+        .from("waiters")
+        .update({ color })
+        .eq("id", waiterId);
+
+      toast.success("Color actualizado");
+      loadWaiters();
+      loadTables(); // Refresh to show updated colors
+    } catch (error) {
+      console.error("Error updating waiter color:", error);
+      toast.error("Error al actualizar el color");
+    }
+  };
+
+  const handleAssignWaiter = async (tableId: string, waiterId: string | null) => {
+    try {
+      await supabase
+        .from("tables")
+        .update({ assigned_waiter_id: waiterId })
+        .eq("id", tableId);
+
+      toast.success("Camarero asignado correctamente");
+      loadTables();
+    } catch (error) {
+      console.error("Error assigning waiter:", error);
+      toast.error("Error al asignar camarero");
+    }
+  };
+
   const getTableColor = (table: Table) => {
     // Rojo - fuera de servicio (prioridad máxima)
     if (table.is_out_of_service) {
@@ -761,8 +818,20 @@ export function TablesView({ businessId }: TablesViewProps) {
   }, {} as Record<string, Table[]>);
 
   return (
-    <div className="flex flex-col h-full animate-fade-in">
-      {/* Tabs de salas y botones en la misma línea */}
+    <div className="flex h-full">
+      {/* Left sidebar - Employees */}
+      <EmployeesSidebar
+        waiters={waiters}
+        tables={tables}
+        rooms={rooms}
+        selectedRoomId={selectedRoomId}
+        onRoomChange={setSelectedRoomId}
+        onAssignWaiter={handleAssignWaiter}
+        onWaiterColorChange={handleWaiterColorChange}
+      />
+
+      {/* Main content */}
+      <div className="flex flex-col flex-1 h-full animate-fade-in overflow-hidden">{/* Tabs de salas y botones en la misma línea */}
       <div className="flex-shrink-0 bg-background border-b">
         <div className="flex items-center justify-between gap-4 w-full max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
           {/* Tabs de salas a la izquierda */}
@@ -968,11 +1037,25 @@ export function TablesView({ businessId }: TablesViewProps) {
                 )}
                 
                 {/* Contenido central */}
-                <div className="flex flex-col items-center gap-1 flex-1 justify-center">
+                <div className="flex flex-col items-center gap-1 flex-1 justify-center relative">
                   {/* Número de mesa */}
                   <div className="text-lg font-bold text-foreground">
                     {table.table_number}
                   </div>
+                  
+                  {/* Punto de color del camarero asignado */}
+                  {table.assigned_waiter_id && (() => {
+                    const waiter = waiters.find(w => w.id === table.assigned_waiter_id);
+                    if (waiter?.color) {
+                      return (
+                        <div
+                          className="w-2 h-2 rounded-full absolute top-0 right-0"
+                          style={{ backgroundColor: waiter.color }}
+                        />
+                      );
+                    }
+                    return null;
+                  })()}
                   
                   {/* Capacidad */}
                   <div className="flex items-center gap-0.5 text-[10px] text-foreground/80 font-medium">
@@ -1029,10 +1112,25 @@ export function TablesView({ businessId }: TablesViewProps) {
                             </div>
                           )}
                           
-                          <div className="flex flex-col items-center gap-1 flex-1 justify-center">
+                          <div className="flex flex-col items-center gap-1 flex-1 justify-center relative">
                             <div className="text-lg font-bold text-foreground">
                               {table.table_number}
                             </div>
+                            
+                            {/* Punto de color del camarero asignado */}
+                            {table.assigned_waiter_id && (() => {
+                              const waiter = waiters.find(w => w.id === table.assigned_waiter_id);
+                              if (waiter?.color) {
+                                return (
+                                  <div
+                                    className="w-2 h-2 rounded-full absolute top-0 right-0"
+                                    style={{ backgroundColor: waiter.color }}
+                                  />
+                                );
+                              }
+                              return null;
+                            })()}
+                            
                             <div className="flex items-center gap-0.5 text-[10px] text-foreground/80 font-medium">
                               <Users className="h-3 w-3" />
                               <span>{table.min_capacity}-{table.max_capacity}</span>
@@ -1468,6 +1566,7 @@ export function TablesView({ businessId }: TablesViewProps) {
         </>
       )}
         </div>
+      </div>
       </div>
     </div>
   );
