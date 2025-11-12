@@ -62,14 +62,18 @@ export function EmployeesSidebar({
   };
 
   return (
-    <div className="w-[280px] h-full bg-card border-r border-border flex flex-col py-6 overflow-y-auto">
+    <div className="w-[280px] h-full bg-sidebar border-r border-border flex flex-col overflow-y-auto">
+      {/* Header */}
+      <div className="px-6 py-6">
+        <h2 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
+          GESTIÓN DE MESAS
+        </h2>
+      </div>
+
       {/* Room selector */}
-      <div className="px-4 mb-6">
-        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
-          Sala
-        </label>
+      <div className="px-4 mb-4">
         <Select value={selectedRoomId || ""} onValueChange={onRoomChange}>
-          <SelectTrigger>
+          <SelectTrigger className="bg-sidebar-accent">
             <SelectValue placeholder="Selecciona una sala" />
           </SelectTrigger>
           <SelectContent>
@@ -81,15 +85,9 @@ export function EmployeesSidebar({
           </SelectContent>
         </Select>
       </div>
-
-      {/* Waiters list */}
-      <div className="px-4 mb-4">
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-          Camareros
-        </h3>
-      </div>
       
-      <nav className="flex-1 px-2 space-y-1">
+      {/* Waiters list */}
+      <nav className="flex-1 px-4 space-y-1">
         {waiters.map((waiter) => {
           const waiterTables = getWaiterTables(waiter.id);
           const waiterColor = waiter.color || "#3b82f6";
@@ -98,14 +96,14 @@ export function EmployeesSidebar({
             <div
               key={waiter.id}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
-                "hover:bg-accent"
+                "flex items-center gap-3 px-3 py-3 rounded-md text-sm transition-colors",
+                "hover:bg-sidebar-accent cursor-pointer"
               )}
             >
               <Popover>
                 <PopoverTrigger asChild>
                   <button
-                    className="w-3 h-3 rounded-full flex-shrink-0 border border-border hover:scale-110 transition-transform"
+                    className="w-4 h-4 rounded-full flex-shrink-0 border-2 border-sidebar-border hover:scale-110 transition-transform"
                     style={{ backgroundColor: waiterColor }}
                   />
                 </PopoverTrigger>
@@ -124,14 +122,14 @@ export function EmployeesSidebar({
               </Popover>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="truncate font-medium">{waiter.name}</span>
-                  <span className="text-xs text-muted-foreground flex-shrink-0">
-                    {waiterTables.length} {waiterTables.length === 1 ? "mesa" : "mesas"}
+                <div className="flex items-center gap-2">
+                  <span className="truncate font-normal text-sidebar-foreground">{waiter.name}</span>
+                  <span className="text-xs text-sidebar-foreground/50 flex-shrink-0">
+                    ({waiterTables.length})
                   </span>
                 </div>
                 {waiter.position && (
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-xs text-sidebar-foreground/50 truncate mt-0.5">
                     {waiter.position}
                   </p>
                 )}
