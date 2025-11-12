@@ -1,12 +1,5 @@
 import { cn } from "@/lib/utils";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -26,19 +19,9 @@ interface Table {
   element_type?: string | null;
 }
 
-interface Room {
-  id: string;
-  name: string;
-  is_active: boolean;
-}
-
 interface EmployeesSidebarProps {
   waiters: Waiter[];
   tables: Table[];
-  rooms: Room[];
-  selectedRoomId: string | null;
-  onRoomChange: (roomId: string) => void;
-  onAssignWaiter: (tableId: string, waiterId: string | null) => void;
   onWaiterColorChange: (waiterId: string, color: string) => void;
 }
 
@@ -52,9 +35,6 @@ const PRESET_COLORS = [
 export function EmployeesSidebar({
   waiters,
   tables,
-  rooms,
-  selectedRoomId,
-  onRoomChange,
   onWaiterColorChange,
 }: EmployeesSidebarProps) {
   const getWaiterTables = (waiterId: string) => {
@@ -68,22 +48,6 @@ export function EmployeesSidebar({
         <h2 className="text-xs font-semibold text-sidebar-foreground/60 uppercase tracking-wider">
           GESTIÓN DE MESAS
         </h2>
-      </div>
-
-      {/* Room selector */}
-      <div className="px-4 mb-4">
-        <Select value={selectedRoomId || ""} onValueChange={onRoomChange}>
-          <SelectTrigger className="bg-sidebar-accent">
-            <SelectValue placeholder="Selecciona una sala" />
-          </SelectTrigger>
-          <SelectContent>
-            {rooms.map((room) => (
-              <SelectItem key={room.id} value={room.id}>
-                {room.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
       
       {/* Waiters list */}

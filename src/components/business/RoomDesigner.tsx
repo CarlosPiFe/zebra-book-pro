@@ -44,9 +44,7 @@ interface RoomDesignerProps {
 
 export function RoomDesigner({ 
   businessId, 
-  rooms, 
-  selectedRoomId,
-  onRoomChange 
+  selectedRoomId
 }: RoomDesignerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
@@ -337,21 +335,6 @@ export function RoomDesigner({
     }
   };
 
-  const handleAssignWaiter = async (tableId: string, waiterId: string | null) => {
-    try {
-      await supabase
-        .from("tables")
-        .update({ assigned_waiter_id: waiterId })
-        .eq("id", tableId);
-
-      toast.success("Camarero asignado correctamente");
-      loadTables();
-    } catch (error) {
-      console.error("Error assigning waiter:", error);
-      toast.error("Error al asignar camarero");
-    }
-  };
-
   const handleWaiterColorChange = async (waiterId: string, color: string) => {
     try {
       await supabase
@@ -375,10 +358,6 @@ export function RoomDesigner({
       <EmployeesSidebar
         waiters={waiters}
         tables={tables}
-        rooms={rooms}
-        selectedRoomId={selectedRoomId}
-        onRoomChange={onRoomChange}
-        onAssignWaiter={handleAssignWaiter}
         onWaiterColorChange={handleWaiterColorChange}
       />
 
