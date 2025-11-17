@@ -27,83 +27,61 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
   const map = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [mapboxToken, setMapboxToken] = useState("");
+  const [mapReady, setMapReady] = useState(false);
 
+  // Initialize map only once
   useEffect(() => {
-    // Usar el token del usuario desde Secrets
     const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
     if (!token) {
       console.error('VITE_MAPBOX_PUBLIC_TOKEN no está configurado');
+      return;
     }
-    setMapboxToken(token || '');
-  }, []);
+    setMapboxToken(token);
 
-  useEffect(() => {
-    if (!mapContainer.current || !mapboxToken) return;
+    if (!mapContainer.current || map.current) return;
 
-    mapboxgl.accessToken = mapboxToken;
+    mapboxgl.accessToken = token;
 
-    // Calcular centro y bounds según restaurantes con coordenadas
-    const businessesWithCoords = businesses.filter(b => b.latitude && b.longitude);
-    
-    console.log('🗺️ Total de restaurantes:', businesses.length);
-    console.log('📍 Restaurantes con coordenadas:', businessesWithCoords.length);
-    console.log('📊 Detalles de restaurantes:', businessesWithCoords.map(b => ({
-      name: b.name,
-      lat: b.latitude,
-      lng: b.longitude
-    })));
-    
-    let center: [number, number] = [-3.7038, 40.4168]; // Madrid por defecto
-    let zoom = 12;
-
-    if (userLocation) {
-      center = [userLocation.lng, userLocation.lat];
-      zoom = 13;
-    } else if (businessesWithCoords.length > 0) {
-      const lngs = businessesWithCoords.map(b => b.longitude!);
-      const lats = businessesWithCoords.map(b => b.latitude!);
-      const avgLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
-      const avgLat = lats.reduce((a, b) => a + b, 0) / lats.length;
-      center = [avgLng, avgLat];
-    }
-
-    // Initialize map
+    // Initialize map centered on Madrid by default
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
-      center,
-      zoom,
+      center: [-3.7038, 40.4168],
+      zoom: 12,
     });
 
     // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-    // Ensure proper sizing and marker projection
-    const doResize = () => {
-      try { map.current?.resize(); } catch (e) { /* noop */ }
+    map.current.on('load', () => {
+      setMapReady(true);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      map.current?.remove();
+      map.current = null;
     };
+  }, []);
 
-    // Resize after load and on next ticks (helps with sticky/hidden containers)
-    map.current.on('load', doResize);
-    map.current.on('style.load', doResize);
-    setTimeout(doResize, 50);
-    setTimeout(doResize, 200);
+  // Update markers when businesses or userLocation change
+  useEffect(() => {
+    if (!mapReady || !map.current) return;
 
-    // Observe container size changes
-    let ro: ResizeObserver | null = null;
-    if (mapContainer.current && 'ResizeObserver' in window) {
-      ro = new ResizeObserver(() => doResize());
-      ro.observe(mapContainer.current);
-    }
-
-    // Limpiar marcadores anteriores
+    // Remove existing markers
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
 
-    // Añadir marcador de usuario si existe
+    const businessesWithCoords = businesses.filter(b => b.latitude && b.longitude);
+
+    console.log('🗺️ Actualizando marcadores:', businessesWithCoords.length, 'restaurantes');
+
+    // Add user location marker if exists
     if (userLocation) {
       const userMarkerEl = document.createElement('div');
-      userMarkerEl.className = 'w-4 h-4 bg-blue-500 border-2 border-white rounded-full shadow-lg';
+      userMarkerEl.style.cssText = 'width: 16px; height: 16px; background-color: #3B82F6; border: 2px solid white; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3);';
       
       const userMarker = new mapboxgl.Marker({
         element: userMarkerEl,
@@ -114,18 +92,19 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
       markersRef.current.push(userMarker);
     }
 
-    // Add markers for each business with coordinates
+    // Add business markers
     businessesWithCoords.forEach((business) => {
       if (!map.current) return;
 
-      console.log('📍 Renderizando marcador:', {
-        name: business.name,
-        lat: business.latitude,
-        lng: business.longitude,
-        address: business.address
-      });
+      const lng = Number(business.longitude);
+      const lat = Number(business.latitude);
+      
+      if (!isFinite(lng) || !isFinite(lat)) {
+        console.warn('⚠️ Coordenadas inválidas:', business.name, lat, lng);
+        return;
+      }
 
-      // Crear mini-tarjeta flotante estilo The Fork
+      // Create card popup
       const cardEl = document.createElement('div');
       cardEl.className = 'bg-white rounded-lg shadow-lg overflow-hidden cursor-pointer hover:shadow-xl transition-shadow w-64 border border-border';
       
@@ -156,18 +135,23 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
         </div>
       `;
 
-      // Crear marcador personalizado (pelota azul)
+      // Create custom marker element
       const markerEl = document.createElement('div');
-      markerEl.className = 'relative group';
+      markerEl.style.cssText = 'width: 32px; height: 32px; background-color: #3B82F6; border: 3px solid white; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;';
       markerEl.innerHTML = `
-        <div style="width: 32px; height: 32px; background-color: #3B82F6; border: 3px solid white; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
-          <svg style="width: 16px; height: 16px; color: white;" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-          </svg>
-        </div>
+        <svg style="width: 16px; height: 16px; color: white;" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+        </svg>
       `;
 
-      // Popup con la tarjeta
+      markerEl.addEventListener('mouseenter', () => {
+        markerEl.style.transform = 'scale(1.1)';
+      });
+      markerEl.addEventListener('mouseleave', () => {
+        markerEl.style.transform = 'scale(1)';
+      });
+
+      // Create popup
       const popup = new mapboxgl.Popup({
         offset: 25,
         closeButton: true,
@@ -181,13 +165,7 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
         }
       });
 
-      const lat = Number(business.latitude);
-      const lng = Number(business.longitude);
-      if (!isFinite(lat) || !isFinite(lng)) {
-        console.warn('⚠️ Coordenadas inválidas para', business.name, business.latitude, business.longitude);
-        return;
-      }
-
+      // Add marker to map with correct [lng, lat] order
       const marker = new mapboxgl.Marker({
         element: markerEl,
       })
@@ -195,31 +173,36 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
         .setPopup(popup)
         .addTo(map.current);
 
-      console.log('✅ Marcador añadido al mapa:', business.name, 'en posición [lng, lat]:', [lng, lat]);
+      console.log('✅ Marcador añadido:', business.name, 'en [lng, lat]:', [lng, lat]);
 
       markersRef.current.push(marker);
     });
 
-    // Ajustar bounds si hay múltiples restaurantes
-    if (businessesWithCoords.length > 1) {
+    // Adjust bounds to show all markers
+    if (businessesWithCoords.length > 0) {
       const bounds = new mapboxgl.LngLatBounds();
+      
       businessesWithCoords.forEach(b => {
-        bounds.extend([b.longitude!, b.latitude!]);
+        if (b.longitude && b.latitude) {
+          bounds.extend([b.longitude, b.latitude]);
+        }
       });
+      
       if (userLocation) {
         bounds.extend([userLocation.lng, userLocation.lat]);
       }
-      map.current.fitBounds(bounds, { padding: 50 });
+      
+      map.current.fitBounds(bounds, { 
+        padding: 50,
+        maxZoom: 15
+      });
+    } else if (userLocation) {
+      map.current.flyTo({
+        center: [userLocation.lng, userLocation.lat],
+        zoom: 13
+      });
     }
-
-    // Cleanup
-    return () => {
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
-      try { ro?.disconnect(); } catch {}
-      map.current?.remove();
-    };
-  }, [mapboxToken, businesses, onBusinessClick, userLocation]);
+  }, [businesses, userLocation, onBusinessClick, mapReady]);
 
   if (!mapboxToken) {
     return (
