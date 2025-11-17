@@ -81,10 +81,10 @@ serve(async (req) => {
         : null
     }));
 
-    // Filtrar restaurantes demasiado lejos (opcional: más de 20km)
+    // Filtrar restaurantes demasiado lejos (opcional: más de 50km)
     if (userLocation) {
       businessesWithDistance = businessesWithDistance.filter(b => 
-        !b.distance || b.distance <= 20
+        !b.distance || b.distance <= 50
       );
       // Ordenar por distancia
       businessesWithDistance.sort((a, b) => (a.distance || 999) - (b.distance || 999));
@@ -155,7 +155,8 @@ ${userLocation ? '- Los restaurantes están ordenados por proximidad' : ''}
    - Si piden "vegano" → DEBE tener "Vegano" en dietary_options
    - Si piden "sin gluten" → DEBE tener "Sin Gluten" en dietary_options
    - Si piden plato específico → DEBE estar en dishes o description
-   ${userLocation ? '- EXCLUYE restaurantes a más de 20km' : ''}
+   - Si piden ubicación específica (Madrid, Barcelona, etc.) → SOLO restaurantes cuya address contenga esa ciudad/zona
+   ${userLocation ? '- EXCLUYE restaurantes a más de 50km' : ''}
 
 4. **RANKING FINAL**:
    - Top 10 restaurantes con puntuación más alta
@@ -203,7 +204,8 @@ ${userLocation ? '- Los restaurantes están ordenados por proximidad' : ''}
 4. **LÍMITES**:
    - NUNCA devuelvas más de 10 restaurantes
    - NUNCA inventes información que no está en la BD
-   ${userLocation ? '- NUNCA devuelvas restaurantes a más de 20km' : ''}
+   - Si mencionan una ciudad/ubicación específica, SOLO devuelve restaurantes de esa ciudad
+   ${userLocation ? '- NUNCA devuelvas restaurantes a más de 50km' : ''}
 
 🚀 EJEMPLOS DE CONSULTAS:
 
@@ -215,6 +217,12 @@ Consulta: "italiana romántica para aniversario"
 
 Consulta: "vegano sin gluten con terraza"
 → Buscar: dietary_options=["Vegano","Sin Gluten"], services incluye terraza
+
+Consulta: "restaurantes en Madrid"
+→ Buscar: SOLO restaurantes cuya address contenga "Madrid"
+
+Consulta: "japonés en Barcelona"
+→ Buscar: cuisine=Japonés AND address contiene "Barcelona"
 
 💡 RECUERDA:
 - Sé ESTRICTO con las validaciones
