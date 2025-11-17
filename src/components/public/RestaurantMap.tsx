@@ -193,16 +193,7 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
         </div>
       `;
 
-      // Crear marcador personalizado (pelota azul)
-      const markerEl = document.createElement('div');
-      markerEl.className = 'relative group';
-      markerEl.innerHTML = `
-        <div style="width: 32px; height: 32px; background-color: #3B82F6; border: 3px solid white; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.2s;">
-          <svg style="width: 16px; height: 16px; color: white;" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-          </svg>
-        </div>
-      `;
+      // Usar marcador nativo de Mapbox
 
       // Popup con la tarjeta
       const popup = new mapboxgl.Popup({
@@ -225,9 +216,7 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
         return;
       }
 
-      const marker = new mapboxgl.Marker({
-        element: markerEl,
-      })
+      const marker = new mapboxgl.Marker()
         .setLngLat([lng, lat])
         .setPopup(popup)
         .addTo(map.current);
