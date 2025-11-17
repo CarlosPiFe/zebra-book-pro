@@ -45,6 +45,14 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
     // Calcular centro y bounds según restaurantes con coordenadas
     const businessesWithCoords = businesses.filter(b => b.latitude && b.longitude);
     
+    console.log('🗺️ Total de restaurantes:', businesses.length);
+    console.log('📍 Restaurantes con coordenadas:', businessesWithCoords.length);
+    console.log('📊 Detalles de restaurantes:', businessesWithCoords.map(b => ({
+      name: b.name,
+      lat: b.latitude,
+      lng: b.longitude
+    })));
+    
     let center: [number, number] = [-3.7038, 40.4168]; // Madrid por defecto
     let zoom = 12;
 
@@ -91,6 +99,13 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
     // Add markers for each business with coordinates
     businessesWithCoords.forEach((business) => {
       if (!map.current) return;
+
+      console.log('📍 Renderizando marcador:', {
+        name: business.name,
+        lat: business.latitude,
+        lng: business.longitude,
+        address: business.address
+      });
 
       // Crear mini-tarjeta flotante estilo The Fork
       const cardEl = document.createElement('div');
@@ -154,6 +169,8 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
         .setLngLat([business.longitude!, business.latitude!])
         .setPopup(popup)
         .addTo(map.current);
+
+      console.log('✅ Marcador añadido al mapa:', business.name, 'en posición [lng, lat]:', [business.longitude, business.latitude]);
 
       markersRef.current.push(marker);
     });
