@@ -29,9 +29,12 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
   const [mapboxToken, setMapboxToken] = useState("");
 
   useEffect(() => {
-    // Token público de Mapbox (fallback siempre disponible)
-    const token = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
-    setMapboxToken(token);
+    // Usar el token del usuario desde Secrets
+    const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
+    if (!token) {
+      console.error('VITE_MAPBOX_PUBLIC_TOKEN no está configurado');
+    }
+    setMapboxToken(token || '');
   }, []);
 
   useEffect(() => {
