@@ -74,6 +74,14 @@ export const LocationInput = ({ value, onChange, placeholder = "¿Dónde?", clas
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
+    
+    // Mostrar sugerencias inmediatamente si hay texto
+    if (newValue.trim().length >= 2) {
+      setShowSuggestions(true);
+    } else {
+      setShowSuggestions(false);
+      setSuggestions([]);
+    }
 
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -178,19 +186,30 @@ export const LocationInput = ({ value, onChange, placeholder = "¿Dónde?", clas
         </Button>
       </div>
 
-      {showSuggestions && suggestions.length > 0 && (
+      {showSuggestions && (
         <div className="absolute z-50 w-full mt-1 bg-background border border-border rounded-md shadow-lg max-h-60 overflow-auto">
-          {suggestions.map((suggestion, index) => (
-            <button
-              key={index}
-              type="button"
-              className="w-full px-4 py-2 text-left hover:bg-accent transition-colors text-sm flex items-start gap-2"
-              onClick={() => handleSelectSuggestion(suggestion)}
-            >
-              <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
-              <span>{suggestion.place_name}</span>
-            </button>
-          ))}
+          {loading ? (
+            <div className="px-4 py-4 text-center">
+              <Loader2 className="h-4 w-4 animate-spin mx-auto text-muted-foreground" />
+              <p className="text-xs text-muted-foreground mt-2">Buscando ubicaciones...</p>
+            </div>
+          ) : suggestions.length > 0 ? (
+            suggestions.map((suggestion, index) => (
+              <button
+                key={index}
+                type="button"
+                className="w-full px-4 py-2 text-left hover:bg-accent transition-colors text-sm flex items-start gap-2"
+                onClick={() => handleSelectSuggestion(suggestion)}
+              >
+                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
+                <span>{suggestion.place_name}</span>
+              </button>
+            ))
+          ) : inputValue.trim().length >= 2 ? (
+            <div className="px-4 py-4 text-center text-sm text-muted-foreground">
+              No se encontraron ubicaciones
+            </div>
+          ) : null}
         </div>
       )}
     </div>
