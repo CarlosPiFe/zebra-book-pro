@@ -48,8 +48,13 @@ export const LocationInput = ({ value, onChange, placeholder = "¿Dónde?", clas
 
     setLoading(true);
     try {
-      // Token público de Mapbox (fallback siempre disponible)
-      const token = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+      // Usar el token del usuario desde Secrets
+      const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
+      if (!token) {
+        console.error('MAPBOX_PUBLIC_TOKEN no está configurado');
+        return;
+      }
+      
       const response = await fetch(
         `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&language=es&country=ES&types=place,locality,neighborhood,address&limit=5`
       );
@@ -98,8 +103,15 @@ export const LocationInput = ({ value, onChange, placeholder = "¿Dónde?", clas
         const { latitude, longitude } = position.coords;
         
         try {
-          // Token público de Mapbox (fallback siempre disponible)
-          const token = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3cifQ.rJcFIG214AriISLbB6B5aw';
+          // Usar el token del usuario desde Secrets
+          const token = import.meta.env.VITE_MAPBOX_PUBLIC_TOKEN;
+          if (!token) {
+            console.error('MAPBOX_PUBLIC_TOKEN no está configurado');
+            setInputValue('Mi ubicación');
+            onChange('Mi ubicación', latitude, longitude);
+            return;
+          }
+          
           const response = await fetch(
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${token}&language=es`
           );
