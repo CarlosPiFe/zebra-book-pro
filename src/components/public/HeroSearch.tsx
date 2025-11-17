@@ -100,7 +100,7 @@ export const HeroSearch = () => {
 
           <div className="space-y-3">
             <div className="flex gap-2">
-              <div className="flex-1 relative">
+              <div className="flex-[2] relative">
                 <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary z-10" />
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                 <Input 

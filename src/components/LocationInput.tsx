@@ -41,16 +41,17 @@ export const LocationInput = ({ value, onChange, placeholder = "¿Dónde?", clas
   }, []);
 
   const searchLocations = async (query: string) => {
-    if (!query.trim() || query.length < 3) {
+    if (!query.trim() || query.length < 2) {
       setSuggestions([]);
       return;
     }
 
     setLoading(true);
     try {
-      const token = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+      // Token público de Mapbox (fallback siempre disponible)
+      const token = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
       const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&language=es&country=ES&limit=5`
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${token}&language=es&country=ES&types=place,locality,neighborhood,address&limit=5`
       );
       
       if (response.ok) {
@@ -75,7 +76,7 @@ export const LocationInput = ({ value, onChange, placeholder = "¿Dónde?", clas
 
     debounceRef.current = setTimeout(() => {
       searchLocations(newValue);
-    }, 500);
+    }, 300);
   };
 
   const handleSelectSuggestion = (suggestion: LocationSuggestion) => {
@@ -97,7 +98,8 @@ export const LocationInput = ({ value, onChange, placeholder = "¿Dónde?", clas
         const { latitude, longitude } = position.coords;
         
         try {
-          const token = import.meta.env.VITE_MAPBOX_TOKEN || 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+          // Token público de Mapbox (fallback siempre disponible)
+          const token = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3cifQ.rJcFIG214AriISLbB6B5aw';
           const response = await fetch(
             `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${token}&language=es`
           );
@@ -107,6 +109,9 @@ export const LocationInput = ({ value, onChange, placeholder = "¿Dónde?", clas
             const placeName = data.features[0]?.place_name || 'Mi ubicación';
             setInputValue(placeName);
             onChange(placeName, latitude, longitude);
+          } else {
+            setInputValue('Mi ubicación');
+            onChange('Mi ubicación', latitude, longitude);
           }
         } catch (error) {
           console.error('Error obteniendo dirección:', error);
@@ -120,6 +125,11 @@ export const LocationInput = ({ value, onChange, placeholder = "¿Dónde?", clas
         console.error('Error obteniendo ubicación:', error);
         alert('No se pudo obtener tu ubicación. Verifica los permisos del navegador.');
         setGettingLocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
       }
     );
   };
