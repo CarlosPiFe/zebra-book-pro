@@ -42,32 +42,53 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
 
     mapboxgl.accessToken = mapboxToken;
 
-    // Calcular centro y bounds según restaurantes con coordenadas
-    const businessesWithCoords = businesses.filter(b => b.latitude && b.longitude);
-    
-    console.log('🗺️ Total de restaurantes:', businesses.length);
-    console.log('📍 Restaurantes con coordenadas:', businessesWithCoords.length);
-    console.log('📊 Detalles de restaurantes:', businessesWithCoords.map(b => ({
-      name: b.name,
-      lat: b.latitude,
-      lng: b.longitude
-    })));
-    
+    // Función para geocodificar dirección usando Mapbox API
+    const geocodeAddress = async (address: string): Promise<[number, number] | null> => {
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${mapboxToken}&limit=1`
+        );
+        const data = await response.json();
+        
+        if (data.features && data.features.length > 0) {
+          const [lng, lat] = data.features[0].center;
+          console.log(`✅ Geocodificado: ${address} -> [${lng}, ${lat}]`);
+          return [lng, lat];
+        }
+        console.warn(`⚠️ No se pudo geocodificar: ${address}`);
+        return null;
+      } catch (error) {
+        console.error(`❌ Error geocodificando ${address}:`, error);
+        return null;
+      }
+    };
+
+    // Geocodificar todos los restaurantes con dirección
+    const geocodeBusinesses = async () => {
+      const geocodedBusinesses = await Promise.all(
+        businesses.map(async (business) => {
+          if (!business.address) return { ...business, geocoded: false };
+          
+          const coords = await geocodeAddress(business.address);
+          if (coords) {
+            return {
+              ...business,
+              longitude: coords[0],
+              latitude: coords[1],
+              geocoded: true
+            };
+          }
+          return { ...business, geocoded: false };
+        })
+      );
+      
+      return geocodedBusinesses.filter(b => b.geocoded && b.latitude && b.longitude);
+    };
+
     let center: [number, number] = [-3.7038, 40.4168]; // Madrid por defecto
     let zoom = 12;
 
-    if (userLocation) {
-      center = [userLocation.lng, userLocation.lat];
-      zoom = 13;
-    } else if (businessesWithCoords.length > 0) {
-      const lngs = businessesWithCoords.map(b => b.longitude!);
-      const lats = businessesWithCoords.map(b => b.latitude!);
-      const avgLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
-      const avgLat = lats.reduce((a, b) => a + b, 0) / lats.length;
-      center = [avgLng, avgLat];
-    }
-
-    // Initialize map
+    // Initialize map first
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
@@ -114,8 +135,24 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
       markersRef.current.push(userMarker);
     }
 
-    // Add markers for each business with coordinates
-    businessesWithCoords.forEach((business) => {
+    // Geocodificar y añadir marcadores
+    geocodeBusinesses().then((businessesWithCoords) => {
+      console.log('🗺️ Restaurantes geocodificados:', businessesWithCoords.length);
+      
+      // Ajustar centro del mapa según ubicación de usuario o restaurantes
+      if (userLocation) {
+        map.current?.setCenter([userLocation.lng, userLocation.lat]);
+        map.current?.setZoom(13);
+      } else if (businessesWithCoords.length > 0) {
+        const lngs = businessesWithCoords.map(b => b.longitude!);
+        const lats = businessesWithCoords.map(b => b.latitude!);
+        const avgLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+        const avgLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+        map.current?.setCenter([avgLng, avgLat]);
+      }
+
+      // Add markers for each business with coordinates
+      businessesWithCoords.forEach((business) => {
       if (!map.current) return;
 
       console.log('📍 Renderizando marcador:', {
@@ -197,20 +234,21 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
 
       console.log('✅ Marcador añadido al mapa:', business.name, 'en posición [lng, lat]:', [lng, lat]);
 
-      markersRef.current.push(marker);
-    });
-
-    // Ajustar bounds si hay múltiples restaurantes
-    if (businessesWithCoords.length > 1) {
-      const bounds = new mapboxgl.LngLatBounds();
-      businessesWithCoords.forEach(b => {
-        bounds.extend([b.longitude!, b.latitude!]);
+        markersRef.current.push(marker);
       });
-      if (userLocation) {
-        bounds.extend([userLocation.lng, userLocation.lat]);
+
+      // Ajustar bounds si hay múltiples restaurantes
+      if (businessesWithCoords.length > 1 && map.current) {
+        const bounds = new mapboxgl.LngLatBounds();
+        businessesWithCoords.forEach(b => {
+          bounds.extend([b.longitude!, b.latitude!]);
+        });
+        if (userLocation) {
+          bounds.extend([userLocation.lng, userLocation.lat]);
+        }
+        map.current.fitBounds(bounds, { padding: 50 });
       }
-      map.current.fitBounds(bounds, { padding: 50 });
-    }
+    });
 
     // Cleanup
     return () => {
