@@ -33,6 +33,9 @@ interface Business {
   service_types?: string[] | null;
   dish_specialties?: string[] | null;
   seo_keywords?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  distance?: number;
 }
 
 export default function SearchPage() {
@@ -46,6 +49,8 @@ export default function SearchPage() {
   // Parámetros de búsqueda
   const [searchLocation, setSearchLocation] = useState<string>("");
   const [searchType, setSearchType] = useState<string>("");
+  const [userLat, setUserLat] = useState<number | null>(null);
+  const [userLng, setUserLng] = useState<number | null>(null);
 
   // Filtros
   const [minRating, setMinRating] = useState<number[]>([3]);
@@ -75,6 +80,13 @@ export default function SearchPage() {
     const minRatingFromURL = searchParams.get('minRating');
     const priceRangeFromURL = searchParams.get('priceRange');
     const aiMatches = searchParams.get('aiMatches') || "";
+    const lat = searchParams.get('userLat');
+    const lng = searchParams.get('userLng');
+    
+    if (lat && lng) {
+      setUserLat(parseFloat(lat));
+      setUserLng(parseFloat(lng));
+    }
     
     // Leer filtros de URL
     const dietsFromURL = searchParams.getAll('diet');
@@ -221,7 +233,23 @@ export default function SearchPage() {
         .eq("is_active", true);
 
       if (error) throw error;
-      setBusinesses(data || []);
+      
+      // Calcular distancias si hay ubicación del usuario
+      let businessesWithDistance: Business[] = (data || []).map(b => b as Business);
+      if (userLat && userLng) {
+        const { calculateDistance } = await import("@/lib/distance");
+        businessesWithDistance = businessesWithDistance.map(b => {
+          if (b.latitude && b.longitude) {
+            const distance = calculateDistance(userLat, userLng, b.latitude, b.longitude);
+            return { ...b, distance };
+          }
+          return b;
+        });
+        // Ordenar por distancia
+        businessesWithDistance.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+      }
+      
+      setBusinesses(businessesWithDistance);
     } catch (error) {
       console.error("Error loading businesses:", error);
     } finally {
