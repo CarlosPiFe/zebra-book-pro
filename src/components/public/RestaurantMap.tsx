@@ -78,6 +78,24 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
     // Add navigation controls
     map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
+    // Ensure proper sizing and marker projection
+    const doResize = () => {
+      try { map.current?.resize(); } catch (e) { /* noop */ }
+    };
+
+    // Resize after load and on next ticks (helps with sticky/hidden containers)
+    map.current.on('load', doResize);
+    map.current.on('style.load', doResize);
+    setTimeout(doResize, 50);
+    setTimeout(doResize, 200);
+
+    // Observe container size changes
+    let ro: ResizeObserver | null = null;
+    if (mapContainer.current && 'ResizeObserver' in window) {
+      ro = new ResizeObserver(() => doResize());
+      ro.observe(mapContainer.current);
+    }
+
     // Limpiar marcadores anteriores
     markersRef.current.forEach(marker => marker.remove());
     markersRef.current = [];
@@ -163,14 +181,21 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
         }
       });
 
+      const lat = Number(business.latitude);
+      const lng = Number(business.longitude);
+      if (!isFinite(lat) || !isFinite(lng)) {
+        console.warn('⚠️ Coordenadas inválidas para', business.name, business.latitude, business.longitude);
+        return;
+      }
+
       const marker = new mapboxgl.Marker({
         element: markerEl,
       })
-        .setLngLat([business.longitude!, business.latitude!])
+        .setLngLat([lng, lat])
         .setPopup(popup)
         .addTo(map.current);
 
-      console.log('✅ Marcador añadido al mapa:', business.name, 'en posición [lng, lat]:', [business.longitude, business.latitude]);
+      console.log('✅ Marcador añadido al mapa:', business.name, 'en posición [lng, lat]:', [lng, lat]);
 
       markersRef.current.push(marker);
     });
@@ -191,6 +216,7 @@ export const RestaurantMap = ({ businesses, onBusinessClick, userLocation }: Res
     return () => {
       markersRef.current.forEach(marker => marker.remove());
       markersRef.current = [];
+      try { ro?.disconnect(); } catch {}
       map.current?.remove();
     };
   }, [mapboxToken, businesses, onBusinessClick, userLocation]);
