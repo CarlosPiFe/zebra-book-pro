@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Search, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { LocationInput } from "@/components/LocationInput";
 
 interface CompactSearchBarProps {
   initialLocation?: string;
@@ -15,17 +16,19 @@ interface CompactSearchBarProps {
 export const CompactSearchBar = ({ initialLocation = "", initialType = "", onSearch }: CompactSearchBarProps) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
+  const [userLat, setUserLat] = useState<number>();
+  const [userLng, setUserLng] = useState<number>();
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Combinar location y type en un query si existen
-    const query = [initialLocation, initialType].filter(Boolean).join(" ");
-    setSearchQuery(query);
+    setSearchQuery(initialType);
+    setLocationQuery(initialLocation);
   }, [initialLocation, initialType]);
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
+    if (!searchQuery.trim() && !locationQuery.trim()) {
       navigate("/search");
       return;
     }
@@ -33,8 +36,13 @@ export const CompactSearchBar = ({ initialLocation = "", initialType = "", onSea
     setIsSearching(true);
     
     try {
+      const body: any = { query: searchQuery || "restaurantes" };
+      if (userLat && userLng) {
+        body.userLocation = { lat: userLat, lng: userLng };
+      }
+
       const { data, error } = await supabase.functions.invoke('intelligent-search', {
-        body: { query: searchQuery }
+        body
       });
 
       if (error) throw error;
@@ -42,7 +50,9 @@ export const CompactSearchBar = ({ initialLocation = "", initialType = "", onSea
       const params = new URLSearchParams();
       const filters = data.appliedFilters;
       
-      if (filters.location) params.append('location', filters.location);
+      if (locationQuery || filters.location) params.append('location', locationQuery || filters.location);
+      if (userLat) params.append('userLat', userLat.toString());
+      if (userLng) params.append('userLng', userLng.toString());
       if (filters.cuisine) params.append('cuisine', filters.cuisine);
       if (filters.keywords) params.append('keywords', filters.keywords);
       if (filters.priceRange) params.append('priceRange', filters.priceRange);
@@ -89,27 +99,39 @@ export const CompactSearchBar = ({ initialLocation = "", initialType = "", onSea
   };
 
   return (
-    <div className="flex gap-2">
-      <div className="flex-1 relative">
-        <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary z-10" />
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-        <Input 
-          placeholder='Ej: "sushi en Madrid" o "italiana con terraza"' 
-          value={searchQuery} 
-          onChange={e => setSearchQuery(e.target.value)} 
-          onKeyPress={handleKeyPress}
-          disabled={isSearching}
-          className="h-10 pl-10 pr-10 text-sm border-input bg-background"
+    <div className="space-y-2">
+      <div className="flex gap-2">
+        <div className="flex-1 relative">
+          <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary z-10" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+          <Input 
+            placeholder='Ej: "sushi" o "italiana con terraza"' 
+            value={searchQuery} 
+            onChange={e => setSearchQuery(e.target.value)} 
+            onKeyPress={handleKeyPress}
+            disabled={isSearching}
+            className="h-10 pl-10 pr-10 text-sm border-input bg-background"
+          />
+        </div>
+        <LocationInput
+          value={locationQuery}
+          onChange={(address, lat, lng) => {
+            setLocationQuery(address);
+            setUserLat(lat);
+            setUserLng(lng);
+          }}
+          placeholder="¿Dónde?"
+          className="flex-1"
         />
+        <Button 
+          onClick={handleSearch}
+          disabled={isSearching}
+          size="sm" 
+          className="h-10 px-6 font-semibold"
+        >
+          {isSearching ? "..." : "BUSCAR"}
+        </Button>
       </div>
-      <Button 
-        onClick={handleSearch}
-        disabled={isSearching}
-        size="sm" 
-        className="h-10 px-6 font-semibold"
-      >
-        {isSearching ? "..." : "BUSCAR"}
-      </Button>
     </div>
   );
 };

@@ -5,15 +5,19 @@ import { Button } from "@/components/ui/button";
 import { Search, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { LocationInput } from "@/components/LocationInput";
 
 export const HeroSearch = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
+  const [userLat, setUserLat] = useState<number>();
+  const [userLng, setUserLng] = useState<number>();
   const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
+    if (!searchQuery.trim() && !locationQuery.trim()) {
       navigate("/search");
       return;
     }
@@ -21,8 +25,13 @@ export const HeroSearch = () => {
     setIsSearching(true);
     
     try {
+      const body: any = { query: searchQuery || "restaurantes" };
+      if (userLat && userLng) {
+        body.userLocation = { lat: userLat, lng: userLng };
+      }
+
       const { data, error } = await supabase.functions.invoke('intelligent-search', {
-        body: { query: searchQuery }
+        body
       });
 
       if (error) throw error;
@@ -32,7 +41,9 @@ export const HeroSearch = () => {
       
       // Añadir filtros aplicados por la IA
       const filters = data.appliedFilters;
-      if (filters.location) params.append('location', filters.location);
+      if (locationQuery || filters.location) params.append('location', locationQuery || filters.location);
+      if (userLat) params.append('userLat', userLat.toString());
+      if (userLng) params.append('userLng', userLng.toString());
       if (filters.cuisine) params.append('cuisine', filters.cuisine);
       if (filters.keywords) params.append('keywords', filters.keywords);
       if (filters.priceRange) params.append('priceRange', filters.priceRange);
@@ -87,27 +98,39 @@ export const HeroSearch = () => {
             </p>
           </div>
 
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary z-10" />
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-              <Input 
-                placeholder='Prueba "sushi barato en Madrid centro" o "italiana romántica"' 
-                value={searchQuery} 
-                onChange={e => setSearchQuery(e.target.value)} 
-                onKeyPress={handleKeyPress}
-                disabled={isSearching}
-                className="h-12 pl-11 pr-11 text-sm border-input"
+          <div className="space-y-3">
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Sparkles className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary z-10" />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                <Input 
+                  placeholder='Prueba "sushi" o "italiana romántica"' 
+                  value={searchQuery} 
+                  onChange={e => setSearchQuery(e.target.value)} 
+                  onKeyPress={handleKeyPress}
+                  disabled={isSearching}
+                  className="h-12 pl-11 pr-11 text-sm border-input"
+                />
+              </div>
+              <LocationInput
+                value={locationQuery}
+                onChange={(address, lat, lng) => {
+                  setLocationQuery(address);
+                  setUserLat(lat);
+                  setUserLng(lng);
+                }}
+                placeholder="¿Dónde?"
+                className="flex-1"
               />
+              <Button 
+                size="default" 
+                className="h-12 px-8 text-sm font-semibold" 
+                onClick={handleSearch}
+                disabled={isSearching}
+              >
+                {isSearching ? "BUSCANDO..." : "BUSCAR"}
+              </Button>
             </div>
-            <Button 
-              size="default" 
-              className="h-12 px-8 text-sm font-semibold" 
-              onClick={handleSearch}
-              disabled={isSearching}
-            >
-              {isSearching ? "BUSCANDO..." : "BUSCAR"}
-            </Button>
           </div>
         </div>
       </div>
