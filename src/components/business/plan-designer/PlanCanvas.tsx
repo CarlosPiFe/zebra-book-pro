@@ -288,7 +288,7 @@ export function PlanCanvas({
     const y = snapToGrid((e.clientY - rect.top - (vpt?.[5] || 0)) / zoom);
 
     const newElement: PlacedElement = {
-      id: `element-${Date.now()}`,
+      id: `element-${Date.now()}-${Math.random()}`,
       type: draggedTemplate.type,
       x,
       y,
@@ -298,6 +298,7 @@ export function PlanCanvas({
       color: '#3b82f6',
     };
 
+    // Add to local state without reloading from database
     onElementsChange([...elements, newElement]);
   };
 

@@ -171,13 +171,14 @@ export function ProfessionalRoomDesigner({
 
           if (error) throw error;
 
-          // Update element with tableId
-          element.tableId = data.id;
+          // Update local state with new tableId
+          setElements(prev => prev.map(e => 
+            e.id === element.id ? { ...e, tableId: data.id } : e
+          ));
         }
       }
 
       toast.success("Diseño guardado correctamente");
-      await loadElements();
     } catch (error) {
       console.error("Error saving layout:", error);
       toast.error("Error al guardar el diseño");
@@ -189,20 +190,24 @@ export function ProfessionalRoomDesigner({
   const handleDelete = async () => {
     if (!selectedElement) return;
 
-    try {
-      if (selectedElement.tableId) {
+    // Update local state immediately
+    setElements(elements.filter(e => e.id !== selectedElement.id));
+    setSelectedElement(null);
+    toast.success("Elemento eliminado");
+
+    // Delete from database in background if it exists
+    if (selectedElement.tableId) {
+      try {
         await supabase
           .from("tables")
           .delete()
           .eq("id", selectedElement.tableId);
+      } catch (error) {
+        console.error("Error deleting from database:", error);
+        // Restore element if deletion failed
+        setElements(prev => [...prev, selectedElement]);
+        toast.error("Error al eliminar de la base de datos");
       }
-
-      setElements(elements.filter(e => e.id !== selectedElement.id));
-      setSelectedElement(null);
-      toast.success("Elemento eliminado");
-    } catch (error) {
-      console.error("Error deleting element:", error);
-      toast.error("Error al eliminar el elemento");
     }
   };
 
