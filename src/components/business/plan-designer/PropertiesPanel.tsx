@@ -17,6 +17,7 @@ interface PlacedElement {
   tableNumber?: number;
   capacity?: number;
   assignedWaiterId?: string;
+  color?: string;
 }
 
 interface Waiter {
@@ -117,15 +118,46 @@ export function PropertiesPanel({ element, waiters, onUpdate, onClose }: Propert
         {/* Rotation */}
         <div className="space-y-2">
           <Label htmlFor="rotation" className="text-xs font-semibold text-muted-foreground">ROTACIÓN</Label>
-          <Input
-            id="rotation"
-            type="number"
-            value={Math.round(localElement.rotation)}
-            onChange={(e) => handleUpdate('rotation', parseFloat(e.target.value))}
-            className="h-8 text-xs"
-            min="0"
-            max="360"
-          />
+          <div className="flex gap-2">
+            <Input
+              id="rotation"
+              type="number"
+              value={Math.round(localElement.rotation)}
+              onChange={(e) => handleUpdate('rotation', parseFloat(e.target.value))}
+              className="h-8 text-xs flex-1"
+              min="0"
+              max="360"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handleUpdate('rotation', (localElement.rotation + 90) % 360)}
+            >
+              90°
+            </Button>
+          </div>
+        </div>
+
+        {/* Color */}
+        <div className="space-y-2">
+          <Label htmlFor="color" className="text-xs font-semibold text-muted-foreground">COLOR</Label>
+          <div className="flex gap-2 items-center">
+            <Input
+              id="color"
+              type="color"
+              value={localElement.color || '#3b82f6'}
+              onChange={(e) => handleUpdate('color', e.target.value)}
+              className="h-8 w-16 p-1 cursor-pointer"
+            />
+            <Input
+              type="text"
+              value={localElement.color || '#3b82f6'}
+              onChange={(e) => handleUpdate('color', e.target.value)}
+              className="h-8 text-xs flex-1 font-mono"
+              placeholder="#3b82f6"
+            />
+          </div>
         </div>
 
         {/* Table-specific properties */}

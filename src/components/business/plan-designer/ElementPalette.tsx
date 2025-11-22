@@ -1,6 +1,6 @@
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Square, Circle, Minus, RectangleHorizontal, RectangleVertical, Dot, Box, DoorOpen, Trees, PanelTopOpen } from "lucide-react";
+import { Square, Circle, Minus } from "lucide-react";
 
 export interface ElementTemplate {
   id: string;
@@ -15,20 +15,11 @@ export interface ElementTemplate {
 
 const elementTemplates: ElementTemplate[] = [
   // Mesas
-  { id: 'table-square', type: 'table-square', category: 'tables', label: 'Mesa Cuadrada', icon: Square, defaultWidth: 80, defaultHeight: 80 },
-  { id: 'table-rect-h', type: 'table-rect-h', category: 'tables', label: 'Mesa Rectangular', icon: RectangleHorizontal, defaultWidth: 120, defaultHeight: 60 },
-  { id: 'table-rect-v', type: 'table-rect-v', category: 'tables', label: 'Mesa Vertical', icon: RectangleVertical, defaultWidth: 60, defaultHeight: 120 },
-  { id: 'table-round', type: 'table-round', category: 'tables', label: 'Mesa Redonda', icon: Circle, defaultWidth: 80, defaultHeight: 80, isCircular: true },
+  { id: 'table-square', type: 'table-square', category: 'tables', label: 'Mesa Cuadrada', icon: Square, defaultWidth: 60, defaultHeight: 60 },
+  { id: 'table-round', type: 'table-round', category: 'tables', label: 'Mesa Redonda', icon: Circle, defaultWidth: 60, defaultHeight: 60, isCircular: true },
   
   // Estructura
-  { id: 'wall-h', type: 'wall', category: 'structure', label: 'Pared Horizontal', icon: Minus, defaultWidth: 200, defaultHeight: 15 },
-  { id: 'wall-v', type: 'wall', category: 'structure', label: 'Pared Vertical', icon: PanelTopOpen, defaultWidth: 15, defaultHeight: 200 },
-  { id: 'column', type: 'column', category: 'structure', label: 'Columna', icon: Box, defaultWidth: 40, defaultHeight: 40 },
-  { id: 'door', type: 'door', category: 'structure', label: 'Puerta', icon: DoorOpen, defaultWidth: 80, defaultHeight: 15 },
-  
-  // Decoración
-  { id: 'plant', type: 'plant', category: 'decoration', label: 'Planta', icon: Trees, defaultWidth: 40, defaultHeight: 40 },
-  { id: 'separator', type: 'separator', category: 'decoration', label: 'Separador', icon: Dot, defaultWidth: 120, defaultHeight: 10 },
+  { id: 'wall', type: 'wall', category: 'structure', label: 'Pared', icon: Minus, defaultWidth: 200, defaultHeight: 15 },
 ];
 
 interface ElementPaletteProps {
@@ -38,7 +29,6 @@ interface ElementPaletteProps {
 export function ElementPalette({ onDragStart }: ElementPaletteProps) {
   const tables = elementTemplates.filter(t => t.category === 'tables');
   const structure = elementTemplates.filter(t => t.category === 'structure');
-  const decoration = elementTemplates.filter(t => t.category === 'decoration');
 
   const renderElement = (template: ElementTemplate) => {
     const Icon = template.icon;
@@ -63,7 +53,7 @@ export function ElementPalette({ onDragStart }: ElementPaletteProps) {
       </div>
 
       <ScrollArea className="flex-1">
-        <Accordion type="multiple" defaultValue={["tables", "structure", "decoration"]} className="px-2">
+        <Accordion type="multiple" defaultValue={["tables", "structure"]} className="px-2">
           <AccordionItem value="tables">
             <AccordionTrigger className="text-sm font-medium">Mesas</AccordionTrigger>
             <AccordionContent>
@@ -78,15 +68,6 @@ export function ElementPalette({ onDragStart }: ElementPaletteProps) {
             <AccordionContent>
               <div className="grid grid-cols-2 gap-2 pb-2">
                 {structure.map(renderElement)}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="decoration">
-            <AccordionTrigger className="text-sm font-medium">Decoración</AccordionTrigger>
-            <AccordionContent>
-              <div className="grid grid-cols-2 gap-2 pb-2">
-                {decoration.map(renderElement)}
               </div>
             </AccordionContent>
           </AccordionItem>

@@ -14,6 +14,7 @@ interface PlacedElement {
   tableNumber?: number;
   capacity?: number;
   assignedWaiterId?: string;
+  color?: string;
 }
 
 interface PlanCanvasProps {
@@ -110,15 +111,24 @@ export function PlanCanvas({
 
       const data = obj.get('data') as any;
       if (data?.element) {
+        // Calculate actual width and height considering scale
+        const scaleX = obj.scaleX || 1;
+        const scaleY = obj.scaleY || 1;
+        const baseWidth = obj.width || data.element.width;
+        const baseHeight = obj.height || data.element.height;
+        
         const updatedElement: PlacedElement = {
           ...data.element,
           x: snapToGrid(obj.left || 0),
           y: snapToGrid(obj.top || 0),
-          width: obj.width || data.element.width,
-          height: obj.height || data.element.height,
-          rotation: obj.angle || 0,
+          width: Math.round(baseWidth * scaleX),
+          height: Math.round(baseHeight * scaleY),
+          rotation: Math.round(obj.angle || 0),
         };
 
+        // Reset scale to 1 since we stored the scaled dimensions
+        obj.set({ scaleX: 1, scaleY: 1, width: updatedElement.width, height: updatedElement.height });
+        
         const updatedElements = elements.map(el => 
           el.id === updatedElement.id ? updatedElement : el
         );
@@ -202,35 +212,24 @@ export function PlanCanvas({
     const waiterColor = assignedWaiter?.color;
 
     // Determine colors
-    let fillColor = '#3b82f6';
+    let fillColor = element.color || '#3b82f6';
     let strokeColor = '#1e40af';
 
     if (waiterColor && isTable) {
       fillColor = waiterColor;
       strokeColor = waiterColor;
-    } else {
+    } else if (!element.color) {
       switch(element.type) {
         case 'wall':
           fillColor = '#6b7280';
           strokeColor = '#374151';
           break;
-        case 'column':
-          fillColor = '#9ca3af';
-          strokeColor = '#6b7280';
-          break;
-        case 'door':
-          fillColor = '#f59e0b';
-          strokeColor = '#d97706';
-          break;
-        case 'plant':
-          fillColor = '#10b981';
-          strokeColor = '#059669';
-          break;
-        case 'separator':
-          fillColor = '#8b5cf6';
-          strokeColor = '#7c3aed';
-          break;
+        default:
+          fillColor = '#3b82f6';
+          strokeColor = '#1e40af';
       }
+    } else {
+      strokeColor = fillColor;
     }
 
     let obj: FabricObject;
@@ -261,13 +260,15 @@ export function PlanCanvas({
     // Store element data
     obj.set('data', { element });
     
-    // Enable controls
+    // Enable controls - free resizing without aspect ratio lock
     obj.set({
       cornerColor: '#3b82f6',
       cornerSize: 12,
       transparentCorners: false,
       borderColor: '#3b82f6',
       borderScaleFactor: 2,
+      lockScalingFlip: true,
+      // Allow free resizing - do not lock aspect ratio
     });
 
     return obj;
@@ -281,8 +282,10 @@ export function PlanCanvas({
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
 
-    const x = snapToGrid((e.clientX - rect.left) / zoom);
-    const y = snapToGrid((e.clientY - rect.top) / zoom);
+    // Calculate correct position considering zoom and viewport
+    const vpt = fabricCanvas.viewportTransform;
+    const x = snapToGrid((e.clientX - rect.left - (vpt?.[4] || 0)) / zoom);
+    const y = snapToGrid((e.clientY - rect.top - (vpt?.[5] || 0)) / zoom);
 
     const newElement: PlacedElement = {
       id: `element-${Date.now()}`,
@@ -292,6 +295,7 @@ export function PlanCanvas({
       width: draggedTemplate.defaultWidth,
       height: draggedTemplate.defaultHeight,
       rotation: 0,
+      color: '#3b82f6',
     };
 
     onElementsChange([...elements, newElement]);
