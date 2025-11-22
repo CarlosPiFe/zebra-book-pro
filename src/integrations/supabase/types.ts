@@ -1199,9 +1199,12 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          password_hash: string | null
+          permissions: Json | null
           position: string | null
           token: string
           user_id: string | null
+          username: string | null
         }
         Insert: {
           business_id: string
@@ -1211,9 +1214,12 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          password_hash?: string | null
+          permissions?: Json | null
           position?: string | null
           token: string
           user_id?: string | null
+          username?: string | null
         }
         Update: {
           business_id?: string
@@ -1223,9 +1229,12 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          password_hash?: string | null
+          permissions?: Json | null
           position?: string | null
           token?: string
           user_id?: string | null
+          username?: string | null
         }
         Relationships: [
           {
@@ -1344,6 +1353,19 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      set_internal_password: {
+        Args: { p_employee_id: string; p_password: string }
+        Returns: undefined
+      }
+      verify_internal_credentials: {
+        Args: { p_business_id: string; p_password: string; p_username: string }
+        Returns: {
+          employee_id: string
+          employee_name: string
+          employee_permissions: Json
+          employee_position: string
+        }[]
       }
       waiter_can_access_table: {
         Args: { _table_id: string; _waiter_id: string }
