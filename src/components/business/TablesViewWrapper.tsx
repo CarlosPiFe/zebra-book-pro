@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { List, PenTool } from "lucide-react";
 import { TablesView } from "./TablesView";
-import { RoomDesigner } from "./RoomDesigner";
+import { ProfessionalRoomDesigner } from "./plan-designer/ProfessionalRoomDesigner";
 import { EmployeesSidebar } from "./EmployeesSidebar";
 
 interface Room {
@@ -141,7 +141,7 @@ export function TablesViewWrapper({ businessId }: TablesViewWrapperProps) {
         {/* Render view based on mode */}
         <div className="flex-1 overflow-hidden">
           {viewMode === "design" ? (
-            <RoomDesigner
+            <ProfessionalRoomDesigner
               businessId={businessId}
               rooms={rooms}
               selectedRoomId={selectedRoomId}
